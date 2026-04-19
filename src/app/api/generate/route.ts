@@ -122,10 +122,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'AI generation failed', details }, { status: 502 });
   }
 
-  // 6. Persist as outfits rows (is_saved = false until user saves)
+  // 6. Validate + deduplicate by layer_type (AI sometimes stacks 2 shirts or 2 trousers)
   const validIds = new Set(ranked.map((i) => i.id));
+  const itemById = new Map(ranked.map((i) => [i.id, i]));
+
   const cleaned = (outfits as { items: string[]; reasoning: string; confidence: number }[])
-    .map((o) => ({ ...o, items: o.items.filter((id) => validIds.has(id)) }))
+    .map((o) => {
+      // Remove ids the AI hallucinated
+      const valid = o.items.filter((id) => validIds.has(id));
+      // Keep only the first item per layer_type — enforces one top, one bottom, etc.
+      const seenLayers = new Set<string>();
+      const deduped = valid.filter((id) => {
+        const layer = itemById.get(id)?.category?.layer_type ?? id;
+        if (seenLayers.has(layer)) return false;
+        seenLayers.add(layer);
+        return true;
+      });
+      return { ...o, items: deduped };
+    })
     .filter((o) => o.items.length >= 2);
 
   return NextResponse.json({
