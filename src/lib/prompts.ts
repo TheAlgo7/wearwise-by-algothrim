@@ -35,17 +35,14 @@ export function buildGeneratePrompt(args: {
   const slim = candidates.map((c) => ({
     id: c.id,
     name: c.name,
-    layer_type: c.category?.layer_type ?? null,
-    category: c.category?.name ?? null,
-    primary_color: c.primary_color,
+    layer: c.category?.layer_type ?? null,
+    cat: c.category?.name ?? null,
+    color: c.primary_color,
     fit: c.fit,
-    sleeve_length: c.sleeve_length,
-    can_be_worn_open: c.can_be_worn_open,
+    sleeve: c.sleeve_length,
+    open: c.can_be_worn_open ?? false,
     formality: c.formality,
     vibe: c.vibe,
-    min_temp_c: c.min_temp_c,
-    max_temp_c: c.max_temp_c,
-    last_worn_at: c.last_worn_at,
   }));
   return [
     `STYLE BLUEPRINT:\n${blueprint}`,

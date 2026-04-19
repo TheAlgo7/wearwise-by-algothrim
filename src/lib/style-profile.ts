@@ -32,26 +32,31 @@ export async function getStyleProfile(): Promise<StyleProfile> {
   }
 }
 
-/** Compact, prompt-friendly string representation of the Style Blueprint. */
+/** Compact, prompt-friendly style blueprint — structured fields only, no full essay. */
 export function formatBlueprint(p: StyleProfile): string {
   const parts: string[] = [];
-  parts.push(`Owner: ${p.user_name}`);
-  if (p.body_type) parts.push(`Body: ${p.body_type}`);
-  if (p.height_cm) parts.push(`Height: ${p.height_cm}cm`);
-  if (p.weight_kg) parts.push(`Weight: ${p.weight_kg}kg`);
-  if (p.preferred_fits.length)   parts.push(`Preferred fits: ${p.preferred_fits.join(', ')}`);
+  parts.push(`Owner: ${p.user_name}${p.height_cm ? ` · ${p.height_cm}cm` : ''}`);
+  if (p.body_type) parts.push(`Build: ${p.body_type}`);
+  if (p.preferred_fits.length)   parts.push(`Fits: ${p.preferred_fits.join(', ')}`);
   if (p.preferred_colors.length) parts.push(`Palette: ${p.preferred_colors.join(', ')}`);
-  if (p.avoided_colors.length)   parts.push(`Avoid colors: ${p.avoided_colors.join(', ')}`);
+  if (p.avoided_colors.length)   parts.push(`Avoid colours: ${p.avoided_colors.join(', ')}`);
   if (p.avoided_combinations.length) {
-    parts.push(`Never wear together: ${p.avoided_combinations
-      .map((c) => `${c.items.join(' + ')} (${c.reason})`)
+    parts.push(`Hard rules: ${p.avoided_combinations
+      .map((c) => `never ${c.items.join(' + ')} (${c.reason})`)
       .join('; ')}`);
   }
   if (p.signature_combos.length) {
     parts.push(`Signature combos: ${p.signature_combos
-      .map((c) => `[${c.name}] ${c.items.join(' + ')}${c.vibe ? ' — ' + c.vibe : ''}`)
-      .join('; ')}`);
+      .map((c) => `[${c.name}] ${c.items.join(' · ')}`)
+      .join(' | ')}`);
   }
-  if (p.notes) parts.push(`Notes: ${p.notes}`);
+  // Append only the hard-rule section from notes (first 400 chars max)
+  if (p.notes) {
+    const hardRuleStart = p.notes.indexOf('SILHOUETTE RULE');
+    const excerpt = hardRuleStart !== -1
+      ? p.notes.slice(hardRuleStart, hardRuleStart + 400)
+      : p.notes.slice(0, 400);
+    parts.push(`Key rules: ${excerpt.replace(/\n+/g, ' ').trim()}`);
+  }
   return parts.join('\n');
 }

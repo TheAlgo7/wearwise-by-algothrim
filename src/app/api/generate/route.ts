@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     event: parsed.event,
     mode_rules: mode.rules,
   });
-  const ranked = rankCandidates(shortlist, mode.rules).slice(0, 35);
+  const ranked = rankCandidates(shortlist, mode.rules).slice(0, 20);
 
   if (ranked.length < 3) {
     return NextResponse.json(
