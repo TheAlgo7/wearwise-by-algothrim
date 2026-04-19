@@ -89,7 +89,7 @@ export default function HomePage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error ?? 'Generation failed');
+      if (!res.ok) setError((data.error ?? 'Generation failed') + (data.details ? ` — ${data.details}` : ''));
       else setOutfits(data.outfits as GeneratedOutfit[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');

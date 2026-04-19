@@ -132,10 +132,9 @@ export async function POST(req: Request) {
     const parsedOut = JSON.parse(text);
     outfits = parsedOut.outfits;
   } catch (err) {
-    return NextResponse.json(
-      { error: 'AI generation failed', details: err instanceof Error ? err.message : String(err) },
-      { status: 502 }
-    );
+    const details = err instanceof Error ? err.message : String(err);
+    console.error('[generate] Gemini error:', details);
+    return NextResponse.json({ error: 'AI generation failed', details }, { status: 502 });
   }
 
   // 6. Persist as outfits rows (is_saved = false until user saves)

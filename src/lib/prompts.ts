@@ -1,3 +1,4 @@
+import { Type } from '@google/genai';
 import type { Item, OutfitContext } from '@/types';
 
 /** System instruction for outfit generation. Strict, deterministic, JSON-only. */
@@ -54,27 +55,25 @@ export function buildGeneratePrompt(args: {
   ].join('\n\n');
 }
 
-/** JSON schema for generation response. */
+/** JSON schema for generation response — uses SDK Type enum (required by @google/genai v1.x). */
 export const GENERATE_SCHEMA = {
-  type: 'object',
+  type: Type.OBJECT,
   properties: {
     outfits: {
-      type: 'array',
-      minItems: 2,
-      maxItems: 3,
+      type: Type.ARRAY,
       items: {
-        type: 'object',
+        type: Type.OBJECT,
         properties: {
-          items:      { type: 'array', items: { type: 'string' }, minItems: 2 },
-          reasoning:  { type: 'string' },
-          confidence: { type: 'number' },
+          items:      { type: Type.ARRAY, items: { type: Type.STRING } },
+          reasoning:  { type: Type.STRING },
+          confidence: { type: Type.NUMBER },
         },
         required: ['items', 'reasoning', 'confidence'],
       },
     },
   },
   required: ['outfits'],
-} as const;
+};
 
 // ---------------------------------------------------------------------
 // Tagging prompt — Gemini Vision returns structured JSON for one photo
