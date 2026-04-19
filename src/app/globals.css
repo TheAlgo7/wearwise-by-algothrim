@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+  }
+
+  html, body {
+    background: #000000;
+    color: #F5F5F7;
+    font-family: 'SamsungOne', 'SF Pro Display', system-ui, -apple-system, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+  }
+
+  body {
+    min-height: 100dvh;
+    padding-top: var(--sat);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+  }
+
+  /* Kill tap highlight on Samsung Internet / Chrome Android */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Hide scrollbars but keep scroll functional — One UI feel */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Prevent zoom on input focus on iOS */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+@layer components {
+  /* One UI squircle card base */
+  .oneui-card {
+    @apply bg-ink-100 rounded-squircle shadow-oneui-card;
+  }
+
+  .oneui-card-raised {
+    @apply bg-ink-200 rounded-squircle shadow-oneui-raised;
+  }
+
+  /* Bottom-reachable content area — everything important lives here */
+  .reach-zone {
+    @apply flex flex-col gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+96px)];
+  }
+
+  /* Large One UI hero title — belongs to the "viewing area" top 30-40% */
+  .oneui-hero {
+    @apply text-oneui-hero text-fog-100 tracking-tight;
+  }
+
+  /* Sub-caption below hero */
+  .oneui-hero-sub {
+    @apply text-oneui-cap text-fog-300 tracking-wide uppercase;
+  }
+
+  /* Chip row — horizontal scrolling mode/filter selector */
+  .chip-row {
+    @apply flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4;
+    scroll-snap-type: x mandatory;
+  }
+
+  .chip-row > * { scroll-snap-align: start; }
+
+  /* Pressable ripple — subtle scale */
+  .press {
+    @apply transition-transform duration-150 active:scale-[0.97];
+  }
+
+  /* Crimson active glow pulse (used on Generate button) */
+  .crimson-pulse {
+    @apply animate-pulse-crimson;
+  }
+}
+
+@layer utilities {
+  .safe-top    { padding-top:    env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Text balance for One UI titles */
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+}

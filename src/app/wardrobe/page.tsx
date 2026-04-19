@@ -1,0 +1,54 @@
+'use client';
+
+import { OneUIButton, OneUIHeader } from '@/components/oneui';
+import { WardrobeGrid } from '@/components/WardrobeGrid';
+import { createClient } from '@/lib/supabase/client';
+import type { Item } from '@/types';
+import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+export default function WardrobePage() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supa = createClient();
+    (async () => {
+      const { data } = await supa
+        .from('items')
+        .select('*, category:categories(*)')
+        .order('created_at', { ascending: false });
+      setItems((data ?? []) as Item[]);
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <main className="min-h-dvh pb-4">
+      <OneUIHeader
+        eyebrow="WARDROBE"
+        title="Your pieces"
+        subtitle={loading ? '—' : `${items.filter((i) => !i.archived).length} items, ${items.filter((i) => i.archived).length} archived`}
+        right={
+          <Link href="/wardrobe/add" aria-label="Add item">
+            <OneUIButton size="icon" intent="primary">
+              <Plus size={20} />
+            </OneUIButton>
+          </Link>
+        }
+      />
+      <div className="reach-zone">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-squircle bg-ink-100 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <WardrobeGrid items={items.filter((i) => !i.archived)} />
+        )}
+      </div>
+    </main>
+  );
+}
