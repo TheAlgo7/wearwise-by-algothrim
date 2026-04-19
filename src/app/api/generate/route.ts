@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
-import { gemini, MODELS } from '@/lib/gemini';
+import { generateJSON } from '@/lib/llm';
 import { effectiveTempC, getWeatherByCity, getWeatherByCoords, timeOfDay } from '@/lib/weather';
 import { DEFAULT_MODES } from '@/lib/modes';
 import { filterItems, rankCandidates } from '@/lib/filter-engine';
 import { formatBlueprint, getStyleProfile } from '@/lib/style-profile';
-import {
-  GENERATE_SCHEMA,
-  GENERATE_SYSTEM,
-  buildGeneratePrompt,
-} from '@/lib/prompts';
+import { GENERATE_SYSTEM, buildGeneratePrompt } from '@/lib/prompts';
 import type { Item, Mode } from '@/types';
 
 export const runtime = 'nodejs';
@@ -112,28 +108,17 @@ export async function POST(req: Request) {
     trip_location: parsed.trip_city,
   };
 
-  // 5. Ask Gemini
+  // 5. Generate outfits via multi-provider LLM (Groq → OpenRouter → Gemini)
   const prompt = buildGeneratePrompt({ blueprint, context, candidates: ranked });
 
   let outfits;
   try {
-    const result = await gemini().models.generateContent({
-      model: MODELS.reasoning,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: GENERATE_SYSTEM,
-        responseMimeType: 'application/json',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        responseSchema: GENERATE_SCHEMA as any,
-        temperature: 0.9,
-      },
-    });
-    const text = result.text ?? '';
+    const text = await generateJSON(GENERATE_SYSTEM, prompt);
     const parsedOut = JSON.parse(text);
     outfits = parsedOut.outfits;
   } catch (err) {
     const details = err instanceof Error ? err.message : String(err);
-    console.error('[generate] Gemini error:', details);
+    console.error('[generate] LLM error:', details);
     return NextResponse.json({ error: 'AI generation failed', details }, { status: 502 });
   }
 

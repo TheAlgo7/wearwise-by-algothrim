@@ -23,7 +23,8 @@ HARD RULES — violate any and the outfit is rejected:
 7. Do not repeat the exact same outfit twice.
 8. Prefer items not worn in the last 3 days when scores are tied.
 
-OUTPUT: strict JSON matching the provided schema. No prose outside JSON.`;
+OUTPUT: strict JSON only — no prose, no markdown fences.
+Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}`;
 
 /** Build the user prompt for one generation call. */
 export function buildGeneratePrompt(args: {
