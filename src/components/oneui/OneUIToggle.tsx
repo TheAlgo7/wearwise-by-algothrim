@@ -22,7 +22,7 @@ export function OneUIToggle({
   return (
     <div
       className={cn(
-        'grid bg-ink-100 p-1 rounded-squircle shadow-oneui-card gap-0',
+        'grid bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] p-1 rounded-full gap-1',
         className
       )}
       style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
@@ -37,11 +37,11 @@ export function OneUIToggle({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'press rounded-squircle-sm font-semibold flex items-center justify-center gap-2 transition-colors',
+              'press rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-200',
               pad,
               active
-                ? 'bg-crimson-gradient text-white shadow-crimson-glow'
-                : 'text-fog-300 hover:text-fog-100'
+                ? 'bg-gradient-to-r from-[#E2335D] to-[#BB165F] text-white shadow-crimson-glow'
+                : 'text-[#FFD9DA]/70 hover:text-[#FFEDE8]'
             )}
           >
             {opt.icon}

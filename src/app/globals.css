@@ -11,78 +11,77 @@
     --sal: env(safe-area-inset-left);
   }
 
-  html, body {
+  html {
+    background: #0d0005;
+  }
+
+  body {
     background: #000000;
-    color: #F5F5F7;
+    background-image:
+      radial-gradient(ellipse 90% 55% at 25% 0%, #2d0515 0%, transparent 55%),
+      radial-gradient(ellipse 70% 45% at 85% 90%, #1a050c 0%, transparent 50%),
+      radial-gradient(ellipse 50% 35% at 60% 50%, #200310 0%, transparent 60%);
+    color: #F5EEF0;
     font-family: 'SamsungOne', 'SF Pro Display', system-ui, -apple-system, Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     overscroll-behavior-y: none;
     touch-action: manipulation;
-  }
-
-  body {
     min-height: 100dvh;
     padding-top: var(--sat);
     padding-left: var(--sal);
     padding-right: var(--sar);
   }
 
-  /* Kill tap highlight on Samsung Internet / Chrome Android */
   * {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Hide scrollbars but keep scroll functional — One UI feel */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Prevent zoom on input focus on iOS */
   input, select, textarea {
     font-size: 16px;
   }
 }
 
 @layer components {
-  /* One UI squircle card base */
-  .oneui-card {
-    @apply bg-ink-100 rounded-squircle shadow-oneui-card;
+  /* Glassmorphism card — the primary surface */
+  .glass-card {
+    @apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.09] shadow-glass-card rounded-[2rem];
   }
 
-  .oneui-card-raised {
-    @apply bg-ink-200 rounded-squircle shadow-oneui-raised;
+  .glass-card-sm {
+    @apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.09] shadow-glass-card rounded-[1.5rem];
   }
 
-  /* Bottom-reachable content area — everything important lives here */
+  /* Legacy squircle aliases — now glass-backed */
+  .oneui-card        { @apply glass-card; }
+  .oneui-card-raised { @apply glass-card; }
+
+  /* Reach zone — stacked cards, padding accounts for floating pill nav */
   .reach-zone {
-    @apply flex flex-col gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+96px)];
+    @apply flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+108px)];
   }
 
-  /* Large One UI hero title — belongs to the "viewing area" top 30-40% */
-  .oneui-hero {
-    @apply text-oneui-hero text-fog-100 tracking-tight;
-  }
+  /* Hero text */
+  .oneui-hero     { @apply text-oneui-hero text-[#FFEDE8] tracking-tight; }
+  .oneui-hero-sub { @apply text-oneui-cap text-[#FF86A0] tracking-widest uppercase font-semibold; }
 
-  /* Sub-caption below hero */
-  .oneui-hero-sub {
-    @apply text-oneui-cap text-fog-300 tracking-wide uppercase;
-  }
-
-  /* Chip row — horizontal scrolling mode/filter selector */
+  /* Chip row */
   .chip-row {
     @apply flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4;
     scroll-snap-type: x mandatory;
   }
-
   .chip-row > * { scroll-snap-align: start; }
 
-  /* Pressable ripple — subtle scale */
+  /* Pressable scale */
   .press {
-    @apply transition-transform duration-150 active:scale-[0.97];
+    @apply transition-transform duration-150 active:scale-[0.96];
   }
 
-  /* Crimson active glow pulse (used on Generate button) */
+  /* Pink glow pulse on generate button */
   .crimson-pulse {
     @apply animate-pulse-crimson;
   }
@@ -91,8 +90,6 @@
 @layer utilities {
   .safe-top    { padding-top:    env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-
-  /* Text balance for One UI titles */
   .text-balance { text-wrap: balance; }
   .text-pretty  { text-wrap: pretty; }
 }

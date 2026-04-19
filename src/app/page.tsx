@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { OneUIHeader } from '@/components/oneui';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { EnvironmentToggle } from '@/components/EnvironmentToggle';
 import { TripModePicker } from '@/components/TripModePicker';
@@ -22,16 +21,15 @@ export default function HomePage() {
   const [tripCity, setTripCity] = useState<string | null>(null);
   const [mode, setMode] = useState<string>(() => modeForDate());
 
-  // Pick up ?mode=church from /modes navigation
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlMode = new URLSearchParams(window.location.search).get('mode');
     if (urlMode) {
       setMode(urlMode);
-      const clean = window.location.pathname;
-      window.history.replaceState(null, '', clean);
+      window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
+
   const [items, setItems] = useState<Item[]>([]);
   const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -39,7 +37,6 @@ export default function HomePage() {
   const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch items (browser) so outfit cards can resolve ids → thumbnails
   useEffect(() => {
     const supa = createClient();
     (async () => {
@@ -51,7 +48,6 @@ export default function HomePage() {
     })();
   }, []);
 
-  // Geolocate → weather
   useEffect(() => {
     const fetchWeather = async (params: string) => {
       const r = await fetch(`/api/weather?${params}`);
@@ -59,23 +55,16 @@ export default function HomePage() {
       else setWeather(null);
     };
 
-    if (tripCity) {
-      void fetchWeather(`city=${encodeURIComponent(tripCity)}`);
-      return;
-    }
+    if (tripCity) { void fetchWeather(`city=${encodeURIComponent(tripCity)}`); return; }
 
-    if (!navigator.geolocation) {
-      void fetchWeather('');
-      return;
-    }
+    if (!navigator.geolocation) { void fetchWeather(''); return; }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
       },
-      () => {
-        void fetchWeather('');
-      },
+      () => { void fetchWeather(''); },
       { maximumAge: 600_000, timeout: 6000 }
     );
   }, [tripCity]);
@@ -94,21 +83,15 @@ export default function HomePage() {
     try {
       const body: Record<string, unknown> = { mode, environment };
       if (tripCity) body.trip_city = tripCity;
-      if (!tripCity && coords) {
-        body.lat = coords.lat;
-        body.lon = coords.lon;
-      }
+      if (!tripCity && coords) { body.lat = coords.lat; body.lon = coords.lon; }
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? 'Generation failed');
-      } else {
-        setOutfits(data.outfits as GeneratedOutfit[]);
-      }
+      if (!res.ok) setError(data.error ?? 'Generation failed');
+      else setOutfits(data.outfits as GeneratedOutfit[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -116,97 +99,113 @@ export default function HomePage() {
     }
   }, [mode, environment, tripCity, coords]);
 
-  const markWorn = useCallback(
-    async (idx: number) => {
-      const o = outfits[idx];
-      if (!o) return;
-      setWornOutfitIdx(idx);
-      const supa = createClient();
-      const now = new Date().toISOString();
-      await supa.from('outfits').insert({
-        items: o.items,
-        ai_reasoning: o.reasoning,
-        confidence: o.confidence,
-        worn_at: now,
-        is_saved: savedIdxs.has(idx),
-        context: {
-          temp_c: effectiveTempC ?? weather?.temp_c,
-          condition: weather?.condition,
-          environment,
-          mode,
-          city: weather?.city,
-        },
-      });
-      // bump item counters
-      for (const id of o.items) {
-        const current = items.find((i) => i.id === id);
-        await supa
-          .from('items')
-          .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
-          .eq('id', id);
-      }
-    },
-    [outfits, savedIdxs, effectiveTempC, weather, environment, mode, items]
-  );
+  const markWorn = useCallback(async (idx: number) => {
+    const o = outfits[idx];
+    if (!o) return;
+    setWornOutfitIdx(idx);
+    const supa = createClient();
+    const now = new Date().toISOString();
+    await supa.from('outfits').insert({
+      items: o.items,
+      ai_reasoning: o.reasoning,
+      confidence: o.confidence,
+      worn_at: now,
+      is_saved: savedIdxs.has(idx),
+      context: { temp_c: effectiveTempC ?? weather?.temp_c, condition: weather?.condition, environment, mode, city: weather?.city },
+    });
+    for (const id of o.items) {
+      const current = items.find((i) => i.id === id);
+      await supa
+        .from('items')
+        .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
+        .eq('id', id);
+    }
+  }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode, items]);
 
   const toggleSave = useCallback((idx: number) => {
     setSavedIdxs((prev) => {
       const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
       return next;
     });
   }, []);
 
   const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
+    weekday: 'long', day: 'numeric', month: 'short',
   });
 
   return (
-    <main className="min-h-dvh pb-4">
-      <OneUIHeader
-        eyebrow="TODAY"
-        title="What do you wear?"
-        subtitle={`${today}${weather?.city ? ` · ${weather.city}` : ''}`}
-        right={
-          <Link
-            href="/wardrobe/add"
-            className="press h-11 w-11 rounded-full bg-crimson-gradient shadow-crimson-glow flex items-center justify-center text-white"
-            aria-label="Add item"
-          >
-            <Plus size={20} />
-          </Link>
-        }
-      />
+    <main className="min-h-dvh">
 
+      {/* ── VIEWING AREA ── */}
+      <div className="px-5 pt-16 pb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
+            {today}{weather?.city ? ` · ${weather.city}` : ''}
+          </p>
+          <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight text-[#FFEDE8]">
+            What do you<br />wear today?
+          </h1>
+          {mode && (
+            <p className="mt-2 text-oneui-body text-[#FFD9DA]/70 capitalize">
+              Mode: {mode}
+            </p>
+          )}
+        </div>
+        <Link
+          href="/wardrobe/add"
+          className="press shrink-0 mt-1 h-12 w-12 rounded-full flex items-center justify-center text-white"
+          style={{
+            background: 'linear-gradient(135deg, #E2335D 0%, #BB165F 100%)',
+            boxShadow: '0 0 20px rgba(226,51,93,0.5)',
+          }}
+          aria-label="Add item"
+        >
+          <Plus size={20} />
+        </Link>
+      </div>
+
+      {/* ── INTERACTION AREA ── */}
       <div className="reach-zone">
+
+        {/* Weather glass card */}
         <WeatherWidget
           weather={weather}
           effectiveTempC={environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : undefined}
           tripCity={tripCity}
         />
 
-        <EnvironmentToggle value={environment} onChange={setEnvironment} />
-
-        <div className="flex">
-          <TripModePicker tripCity={tripCity} onChange={setTripCity} />
+        {/* Controls glass card */}
+        <div className="glass-card p-5 flex flex-col gap-4">
+          <EnvironmentToggle value={environment} onChange={setEnvironment} />
+          <div className="flex">
+            <TripModePicker tripCity={tripCity} onChange={setTripCity} />
+          </div>
+          <ModeSelector value={mode} onChange={setMode} />
         </div>
 
-        <ModeSelector value={mode} onChange={setMode} />
-
+        {/* Generate */}
         <GenerateButton onClick={generate} loading={generating} />
 
+        {/* Error */}
         {error && (
-          <div className="rounded-squircle-sm bg-crimson-700/30 border border-crimson-700 px-4 py-3 text-oneui-body text-crimson-100">
+          <div
+            className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-[#FFEDE8]"
+            style={{
+              background: 'rgba(226,51,93,0.15)',
+              border: '1px solid rgba(226,51,93,0.35)',
+            }}
+          >
             {error}
           </div>
         )}
 
+        {/* Outfit cards */}
         {outfits.length > 0 && (
-          <div className="flex flex-col gap-3 mt-2">
-            <h2 className="oneui-hero-sub px-1">Fresh for you</h2>
+          <div className="flex flex-col gap-3 mt-1">
+            <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase px-1">
+              Fresh for you
+            </p>
             {outfits.map((o, idx) => (
               <OutfitCard
                 key={idx}
@@ -221,11 +220,21 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Empty wardrobe nudge */}
         {items.length === 0 && !generating && (
-          <div className="rounded-squircle-sm bg-ink-100 px-4 py-5 text-center text-fog-300 text-oneui-body">
-            Your wardrobe is empty. Add a few pieces, then come back here to generate your first fit.
+          <div
+            className="rounded-[2rem] px-5 py-6 text-center"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <p className="text-[#FFD9DA]/70 text-oneui-body">
+              Your wardrobe is empty.
+            </p>
+            <p className="text-[#FF86A0] text-oneui-cap mt-1">
+              Add a few pieces, then come back here.
+            </p>
           </div>
         )}
+
       </div>
     </main>
   );

@@ -25,11 +25,11 @@ export function OneUIChip({
     <button
       onClick={onClick}
       className={cn(
-        'press shrink-0 inline-flex items-center gap-2 rounded-full font-semibold border transition-colors',
+        'press shrink-0 inline-flex items-center gap-2 rounded-full font-semibold border transition-all duration-200',
         isMode ? 'h-11 px-5 text-[14px]' : 'h-9 px-4 text-[13px]',
         active
-          ? 'bg-crimson-gradient text-white border-transparent shadow-crimson-glow'
-          : 'bg-ink-100 text-fog-200 border-white/[0.06] hover:text-fog-100 hover:bg-ink-200',
+          ? 'bg-gradient-to-r from-[#E2335D] to-[#BB165F] text-white border-transparent shadow-crimson-glow'
+          : 'bg-white/[0.06] backdrop-blur-sm text-[#FFD9DA] border-white/[0.1] hover:bg-white/[0.1] hover:text-[#FFEDE8]',
         className
       )}
     >

@@ -8,16 +8,16 @@ interface SquircleProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const radiusMap = {
-  sm: 'rounded-squircle-sm',
-  md: 'rounded-squircle',
-  lg: 'rounded-squircle-lg',
-  xl: 'rounded-squircle-xl',
+  sm: 'rounded-[1.5rem]',
+  md: 'rounded-[2rem]',
+  lg: 'rounded-[2.5rem]',
+  xl: 'rounded-[3rem]',
 } as const;
 
 const variantMap = {
-  flat:   'bg-ink-100 shadow-oneui-card',
-  raised: 'bg-ink-200 shadow-oneui-raised',
-  glass:  'bg-ink-200/60 backdrop-blur-xl shadow-oneui-card border border-white/[0.04]',
+  flat:   'bg-white/[0.05] backdrop-blur-xl border border-white/[0.07] shadow-glass-card',
+  raised: 'bg-white/[0.07] backdrop-blur-2xl border border-white/[0.1] shadow-glass-card',
+  glass:  'bg-white/[0.06] backdrop-blur-2xl border border-white/[0.09] shadow-glass-card',
 } as const;
 
 export function Squircle({

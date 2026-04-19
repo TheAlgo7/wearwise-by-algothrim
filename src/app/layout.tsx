@@ -18,15 +18,9 @@ export const metadata: Metadata = {
     title: 'WearWise',
     statusBarStyle: 'black-translucent',
   },
-  formatDetection: {
-    telephone: false,
-    email: false,
-    address: false,
-  },
+  formatDetection: { telephone: false, email: false, address: false },
   icons: {
-    icon: [
-      { url: '/icons/icon.svg', type: 'image/svg+xml' },
-    ],
+    icon: [{ url: '/icons/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icons/apple-touch-icon.svg' }],
     shortcut: '/icons/icon.svg',
   },
@@ -38,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: '#0d0005',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
@@ -49,7 +43,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-ink-0 text-fog-100 antialiased min-h-dvh">
+      <body>
         <div className="mx-auto max-w-xl min-h-dvh">
           {children}
         </div>

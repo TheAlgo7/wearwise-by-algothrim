@@ -1,6 +1,5 @@
 'use client';
 
-import { Squircle } from '@/components/oneui';
 import { cn } from '@/lib/cn';
 import { CloudRain, Cloud, CloudSun, Sun, Moon, Snowflake, CloudLightning, Wind, Droplets } from 'lucide-react';
 import type { WeatherSnapshot } from '@/types';
@@ -32,10 +31,11 @@ const iconFor = (code: string) => {
 export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, className }: Props) {
   if (loading || !weather) {
     return (
-      <Squircle variant="raised" className={cn('p-5 min-h-[120px] animate-pulse', className)}>
-        <div className="h-4 w-20 bg-ink-400 rounded" />
-        <div className="mt-3 h-10 w-28 bg-ink-400 rounded" />
-      </Squircle>
+      <div className={cn('glass-card p-5 min-h-[130px] animate-pulse', className)}>
+        <div className="h-3 w-20 bg-white/10 rounded-full" />
+        <div className="mt-4 h-12 w-28 bg-white/10 rounded-full" />
+        <div className="mt-3 h-3 w-32 bg-white/10 rounded-full" />
+      </div>
     );
   }
 
@@ -43,36 +43,54 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, clas
   const overridden = effectiveTempC !== undefined && Math.abs(effectiveTempC - weather.temp_c) > 0.1;
 
   return (
-    <Squircle variant="raised" className={cn('p-5', className)}>
+    <div className={cn('glass-card p-5', className)}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="oneui-hero-sub flex items-center gap-1.5">
-            {tripCity ? <span className="text-crimson-300">TRIP · </span> : null}
-            <span className="truncate">{weather.city}, {weather.country}</span>
+          <div className="flex items-center gap-1.5 mb-1">
+            {tripCity && (
+              <span className="text-[#E2335D] text-oneui-cap font-bold tracking-widest uppercase">TRIP ·</span>
+            )}
+            <span className="text-[#FF86A0] text-oneui-cap font-semibold tracking-wider uppercase truncate">
+              {weather.city}, {weather.country}
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-3">
-            <span className="text-[56px] leading-none font-bold tracking-tight text-fog-100">
+          <div className="flex items-baseline gap-3 mt-1">
+            <span className="text-[60px] leading-none font-bold tracking-tight text-[#FFEDE8]">
               {Math.round(overridden ? effectiveTempC! : weather.temp_c)}°
             </span>
             {overridden && (
-              <span className="text-oneui-cap text-fog-400 line-through">
+              <span className="text-oneui-cap text-[#FFD9DA]/50 line-through">
                 {Math.round(weather.temp_c)}°
               </span>
             )}
           </div>
-          <p className="mt-1 text-oneui-body text-fog-200 capitalize">
-            {weather.condition}
-          </p>
+          <p className="mt-1 text-oneui-body text-[#FFD9DA]/80 capitalize">{weather.condition}</p>
         </div>
-        <div className="shrink-0 h-20 w-20 rounded-full bg-ink-300/60 flex items-center justify-center">
-          <Icon size={44} className="text-crimson-300" strokeWidth={1.5} />
+        <div
+          className="shrink-0 h-[72px] w-[72px] rounded-full flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, rgba(226,51,93,0.15) 0%, rgba(187,22,95,0.1) 100%)',
+            border: '1px solid rgba(226,51,93,0.2)',
+          }}
+        >
+          <Icon size={38} style={{ color: '#FF86A0' }} strokeWidth={1.5} />
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-5 text-oneui-cap text-fog-300">
-        <span className="flex items-center gap-1.5"><Droplets size={14} />{weather.humidity}%</span>
-        <span className="flex items-center gap-1.5"><Wind size={14} />{weather.wind_kph} kph</span>
-        {weather.is_night && <span className="flex items-center gap-1.5 text-crimson-300"><Moon size={14} />night</span>}
+      <div className="mt-4 flex items-center gap-5 text-oneui-cap text-[#FFD9DA]/60">
+        <span className="flex items-center gap-1.5">
+          <Droplets size={13} style={{ color: '#FF86A0' }} />
+          {weather.humidity}%
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Wind size={13} style={{ color: '#FF86A0' }} />
+          {weather.wind_kph} kph
+        </span>
+        {weather.is_night && (
+          <span className="flex items-center gap-1.5" style={{ color: '#FF86A0' }}>
+            <Moon size={13} />night
+          </span>
+        )}
       </div>
-    </Squircle>
+    </div>
   );
 }

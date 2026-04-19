@@ -10,11 +10,11 @@ export default function ProfilePage() {
       <OneUIHeader
         eyebrow="BLUEPRINT"
         title="Your style"
-        subtitle="This private blueprint is injected into every AI generation so outfits feel like you, not a generic mannequin."
+        subtitle="Injected into every AI generation so outfits feel like you."
       />
       <div className="reach-zone">
         <StyleBlueprint />
-        <p className="text-center text-[11px] text-fog-500 mt-6">
+        <p className="text-center text-[11px] mt-6" style={{ color: 'rgba(255,217,218,0.3)' }}>
           {APP_TAGLINE} · v0.1
         </p>
       </div>

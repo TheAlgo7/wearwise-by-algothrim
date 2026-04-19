@@ -29,7 +29,7 @@ export default function WardrobePage() {
       <OneUIHeader
         eyebrow="WARDROBE"
         title="Your pieces"
-        subtitle={loading ? '—' : `${items.filter((i) => !i.archived).length} items, ${items.filter((i) => i.archived).length} archived`}
+        subtitle={loading ? '—' : `${items.filter((i) => !i.archived).length} items`}
         right={
           <Link href="/wardrobe/add" aria-label="Add item">
             <OneUIButton size="icon" intent="primary">
@@ -42,7 +42,11 @@ export default function WardrobePage() {
         {loading ? (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-squircle bg-ink-100 animate-pulse" />
+              <div
+                key={i}
+                className="aspect-[3/4] rounded-[2rem] animate-pulse"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
+              />
             ))}
           </div>
         ) : (
