@@ -12,7 +12,6 @@ import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import { modeForDate } from '@/lib/modes';
 import type { Environment, Item, WeatherSnapshot, GeneratedOutfit } from '@/types';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
 
 export default function HomePage() {
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
@@ -138,27 +137,18 @@ export default function HomePage() {
     <main className="min-h-dvh">
 
       {/* ── VIEWING AREA ── */}
-      <div className="px-5 pt-16 pb-6 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
-            {today}{weather?.city ? ` · ${weather.city}` : ''}
+      <div className="px-5 pt-16 pb-6">
+        <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
+          {today}{weather?.city ? ` · ${weather.city}` : ''}
+        </p>
+        <h1 className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
+          What do you wear today?
+        </h1>
+        {mode && (
+          <p className="mt-2 text-oneui-body text-[#FFD9DA]/70 capitalize">
+            Mode: {mode}
           </p>
-          <h1 className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
-            What do you wear today?
-          </h1>
-          {mode && (
-            <p className="mt-2 text-oneui-body text-[#FFD9DA]/70 capitalize">
-              Mode: {mode}
-            </p>
-          )}
-        </div>
-        <Link
-          href="/wardrobe/add"
-          className="press shrink-0 mt-1 h-11 w-11 rounded-full bg-[#E2335D] hover:bg-[#BB165F] transition-colors duration-200 flex items-center justify-center text-white"
-          aria-label="Add item"
-        >
-          <Plus size={20} />
-        </Link>
+        )}
       </div>
 
       {/* ── INTERACTION AREA ── */}

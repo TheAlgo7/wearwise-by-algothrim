@@ -11,8 +11,8 @@ export function gemini(): GoogleGenAI {
 }
 
 export const MODELS = {
-  /** Fast reasoning for outfit generation + tagging. */
-  reasoning: 'gemini-2.5-flash',
-  /** Multimodal image generation / editing (a.k.a. "Nano Banana 2"). */
-  image:     'gemini-2.5-flash-image',
+  /** Fast model for outfit generation + tagging — low latency. */
+  reasoning: 'gemini-2.0-flash',
+  /** Multimodal image generation / editing. */
+  image:     'gemini-2.0-flash-exp-image-generation',
 } as const;
