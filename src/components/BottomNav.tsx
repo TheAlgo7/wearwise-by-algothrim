@@ -36,7 +36,7 @@ export function BottomNav() {
                 )}
               >
                 {active && (
-                  <span aria-hidden className="absolute inset-0 rounded-full bg-[#E2335D]/20" />
+                  <span aria-hidden className="absolute inset-0 rounded-full bg-[#E2335D]/30" />
                 )}
                 <Icon size={20} className="relative" strokeWidth={active ? 2.4 : 1.8} />
                 <span className="relative text-oneui-tab">{label}</span>

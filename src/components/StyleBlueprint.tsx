@@ -149,7 +149,7 @@ export function StyleBlueprint() {
       </Squircle>
 
       <Squircle variant="raised" className="p-4">
-        <Field label="Private notes (injected into every AI prompt)">
+        <Field label="Style rules">
           <textarea
             rows={4}
             value={profile.notes ?? ''}

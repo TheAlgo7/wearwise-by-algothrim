@@ -2,7 +2,7 @@
 
 import { OneUIButton } from '@/components/oneui';
 import { cn } from '@/lib/cn';
-import { Check, Heart, Star } from 'lucide-react';
+import { Check, BookmarkPlus, BookmarkCheck, Star } from 'lucide-react';
 import Image from 'next/image';
 import type { Item, GeneratedOutfit } from '@/types';
 
@@ -21,7 +21,6 @@ interface Props {
 export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear, onRate, className }: Props) {
   const byId = new Map(items.map((i) => [i.id, i]));
   const resolved = outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[];
-  const conf = Math.round((outfit.confidence ?? 0) * 100);
 
   return (
     <div className={cn('glass-card p-5 animate-oneui-fade', className)}>
@@ -54,46 +53,36 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
       </div>
 
       {/* Names */}
-      <div className="mt-3 flex flex-wrap gap-x-2 gap-y-0.5 text-oneui-cap text-[#FF86A0]">
-        {resolved.map((it, idx) => (
-          <span key={it.id}>
-            {it.name}{idx < resolved.length - 1 ? ' ·' : ''}
+      <div className="mt-3 overflow-x-auto no-scrollbar flex gap-2 pb-0.5">
+        {resolved.map((it) => (
+          <span
+            key={it.id}
+            className="shrink-0 text-oneui-cap text-[#FF86A0] bg-[#E2335D]/10 rounded-full px-2.5 py-0.5"
+          >
+            {it.name}
           </span>
         ))}
       </div>
 
       {/* Reasoning */}
-      <p className="mt-3 text-oneui-body text-[#FFD9DA]/80 text-pretty">{outfit.reasoning}</p>
-
-      {/* Confidence bar */}
-      <div className="mt-4 flex items-center gap-3">
-        <span className="text-oneui-cap text-[#FF86A0] font-semibold tracking-wider uppercase shrink-0">
-          Confidence
-        </span>
-        <div className="flex-1 h-1 bg-white/[0.08] rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${conf}%`, background: '#E2335D' }}
-          />
-        </div>
-        <span className="text-oneui-cap font-bold text-[#FFEDE8] tabular-nums shrink-0">{conf}%</span>
-      </div>
+      <p className="mt-3 text-oneui-body text-[#FFD9DA]/80 text-pretty line-clamp-2">{outfit.reasoning}</p>
 
       {/* Actions */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4 flex items-center gap-2">
         <OneUIButton
-          intent={worn ? 'primary' : 'secondary'}
+          intent={worn ? 'secondary' : 'primary'}
           size="sm"
           onClick={onWear}
           leftIcon={<Check size={15} />}
+          className="flex-1"
         >
-          {worn ? 'Worn today' : "I'm wearing this"}
+          {worn ? 'Worn today' : "Wearing this"}
         </OneUIButton>
         <OneUIButton
-          intent={saved ? 'primary' : 'outline'}
+          intent={saved ? 'secondary' : 'ghost'}
           size="sm"
           onClick={onSave}
-          leftIcon={<Heart size={15} fill={saved ? 'currentColor' : 'none'} />}
+          leftIcon={saved ? <BookmarkCheck size={15} /> : <BookmarkPlus size={15} />}
         >
           {saved ? 'Saved' : 'Save'}
         </OneUIButton>

@@ -133,6 +133,18 @@ export default function HomePage() {
     weekday: 'long', day: 'numeric', month: 'short',
   });
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h >= 4  && h <  6) return "Can't sleep?";
+    if (h >= 6  && h <  9) return 'Early start.';
+    if (h >= 9  && h < 12) return 'Morning, Gaurav.';
+    if (h >= 12 && h < 14) return 'Midday already.';
+    if (h >= 14 && h < 17) return 'Afternoon, Gaurav.';
+    if (h >= 17 && h < 20) return 'Evening plans?';
+    if (h >= 20 && h < 23) return 'Night out?';
+    return 'Night owl mode.';
+  })();
+
   return (
     <main className="min-h-dvh">
 
@@ -142,13 +154,8 @@ export default function HomePage() {
           {today}{weather?.city ? ` · ${weather.city}` : ''}
         </p>
         <h1 className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
-          What do you wear today?
+          {greeting}
         </h1>
-        {mode && (
-          <p className="mt-2 text-oneui-body text-[#FFD9DA]/70 capitalize">
-            Mode: {mode}
-          </p>
-        )}
       </div>
 
       {/* ── INTERACTION AREA ── */}
@@ -164,9 +171,7 @@ export default function HomePage() {
         {/* Controls glass card */}
         <div className="glass-card p-5 flex flex-col gap-4">
           <EnvironmentToggle value={environment} onChange={setEnvironment} />
-          <div className="flex">
-            <TripModePicker tripCity={tripCity} onChange={setTripCity} />
-          </div>
+          <TripModePicker tripCity={tripCity} onChange={setTripCity} />
           <ModeSelector value={mode} onChange={setMode} />
         </div>
 

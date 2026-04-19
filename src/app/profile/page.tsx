@@ -10,7 +10,6 @@ export default function ProfilePage() {
       <OneUIHeader
         eyebrow="BLUEPRINT"
         title="Your style"
-        subtitle="Injected into every AI generation so outfits feel like you."
       />
       <div className="reach-zone">
         <StyleBlueprint />
