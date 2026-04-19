@@ -66,13 +66,7 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, clas
           </div>
           <p className="mt-1 text-oneui-body text-[#FFD9DA]/80 capitalize">{weather.condition}</p>
         </div>
-        <div
-          className="shrink-0 h-[72px] w-[72px] rounded-full flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(226,51,93,0.15) 0%, rgba(187,22,95,0.1) 100%)',
-            border: '1px solid rgba(226,51,93,0.2)',
-          }}
-        >
+        <div className="shrink-0 h-[64px] w-[64px] rounded-full bg-white/[0.07] flex items-center justify-center">
           <Icon size={38} style={{ color: '#FF86A0' }} strokeWidth={1.5} />
         </div>
       </div>

@@ -143,8 +143,8 @@ export default function HomePage() {
           <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
             {today}{weather?.city ? ` · ${weather.city}` : ''}
           </p>
-          <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight text-[#FFEDE8]">
-            What do you<br />wear today?
+          <h1 className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
+            What do you wear today?
           </h1>
           {mode && (
             <p className="mt-2 text-oneui-body text-[#FFD9DA]/70 capitalize">
@@ -154,11 +154,7 @@ export default function HomePage() {
         </div>
         <Link
           href="/wardrobe/add"
-          className="press shrink-0 mt-1 h-12 w-12 rounded-full flex items-center justify-center text-white"
-          style={{
-            background: 'linear-gradient(135deg, #E2335D 0%, #BB165F 100%)',
-            boxShadow: '0 0 20px rgba(226,51,93,0.5)',
-          }}
+          className="press shrink-0 mt-1 h-11 w-11 rounded-full bg-[#E2335D] hover:bg-[#BB165F] transition-colors duration-200 flex items-center justify-center text-white"
           aria-label="Add item"
         >
           <Plus size={20} />

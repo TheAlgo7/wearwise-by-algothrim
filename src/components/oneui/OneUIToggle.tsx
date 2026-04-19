@@ -22,7 +22,7 @@ export function OneUIToggle({
   return (
     <div
       className={cn(
-        'grid bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] p-1 rounded-full gap-1',
+        'grid bg-white/[0.07] border border-white/[0.06] p-1 rounded-full gap-1',
         className
       )}
       style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
@@ -40,8 +40,8 @@ export function OneUIToggle({
               'press rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-200',
               pad,
               active
-                ? 'bg-gradient-to-r from-[#E2335D] to-[#BB165F] text-white shadow-crimson-glow'
-                : 'text-[#FFD9DA]/70 hover:text-[#FFEDE8]'
+                ? 'bg-[#E2335D] text-white'
+                : 'text-[#A89098] hover:text-[#FFEDE8]'
             )}
           >
             {opt.icon}

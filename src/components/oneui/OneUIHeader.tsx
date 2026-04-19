@@ -18,7 +18,7 @@ export function OneUIHeader({ title, eyebrow, subtitle, right, className }: OneU
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight text-[#FFEDE8] text-balance">
+        <h1 className="text-[30px] font-semibold leading-[1.15] tracking-tight text-[#FFEDE8] text-balance">
           {title}
         </h1>
         {subtitle ? (

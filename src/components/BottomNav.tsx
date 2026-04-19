@@ -22,9 +22,7 @@ export function BottomNav() {
       aria-label="Primary"
     >
       <div className="mx-auto max-w-xl px-5 pointer-events-auto">
-        <div
-          className="bg-white/[0.08] backdrop-blur-2xl border border-white/[0.12] rounded-full px-2 py-2 flex justify-between items-center shadow-nav-pill"
-        >
+        <div className="bg-[#1A1819] border border-white/[0.07] rounded-full px-2 py-2 flex justify-between items-center">
           {NAV.map(({ href, label, icon: Icon, match }) => {
             const active = match(pathname);
             return (
@@ -38,15 +36,7 @@ export function BottomNav() {
                 )}
               >
                 {active && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(226,51,93,0.25) 0%, rgba(187,22,95,0.25) 100%)',
-                      boxShadow: '0 0 20px rgba(226,51,93,0.3)',
-                      border: '1px solid rgba(226,51,93,0.25)',
-                    }}
-                  />
+                  <span aria-hidden className="absolute inset-0 rounded-full bg-[#E2335D]/20" />
                 )}
                 <Icon size={20} className="relative" strokeWidth={active ? 2.4 : 1.8} />
                 <span className="relative text-oneui-tab">{label}</span>

@@ -73,11 +73,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
         <div className="flex-1 h-1 bg-white/[0.08] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${conf}%`,
-              background: 'linear-gradient(90deg, #E2335D, #FF86A0)',
-              boxShadow: '0 0 8px rgba(226,51,93,0.6)',
-            }}
+            style={{ width: `${conf}%`, background: '#E2335D' }}
           />
         </div>
         <span className="text-oneui-cap font-bold text-[#FFEDE8] tabular-nums shrink-0">{conf}%</span>

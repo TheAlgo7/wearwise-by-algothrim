@@ -9,11 +9,11 @@ const buttonStyles = cva(
   {
     variants: {
       intent: {
-        primary:   'bg-gradient-to-r from-[#E2335D] to-[#BB165F] text-white shadow-crimson-glow hover:brightness-110',
-        secondary: 'bg-white/[0.08] backdrop-blur-xl text-[#FFEDE8] border border-white/[0.1] hover:bg-white/[0.12]',
-        ghost:     'bg-transparent text-[#FFD9DA] hover:bg-white/[0.07]',
-        outline:   'bg-transparent text-[#FFEDE8] border border-white/[0.15] hover:bg-white/[0.07]',
-        danger:    'bg-gradient-to-r from-[#E2335D] to-[#8B0F47] text-white hover:brightness-110',
+        primary:   'bg-[#E2335D] text-white transition-colors duration-200 hover:bg-[#BB165F]',
+        secondary: 'bg-white/[0.08] text-[#FFEDE8] border border-white/[0.08] transition-colors duration-200 hover:bg-white/[0.13]',
+        ghost:     'bg-transparent text-[#FFD9DA] transition-colors duration-200 hover:bg-white/[0.07]',
+        outline:   'bg-transparent text-[#FFEDE8] border border-white/[0.12] transition-colors duration-200 hover:bg-white/[0.07]',
+        danger:    'bg-[#E2335D] text-white transition-colors duration-200 hover:bg-[#BB165F]',
       },
       size: {
         sm:   'h-10 px-4 text-[14px] rounded-full',

@@ -8,28 +8,16 @@ interface SquircleProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const radiusMap = {
-  sm: 'rounded-[1.5rem]',
-  md: 'rounded-[2rem]',
-  lg: 'rounded-[2.5rem]',
-  xl: 'rounded-[3rem]',
+  sm: 'rounded-[14px]',
+  md: 'rounded-[20px]',
+  lg: 'rounded-[26px]',
+  xl: 'rounded-[32px]',
 } as const;
 
-const variantMap = {
-  flat:   'bg-white/[0.05] backdrop-blur-xl border border-white/[0.07] shadow-glass-card',
-  raised: 'bg-white/[0.07] backdrop-blur-2xl border border-white/[0.1] shadow-glass-card',
-  glass:  'bg-white/[0.06] backdrop-blur-2xl border border-white/[0.09] shadow-glass-card',
-} as const;
-
-export function Squircle({
-  variant = 'flat',
-  radius = 'md',
-  className,
-  children,
-  ...rest
-}: SquircleProps) {
+export function Squircle({ variant: _v = 'flat', radius = 'md', className, children, ...rest }: SquircleProps) {
   return (
     <div
-      className={cn(variantMap[variant], radiusMap[radius], className)}
+      className={cn('bg-[#1A1819] border border-white/[0.05]', radiusMap[radius], className)}
       {...rest}
     >
       {children}

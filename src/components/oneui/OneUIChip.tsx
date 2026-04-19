@@ -28,8 +28,8 @@ export function OneUIChip({
         'press shrink-0 inline-flex items-center gap-2 rounded-full font-semibold border transition-all duration-200',
         isMode ? 'h-11 px-5 text-[14px]' : 'h-9 px-4 text-[13px]',
         active
-          ? 'bg-gradient-to-r from-[#E2335D] to-[#BB165F] text-white border-transparent shadow-crimson-glow'
-          : 'bg-white/[0.06] backdrop-blur-sm text-[#FFD9DA] border-white/[0.1] hover:bg-white/[0.1] hover:text-[#FFEDE8]',
+          ? 'bg-[#E2335D] text-white border-transparent'
+          : 'bg-white/[0.08] text-[#D9C8CC] border-white/[0.08] hover:bg-white/[0.12] hover:text-[#FFEDE8]',
         className
       )}
     >
