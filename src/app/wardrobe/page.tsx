@@ -3,12 +3,14 @@
 import { OneUIButton, OneUIHeader } from '@/components/oneui';
 import { WardrobeGrid } from '@/components/WardrobeGrid';
 import { createClient } from '@/lib/supabase/client';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import type { Item } from '@/types';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function WardrobePage() {
+  useScrollRestoration('wardrobe');
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
