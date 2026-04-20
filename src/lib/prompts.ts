@@ -11,7 +11,9 @@ HARD RULES — any violation is an automatic reject:
 2. ONE item per layer slot for clothing: one base, one mid, one outer, one bottom per outfit. NEVER two shirts or two trousers.
 3. A mid item where open=true may be worn over a base (e.g. open shirt over tee). Otherwise mid alone covers the top.
 4. Each outfit MUST have: one top (base OR mid) and one bottom. Footwear should be included if candidates exist.
-5. Accessories (belt, watch, cap, sunglasses, bandana, tie, etc.) are OPTIONAL additions. Include them when they genuinely improve the look.
+5. WATCH: Always include a watch when one is in the candidates — a watch completes every outfit. Pick the one that best matches the outfit's formality.
+   BELT: Include a belt whenever the outfit has trousers/jeans and a belt candidate exists that matches the formality.
+   Other accessories (cap, sunglasses) — include when they genuinely improve the look.
 6. STATEMENT accessories (bandana, cowboy hat, fedora, arm sleeves) — only include when mode/context explicitly calls for it. Do NOT add them to everyday outfits.
 7. TIES: ONLY with collared dress shirts (Shirt/Button-down category). NEVER with polo, t-shirt, hoodie, sweatshirt, or any knitwear. A tie on a polo = automatic reject.
 7. Follow avoided_combinations from the Style Blueprint strictly.

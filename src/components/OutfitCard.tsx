@@ -36,14 +36,14 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
           onClick={() => setSheetOpen(true)}
           aria-label="View outfit details"
         >
-          {/* Item strip */}
-          <div className="flex gap-2.5 overflow-x-hidden">
+          {/* Item strip — scrollable */}
+          <div className="flex gap-2.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {resolved.map((it) => (
               <div
                 key={it.id}
                 className="shrink-0 w-[88px] h-[88px] rounded-[1.25rem] overflow-hidden flex items-center justify-center"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
+                  background: '#000',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}
               >

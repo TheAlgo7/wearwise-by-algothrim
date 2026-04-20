@@ -21,9 +21,13 @@ export function filterItems(items: Item[], ctx: FilterContext): Item[] {
 }
 
 function passesGates(it: Item, ctx: FilterContext): boolean {
-  // 1. Weather gate — respect stored min/max with a small tolerance
-  if (it.min_temp_c !== null && ctx.temp_c < it.min_temp_c - TEMP_TOLERANCE) return false;
-  if (it.max_temp_c !== null && ctx.temp_c > it.max_temp_c + TEMP_TOLERANCE) return false;
+  const layer = it.category?.layer_type ?? '';
+
+  // 1. Weather gate — bottoms are always wearable; skip temp filter for them
+  if (layer !== 'bottom') {
+    if (it.min_temp_c !== null && ctx.temp_c < it.min_temp_c - TEMP_TOLERANCE) return false;
+    if (it.max_temp_c !== null && ctx.temp_c > it.max_temp_c + TEMP_TOLERANCE) return false;
+  }
 
   // 2. Formality gate — scoped by mode rules
   const { min_formality, max_formality } = ctx.mode_rules;
