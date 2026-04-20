@@ -10,6 +10,8 @@ interface Props {
   items: Item[];
 }
 
+const TAB_KEY = 'wearwise.wardrobe.tab';
+
 const LAYER_LABELS: Record<LayerType, string> = {
   base:      'Base',
   mid:       'Mid',
@@ -24,7 +26,15 @@ const LAYER_LABELS: Record<LayerType, string> = {
 };
 
 export function WardrobeGrid({ items }: Props) {
-  const [filter, setFilter] = useState<LayerType | 'all'>('all');
+  const [filter, setFilterState] = useState<LayerType | 'all'>(() => {
+    if (typeof window === 'undefined') return 'all';
+    return (sessionStorage.getItem(TAB_KEY) as LayerType | 'all') ?? 'all';
+  });
+
+  function setFilter(val: LayerType | 'all') {
+    sessionStorage.setItem(TAB_KEY, val);
+    setFilterState(val);
+  }
 
   const presentLayers = useMemo(() => {
     const s = new Set<LayerType>();
