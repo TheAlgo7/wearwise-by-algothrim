@@ -20,6 +20,8 @@ const Body = z.object({
   override_temp_c: z.number().optional(),
   lat: z.number().optional(),
   lon: z.number().optional(),
+  custom_context: z.string().optional(),
+  planned_for: z.enum(['now', 'tonight', 'tomorrow']).default('now'),
 });
 
 export async function POST(req: Request) {
@@ -100,10 +102,12 @@ export async function POST(req: Request) {
   const context = {
     temp_c,
     condition: weather.condition,
-    time_of_day: tod,
+    time_of_day: parsed.planned_for === 'tonight' ? 'evening' : parsed.planned_for === 'tomorrow' ? 'morning' : tod,
     environment: parsed.environment,
     event: parsed.event,
     mode: parsed.mode,
+    custom_context: parsed.custom_context,
+    planned_for: parsed.planned_for,
     city: weather.city,
     trip_location: parsed.trip_city,
   };
@@ -130,10 +134,12 @@ export async function POST(req: Request) {
     .map((o) => {
       // Remove ids the AI hallucinated
       const valid = o.items.filter((id) => validIds.has(id));
-      // Keep only the first item per layer_type — enforces one top, one bottom, etc.
+      // Deduplicate clothing layers (base/mid/outer/bottom) but allow multiple accessories
+      const DUPE_LAYERS = new Set(['base', 'mid', 'outer', 'bottom']);
       const seenLayers = new Set<string>();
       const deduped = valid.filter((id) => {
         const layer = itemById.get(id)?.category?.layer_type ?? id;
+        if (!DUPE_LAYERS.has(layer)) return true; // accessories always allowed
         if (seenLayers.has(layer)) return false;
         seenLayers.add(layer);
         return true;

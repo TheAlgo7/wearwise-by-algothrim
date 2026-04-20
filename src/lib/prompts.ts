@@ -8,13 +8,29 @@ shortlist of wardrobe items, anchored to the owner's Style Blueprint.
 
 HARD RULES — any violation is an automatic reject:
 1. Use ONLY ids from the candidates list. Never invent ids.
-2. ONE item per layer slot per outfit. layer="base" means ONE base, layer="mid" means ONE mid, layer="bottom" means ONE bottom. NEVER put two shirts or two trousers in the same outfit.
-3. A mid item where open=true may be worn over a base (e.g. open shirt over tee). Otherwise mid alone covers the top — no base needed.
-4. Each outfit must have: one top (base OR mid), one bottom. Footwear is optional if no candidate exists.
-5. Follow avoided_combinations from the Style Blueprint strictly.
-6. Colours must harmonise — neutral + accent or tonal, never clashing.
-7. No two outfits may be identical.
-8. Prefer items not recently worn.
+2. ONE item per layer slot for clothing: one base, one mid, one outer, one bottom per outfit. NEVER two shirts or two trousers.
+3. A mid item where open=true may be worn over a base (e.g. open shirt over tee). Otherwise mid alone covers the top.
+4. Each outfit MUST have: one top (base OR mid) and one bottom. Footwear should be included if candidates exist.
+5. Accessories (belt, watch, cap, sunglasses, bandana, tie, etc.) are OPTIONAL additions. Include them when they genuinely improve the look.
+6. STATEMENT accessories (bandana, cowboy hat, fedora, arm sleeves, tie) — only include when the mode/context explicitly calls for it. Do NOT add them to everyday outfits.
+7. Follow avoided_combinations from the Style Blueprint strictly.
+8. Colours must harmonise — neutral + accent or tonal, never clashing.
+9. No two outfits may be identical.
+10. Prefer items not recently worn.
+
+MODE GUIDANCE:
+- home: Lounge/comfort priority. Slides as footwear ok. No need to impress.
+- casual: Friends, mall, local streets, car rides. Relaxed but put-together.
+- smart: Dinner, meeting, date, family event. Smart-casual to polished. Bootcuts + nice shirt or structured look preferred.
+- gym: Athletic outfits only. Performance tees, shorts, trainers. Arm sleeves allowed.
+- church: Modest, clean, structured. No gym or lounge vibes.
+- travel: Comfortable, layerable, repeated-wear friendly.
+- impress: Best signature combos. Fresh, high-confidence, statement pieces ok.
+- night: Dark palette. Evening/party energy.
+- describe: Use the custom_context field to understand the exact occasion and dress accordingly.
+- quick: Pick the easiest put-together outfit for right now.
+
+If planned_for is "tomorrow" — note this is advance planning. If "tonight" — skew evening/night energy.
 
 OUTPUT: strict JSON only — no prose, no markdown fences.
 Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}`;
@@ -26,18 +42,23 @@ export function buildGeneratePrompt(args: {
   candidates: Item[];
 }): string {
   const { blueprint, context, candidates } = args;
-  const slim = candidates.map((c) => ({
-    id: c.id,
-    name: c.name,
-    layer: c.category?.layer_type ?? null,
-    cat: c.category?.name ?? null,
-    color: c.primary_color,
-    fit: c.fit,
-    sleeve: c.sleeve_length,
-    open: c.can_be_worn_open ?? false,
-    formality: c.formality,
-    vibe: c.vibe,
-  }));
+  const slim = candidates.map((c) => {
+    const isAccessory = ['accessory','headwear','eyewear','timepiece','jewelry'].includes(c.category?.layer_type ?? '');
+    return {
+      id: c.id,
+      name: c.name,
+      layer: c.category?.layer_type ?? null,
+      cat: c.category?.name ?? null,
+      color: c.primary_color,
+      fit: c.fit,
+      sleeve: c.sleeve_length,
+      open: c.can_be_worn_open ?? false,
+      formality: c.formality,
+      vibe: c.vibe,
+      ...(isAccessory && c.occasions?.length ? { occasions: c.occasions } : {}),
+      ...(isAccessory && c.notes ? { note: c.notes } : {}),
+    };
+  });
   return [
     `STYLE BLUEPRINT:\n${blueprint}`,
     `CONTEXT:\n${JSON.stringify(context, null, 2)}`,

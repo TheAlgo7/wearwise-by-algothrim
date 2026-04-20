@@ -19,6 +19,8 @@ export default function HomePage() {
   const [environment, setEnvironment] = useState<Environment>('outdoor');
   const [tripCity, setTripCity] = useState<string | null>(null);
   const [mode, setMode] = useState<string>(() => modeForDate());
+  const [customContext, setCustomContext] = useState('');
+  const [plannedFor, setPlannedFor] = useState<'now' | 'tonight' | 'tomorrow'>('now');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -80,7 +82,8 @@ export default function HomePage() {
     setWornOutfitIdx(null);
     setSavedIdxs(new Set());
     try {
-      const body: Record<string, unknown> = { mode, environment };
+      const body: Record<string, unknown> = { mode, environment, planned_for: plannedFor };
+      if (mode === 'describe' && customContext.trim()) body.custom_context = customContext.trim();
       if (tripCity) body.trip_city = tripCity;
       if (!tripCity && coords) { body.lat = coords.lat; body.lon = coords.lon; }
       const res = await fetch('/api/generate', {
@@ -96,7 +99,7 @@ export default function HomePage() {
     } finally {
       setGenerating(false);
     }
-  }, [mode, environment, tripCity, coords]);
+  }, [mode, environment, tripCity, coords, customContext, plannedFor]);
 
   const markWorn = useCallback(async (idx: number) => {
     const o = outfits[idx];
@@ -172,7 +175,29 @@ export default function HomePage() {
         <div className="glass-card p-5 flex flex-col gap-4">
           <EnvironmentToggle value={environment} onChange={setEnvironment} />
           <TripModePicker tripCity={tripCity} onChange={setTripCity} />
-          <ModeSelector value={mode} onChange={setMode} />
+          <ModeSelector value={mode} onChange={setMode} customContext={customContext} onCustomContextChange={setCustomContext} />
+
+          {/* When? chips */}
+          <div className="flex gap-2">
+            {(['now', 'tonight', 'tomorrow'] as const).map((t) => {
+              const labels = { now: 'Right now', tonight: 'Tonight', tomorrow: 'Tomorrow' };
+              const active = plannedFor === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setPlannedFor(t)}
+                  className="press rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                  style={{
+                    background: active ? 'rgba(226,51,93,0.20)' : 'rgba(255,255,255,0.06)',
+                    color: active ? '#FF86A0' : '#A89098',
+                    border: `1px solid ${active ? 'rgba(226,51,93,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                  }}
+                >
+                  {labels[t]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Generate */}

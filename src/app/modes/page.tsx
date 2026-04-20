@@ -2,17 +2,22 @@
 
 import { OneUIHeader } from '@/components/oneui';
 import { MODES } from '@/lib/constants';
-import { ChevronRight, History, Zap, Church, Plane, Star, Moon } from 'lucide-react';
+import { ChevronRight, History, Zap, Church, Plane, Star, Moon, Home, Users, Briefcase, Dumbbell, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 
 const MODE_ICONS: Record<string, LucideIcon> = {
-  quick:   Zap,
-  church:  Church,
-  travel:  Plane,
-  impress: Star,
-  night:   Moon,
+  quick:    Zap,
+  home:     Home,
+  casual:   Users,
+  smart:    Briefcase,
+  gym:      Dumbbell,
+  church:   Church,
+  travel:   Plane,
+  impress:  Star,
+  night:    Moon,
+  describe: MessageCircle,
 };
 
 export default function ModesPage() {
@@ -34,9 +39,7 @@ export default function ModesPage() {
                 className="press text-left"
               >
                 <div className="glass-card p-4 flex items-center gap-4">
-                  <div
-                    className="h-12 w-12 rounded-full flex items-center justify-center shrink-0 bg-[#E2335D]/15"
-                  >
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center shrink-0 bg-[#E2335D]/15">
                     <Icon size={20} style={{ color: '#E2335D' }} />
                   </div>
                   <div className="flex-1 min-w-0">

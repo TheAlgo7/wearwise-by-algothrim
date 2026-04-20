@@ -78,11 +78,16 @@ export const TIMES_OF_DAY = ['morning', 'afternoon', 'evening', 'night'] as cons
 export type TimeOfDay = (typeof TIMES_OF_DAY)[number];
 
 export const MODES = [
-  { id: 'quick',   label: 'Quick Fit',  hint: 'Something in 2 seconds' },
-  { id: 'church',  label: 'Church',     hint: 'Sunday · modest · clean' },
-  { id: 'travel',  label: 'Travel',     hint: 'Comfort · layering · repeatable' },
-  { id: 'impress', label: 'Impress',    hint: 'Signature combos only' },
-  { id: 'night',   label: 'Night',      hint: 'Dark palette · evening' },
+  { id: 'quick',    label: 'Quick Fit', hint: 'Something in 2 seconds' },
+  { id: 'home',     label: 'Home',      hint: 'Comfy · chill · no pressure' },
+  { id: 'casual',   label: 'Casual',    hint: 'Friends · mall · local streets' },
+  { id: 'smart',    label: 'Smart',     hint: 'Dinner · meeting · date · family' },
+  { id: 'gym',      label: 'Gym',       hint: 'Active · performance · sporty' },
+  { id: 'church',   label: 'Church',    hint: 'Sunday · modest · clean' },
+  { id: 'travel',   label: 'Travel',    hint: 'Comfort · layering · repeatable' },
+  { id: 'impress',  label: 'Impress',   hint: 'Signature combos only' },
+  { id: 'night',    label: 'Night',     hint: 'Dark palette · evening' },
+  { id: 'describe', label: 'Describe',  hint: 'Tell me where you\'re going' },
 ] as const;
 
 export type ModeId = (typeof MODES)[number]['id'];
