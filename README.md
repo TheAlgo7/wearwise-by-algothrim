@@ -1,119 +1,97 @@
-<div align="center">
+# WearWise
 
-# 👔 WearWise
-
-### *Dress like you already know what you're doing.*
+> *Dress like you already know what you're doing.*
 
 **Personal AI wardrobe & outfit generator — built exclusively for The Algothrim | Gaurav Kumar**
 
-[![Live App](https://img.shields.io/badge/Live%20App-wearwise--algothrim.vercel.app-E2335D?style=for-the-badge&logo=vercel&logoColor=white)](https://wearwise-algothrim.vercel.app)
+[![Live App](https://img.shields.io/badge/Live%20App-wearwise--by--algothrim.vercel.app-E2335D?style=for-the-badge&logo=vercel&logoColor=white)](https://wearwise-by-algothrim.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed-Vercel-000?style=for-the-badge&logo=vercel)](https://vercel.com)
+
+Photograph your clothes once. Every time you open the app, get 2–3 complete outfits built for today's weather, your location, and whatever mode you're in — Church on Sundays, Travel, Impress, or just a quick morning grab. A hidden Style Blueprint is injected on every call so the output sounds like your own judgement, not a generic fashion bot.
 
 ---
 
-*You photograph your clothes once. After that, every time you open the app you get 2–3 complete outfits built specifically for today's weather, your location, and whatever mode you're in — Church, Travel, Impress, or just a regular morning. The AI gets a hidden style profile on every call so the output sounds like your own judgement, not a generic fashion bot.*
+## How It Works
 
-</div>
+**Stage 1 — The Bouncer**
+Filters your wardrobe by real constraints before AI ever sees it: temperature (bottoms always pass through), formality range, vibe tags, and recency scoring. Results are sliced by layer — tops, bottoms, footwear, watches, and accessories each have their own guaranteed slots so nothing gets crowded out.
 
----
-
-## 🧬 How It Works
-
-The engine runs in two stages:
-
-**Stage 1 — The Bouncer (database)**
-Filters your wardrobe by real constraints before AI ever sees it: temperature tolerance (±2°C), formality range, time of day, layer gates, and recency scoring. Caps the candidate list at 20 items. If fewer than 3 pass the filters, it stops and tells you exactly why rather than hallucinating an outfit.
-
-**Stage 2 — The Stylist (multi-provider AI)**
-Takes the shortlist and generates 2–3 complete outfits with reasoning. Fallback chain: Groq → OpenRouter → Gemini — so generation always works even when one provider hits rate limits. The model receives a compact Style Blueprint on every call — a private profile of fit preferences, avoided combinations, and signature combos — so it assembles outfits that actually feel like you.
-
-**Layering logic** is explicit: `base`, `mid` (can be worn open or closed), `bottom`, `outer`. The `can_be_worn_open` flag on button-downs means an open flannel over a tee is a real valid option. Server-side deduplication enforces one item per layer slot post-generation so two shirts never appear in the same outfit even when the AI ignores the rule.
-
-**Indoor AC override** sets the effective temperature to 22°C for air-conditioned environments. **Trip Mode** pulls the destination city's forecast instead of your current GPS location.
+**Stage 2 — The Stylist**
+Takes the shortlist and generates 2–3 complete outfits with reasoning. Multi-provider fallback: Groq → OpenRouter → Gemini so generation always works. Watch and belt are included by default when they exist in candidates. Server-side rules enforce one item per layer slot, ties only with dress shirts, and no duplicate items — even when the model ignores the prompt.
 
 ---
 
-## 🌍 Live App
+## Features
 
-**[→ wearwise-algothrim.vercel.app](https://wearwise-algothrim.vercel.app)**
-
-PWA — install from Chrome on Samsung to home screen. Full standalone mode, no browser chrome.
+| Feature | Description |
+| --- | --- |
+| **Generate Fit** | Tap once — 2–3 outfits for today's weather, mode, and environment |
+| **10 Modes** | Quick · Home · Casual · Smart · Gym · Church · Travel · Impress · Night · Describe |
+| **Describe Mode** | Type the occasion in plain English — the AI dresses accordingly |
+| **When Chips** | Plan for right now, tonight, or tomorrow |
+| **Trip Mode** | Enter any city — uses that forecast instead of your GPS |
+| **Indoor AC** | Overrides effective temperature to 22°C |
+| **Watch + Belt** | Always included when available and formality matches |
+| **Add Item** | Photograph a piece — AI removes background and auto-tags everything |
+| **Outfit History** | Every "Wearing this" tap is logged with weather and mode context |
+| **Style Blueprint** | Private profile of fits, palette, and rules injected into every prompt |
+| **Church Auto-mode** | Sundays default to Church mode automatically |
+| **PWA** | Installs to home screen, service worker for offline resilience |
+| **AMOLED design** | Pure black, flat matte cards, crimson accent — Samsung One UI 8.5 |
 
 ---
 
-## ⚙️ Stack
+## Stack
 
 | Layer | Tech |
-|---|---|
-| Framework | Next.js 16 App Router, React 19, TypeScript 5.7 |
+| --- | --- |
+| Framework | Next.js 16 App Router · React 19 · TypeScript 5.7 |
 | Styling | Tailwind CSS — Samsung One UI 8.5 design language |
-| Database | Supabase (Postgres + Storage) |
-| AI — Outfits | Groq `llama-3.3-70b` → OpenRouter Gemini/Llama → Google Gemini 2.0 Flash |
-| AI — Tagging | Gemini 2.0 Flash (vision) — auto-tags new items from photo |
-| AI — BG Removal | Gemini 2.0 Flash Image — removes background on upload |
+| Database | Supabase (Postgres + Storage) with RLS |
+| AI — Outfits | Groq `llama-3.3-70b` → OpenRouter → Gemini 2.0 Flash |
+| AI — Tagging | Gemini 2.0 Flash Vision — auto-tags new items from photo |
+| AI — BG Removal | Gemini 2.0 Flash Image |
 | Weather | OpenWeather API |
-| Hosting | Vercel (hobby, 30s function limit) |
+| Hosting | Vercel |
 
 ---
 
-## 🧩 Features
+## Project Structure
 
-| Feature | What it does |
-|---|---|
-| **Generate Fit** | Tap once — 2–3 outfits assembled for today's weather, mode, and environment |
-| **5 Modes** | Quick Fit · Church (auto-activates Sundays) · Travel · Impress · Night |
-| **Trip Mode** | Enter any city — uses that city's forecast instead of your GPS |
-| **Indoor AC** | Overrides effective temperature to 22°C for AC-heavy days |
-| **Add Item** | Photograph a piece — AI removes the background and auto-tags everything |
-| **Outfit History** | Every "Wearing this" tap is logged with temp, mode, and city context |
-| **Style Blueprint** | Private profile (fits, palette, rules) injected into every generation prompt |
-| **Time-aware greeting** | "Morning, Gaurav." → "Night owl mode." — changes with the hour |
-| **PWA** | Installs on home screen, service worker for offline resilience |
-| **AMOLED design** | Pure black, flat matte cards, crimson accent — matches Samsung One UI 8.5 |
-
----
-
-## 🗂️ Project Structure
-
-```
+```text
 src/
   app/
-    api/             Route handlers — generate, tag-item, clean-image, upload, weather
-    page.tsx         Home — time-aware greeting, controls, outfit cards
-    wardrobe/        Grid, add flow (/add), item detail (/[id])
-    modes/           Mode picker → redirects to Today with mode applied
-    outfits/         Outfit history log
-    profile/         Style Blueprint editor
+    api/           generate · tag-item · clean-image · upload · weather
+    page.tsx       Home — greeting, controls, outfit cards
+    wardrobe/      Grid, add flow, item detail
+    outfits/       Outfit history
+    profile/       Style Blueprint editor
+    modes/         Mode picker
   components/
-    oneui/           Design system primitives — Button, Chip, Toggle, Header, Sheet, Squircle
-    OutfitCard       Outfit result card — item strip, name pills, reasoning, actions
-    ItemCard         Wardrobe grid card — photo + name + fit
-    WeatherWidget    Live weather — temp, condition, humidity, wind
-    AddItemForm      Full add-item flow — photo → AI tag → confirm → save
-    GenerateButton   The big crimson CTA
-    BottomNav        Floating pill nav — Today · Wardrobe · Modes · Profile
+    oneui/         Design system — Button, Chip, Toggle, Header, Sheet
+    OutfitCard     Scrollable item strip, name pills, reasoning, actions
+    OutfitDetailSheet  Full-screen outfit breakdown
+    WeatherWidget  Live weather card
+    AddItemForm    Photo → AI tag → confirm → save
   lib/
-    filter-engine    The bouncer — temperature, formality, vibe, recency gates
-    llm              Multi-provider JSON generation (Groq → OpenRouter → Gemini)
-    prompts          System prompt, JSON schema, candidate builder
-    style-profile    Style Blueprint fetcher + blueprint formatter
-    modes            Default mode definitions + fallback rules
-    weather          OpenWeather fetch helpers
-    gemini           @google/genai wrapper for vision routes
+    filter-engine  Temperature, formality, vibe, and recency gates
+    llm            Multi-provider JSON generation
+    prompts        System prompt + candidate builder
+    style-profile  Style Blueprint fetcher and formatter
+    modes          Default mode rules and Sunday auto-detection
 public/
-  icons/             SVG app icons — icon.svg, icon-maskable.svg, apple-touch-icon.svg
+  icons/           icon-192.png · icon-512.png · icon-maskable-512.png · icon.ico
   manifest.webmanifest
-  sw.js              Service worker — offline fallback
+  sw.js            Service worker
 supabase/
-  schema.sql         Full schema — enums, tables, triggers, storage bucket policy
-  seed.sql           29 categories, 5 modes, singleton style_profile row
+  schema.sql       Full schema — tables, triggers, RLS, storage policy
+  seed.sql         29 categories, 10 modes, style_profile seed
 ```
 
 ---
 
-## 🚀 Run Locally
+## Run Locally
 
 ```bash
 git clone https://github.com/TheAlgo7/wearwise-by-algothrim
@@ -122,9 +100,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-**Environment variables** — copy `.env.example` to `.env.local`:
+Create `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -137,31 +113,10 @@ OPENROUTER_API_KEY=
 NEXT_PUBLIC_DEFAULT_CITY=New Delhi,IN
 ```
 
-**Database:** Create a Supabase project, run `supabase/schema.sql` then `supabase/seed.sql`.
-
-> Single-user app. RLS is disabled by design. Don't expose publicly without adding auth.
+Run `supabase/schema.sql` then `supabase/seed.sql` against a new Supabase project.
 
 ---
-
-## 🎨 Design
-
-Samsung One UI 8.5 — feels like a native Samsung app, not a web app.
-
-- **Background:** AMOLED black `#000000`
-- **Cards:** Flat matte `#1A1819` · `border: 1px solid rgba(255,255,255,0.05)`
-- **Accent:** Crimson `#E2335D` · matches the phone's personalization color
-- **Text ramp:** `#FFEDE8` → `#FFD9DA` → `#FF86A0`
-- **Nav:** Floating pill, safe-area aware
-- **Tap feedback:** `active:scale-[0.97]` on every interactive surface
-
-Full token reference: [`DESIGN.md`](DESIGN.md)
-
----
-
-<div align="center">
 
 **Built for one person. Works exactly for that one person.**
 
-`v1.0` · Samsung One UI 8.5 · April 2026
-
-</div>
+`v1.3` · Samsung One UI 8.5 · April 2026

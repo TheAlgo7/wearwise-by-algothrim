@@ -1,7 +1,7 @@
 {
   "name": "WearWise",
   "short_name": "WearWise",
-  "description": "Custom AI-driven wardrobe & outfit generator for The Algothrim | Gaurav Kumar.",
+  "description": "Personal AI wardrobe & outfit generator for Gaurav Kumar.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -12,18 +12,24 @@
   "theme_color": "#000000",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["lifestyle", "productivity", "utilities"],
+  "categories": ["lifestyle", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -31,23 +37,20 @@
     {
       "name": "Generate Fit",
       "short_name": "Fit",
-      "description": "Get today's outfit",
       "url": "/",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Add Item",
       "short_name": "Add",
-      "description": "Photograph a new piece",
       "url": "/wardrobe/add",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Wardrobe",
       "short_name": "Closet",
-      "description": "Browse your wardrobe",
       "url": "/wardrobe",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
