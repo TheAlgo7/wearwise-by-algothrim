@@ -93,7 +93,8 @@ export async function POST(req: Request) {
     ...byLayer(['base', 'mid', 'outer'], 7),
     ...byLayer(['bottom'], 5),
     ...byLayer(['footwear'], 4),
-    ...byLayer(['accessory', 'headwear', 'eyewear', 'timepiece', 'jewelry'], 6),
+    ...byLayer(['timepiece'], 3),                           // watches always guaranteed a slot
+    ...byLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 7),
   ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx); // dedup
 
   if (candidates.length < 3) {
