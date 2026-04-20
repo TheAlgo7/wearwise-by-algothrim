@@ -12,7 +12,8 @@ HARD RULES — any violation is an automatic reject:
 3. A mid item where open=true may be worn over a base (e.g. open shirt over tee). Otherwise mid alone covers the top.
 4. Each outfit MUST have: one top (base OR mid) and one bottom. Footwear should be included if candidates exist.
 5. Accessories (belt, watch, cap, sunglasses, bandana, tie, etc.) are OPTIONAL additions. Include them when they genuinely improve the look.
-6. STATEMENT accessories (bandana, cowboy hat, fedora, arm sleeves, tie) — only include when the mode/context explicitly calls for it. Do NOT add them to everyday outfits.
+6. STATEMENT accessories (bandana, cowboy hat, fedora, arm sleeves) — only include when mode/context explicitly calls for it. Do NOT add them to everyday outfits.
+7. TIES: ONLY with collared dress shirts (Shirt/Button-down category). NEVER with polo, t-shirt, hoodie, sweatshirt, or any knitwear. A tie on a polo = automatic reject.
 7. Follow avoided_combinations from the Style Blueprint strictly.
 8. Colours must harmonise — neutral + accent or tonal, never clashing.
 9. No two outfits may be identical.

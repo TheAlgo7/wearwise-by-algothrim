@@ -132,8 +132,8 @@ export async function POST(req: Request) {
 
   const cleaned = (outfits as { items: string[]; reasoning: string; confidence: number }[])
     .map((o) => {
-      // Remove ids the AI hallucinated
-      const valid = o.items.filter((id) => validIds.has(id));
+      // Remove ids the AI hallucinated and deduplicate
+      const valid = [...new Set(o.items)].filter((id) => validIds.has(id));
       // Deduplicate clothing layers (base/mid/outer/bottom) but allow multiple accessories
       const DUPE_LAYERS = new Set(['base', 'mid', 'outer', 'bottom']);
       const seenLayers = new Set<string>();

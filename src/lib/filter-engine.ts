@@ -36,7 +36,7 @@ function passesGates(it: Item, ctx: FilterContext): boolean {
   if (ctx.mode_rules.excluded_vibes?.length) {
     if (it.vibe.some((v) => ctx.mode_rules.excluded_vibes!.includes(v))) return false;
   }
-  if (ctx.mode_rules.required_vibes_any?.length) {
+  if (ctx.mode_rules.required_vibes_any?.length && it.vibe.length > 0) {
     if (!it.vibe.some((v) => ctx.mode_rules.required_vibes_any!.includes(v))) return false;
   }
 
