@@ -144,7 +144,17 @@ export async function POST(req: Request) {
         seenLayers.add(layer);
         return true;
       });
-      return { ...o, items: deduped };
+
+      // Hard rule: remove ties if no dress shirt (button-down) in outfit
+      const hasDressShirt = deduped.some((id) => {
+        const cat = itemById.get(id)?.category?.name ?? '';
+        return cat.toLowerCase().includes('shirt');
+      });
+      const final = hasDressShirt
+        ? deduped
+        : deduped.filter((id) => itemById.get(id)?.category?.name !== 'Tie');
+
+      return { ...o, items: final };
     })
     .filter((o) => o.items.length >= 2);
 
