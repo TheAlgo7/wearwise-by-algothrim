@@ -3,7 +3,7 @@
 import { OneUIButton } from '@/components/oneui';
 import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
-import { Check, BookmarkPlus, BookmarkCheck, Star } from 'lucide-react';
+import { Check, BookmarkPlus, BookmarkCheck, Star, Shirt } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import type { Item, GeneratedOutfit } from '@/types';
@@ -23,7 +23,9 @@ interface Props {
 export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear, onRate, className }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const byId = new Map(items.map((i) => [i.id, i]));
-  const resolved = outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[];
+  const resolved = Array.from(
+    new Map(outfit.items.map((id) => byId.get(id)).filter(Boolean).map((i) => [i!.id, i!])).values()
+  );
 
   return (
     <>
@@ -55,7 +57,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
                     unoptimized
                   />
                 ) : (
-                  <span className="text-oneui-tab text-[#FFD9DA]/50 text-center px-2 leading-tight">{it.name}</span>
+                  <Shirt size={28} className="text-[#FFD9DA]/30" strokeWidth={1.4} />
                 )}
               </div>
             ))}
