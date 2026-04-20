@@ -18,7 +18,7 @@ export function ItemCard({ item, compact, className }: Props) {
     <Link href={`/wardrobe/${item.id}`} className={cn('block press', className)}>
       <Squircle variant="flat" className={cn('overflow-hidden', compact && 'rounded-squircle-sm')}>
         <div
-          className={cn('relative w-full flex items-center justify-center bg-black', compact ? 'aspect-square' : 'aspect-[3/4]')}
+          className={cn('relative w-full flex items-center justify-center bg-black rounded-b-[16px]', compact ? 'aspect-square' : 'aspect-[3/4]')}
         >
           {item.image_url ? (
             <Image

@@ -60,6 +60,7 @@
   .chip-row {
     @apply flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4;
     scroll-snap-type: x mandatory;
+    scroll-padding-left: 1rem;
   }
   .chip-row > * { scroll-snap-align: start; }
 
