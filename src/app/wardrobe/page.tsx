@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function WardrobePage() {
-  useScrollRestoration('wardrobe');
+  useScrollRestoration('wardrobe', !loading);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
