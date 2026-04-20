@@ -153,10 +153,10 @@ export default function HomePage() {
 
       {/* ── VIEWING AREA ── */}
       <div className="px-5 pt-16 pb-6">
-        <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
+        <p suppressHydrationWarning className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
           {today}{weather?.city ? ` · ${weather.city}` : ''}
         </p>
-        <h1 className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
+        <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
           {greeting}
         </h1>
       </div>
