@@ -82,13 +82,25 @@ export async function POST(req: Request) {
     event: parsed.event,
     mode_rules: mode.rules,
   });
-  const ranked = rankCandidates(shortlist, mode.rules).slice(0, 20);
+  const ranked = rankCandidates(shortlist, mode.rules);
 
-  if (ranked.length < 3) {
+  // Layer-aware candidate selection — guarantee tops + bottoms always reach the LLM
+  // so accessories don't crowd them out of a blind top-N slice.
+  const byLayer = (layers: string[], cap: number) =>
+    ranked.filter((i) => layers.includes(i.category?.layer_type ?? '')).slice(0, cap);
+
+  const candidates = [
+    ...byLayer(['base', 'mid', 'outer'], 7),
+    ...byLayer(['bottom'], 5),
+    ...byLayer(['footwear'], 4),
+    ...byLayer(['accessory', 'headwear', 'eyewear', 'timepiece', 'jewelry'], 6),
+  ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx); // dedup
+
+  if (candidates.length < 3) {
     return NextResponse.json(
       {
         error: 'Not enough candidates to build outfits. Add more items or relax the mode.',
-        candidate_count: ranked.length,
+        candidate_count: candidates.length,
         context: { temp_c, condition: weather.condition, time_of_day: tod, environment: parsed.environment, mode: parsed.mode, city: weather.city },
       },
       { status: 422 }
@@ -113,7 +125,7 @@ export async function POST(req: Request) {
   };
 
   // 5. Generate outfits via multi-provider LLM (Groq → OpenRouter → Gemini)
-  const prompt = buildGeneratePrompt({ blueprint, context, candidates: ranked });
+  const prompt = buildGeneratePrompt({ blueprint, context, candidates });
 
   let outfits;
   try {
@@ -127,8 +139,8 @@ export async function POST(req: Request) {
   }
 
   // 6. Validate + deduplicate by layer_type (AI sometimes stacks 2 shirts or 2 trousers)
-  const validIds = new Set(ranked.map((i) => i.id));
-  const itemById = new Map(ranked.map((i) => [i.id, i]));
+  const validIds = new Set(candidates.map((i) => i.id));
+  const itemById = new Map(candidates.map((i) => [i.id, i]));
 
   const cleaned = (outfits as { items: string[]; reasoning: string; confidence: number }[])
     .map((o) => {
@@ -161,6 +173,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     outfits: cleaned,
     context,
-    candidate_count: ranked.length,
+    candidate_count: candidates.length,
   });
 }
