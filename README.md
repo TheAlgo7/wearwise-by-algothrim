@@ -1,97 +1,46 @@
+<div align="center">
+
 # WearWise
 
-> *Dress like you already know what you're doing.*
+### *Dress like you already know what you're doing.*
 
-**Personal AI wardrobe & outfit generator — built exclusively for The Algothrim | Gaurav Kumar**
+**Personal AI wardrobe and outfit generator for The Algothrim — built around real clothes, real context, and actual taste.**
 
-[![Live App](https://img.shields.io/badge/Live%20App-wearwise--by--algothrim.vercel.app-E2335D?style=for-the-badge&logo=vercel&logoColor=white)](https://wearwise-by-algothrim.vercel.app)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![Live App](https://img.shields.io/badge/Live-wearwise--by--algothrim.vercel.app-E2335D?style=for-the-badge&logo=vercel&logoColor=white)](https://wearwise-by-algothrim.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![AI Pipeline](https://img.shields.io/badge/AI-Gemini%20%C2%B7%20Groq%20%C2%B7%20OpenRouter-E2335D?style=for-the-badge&labelColor=101010)](https://github.com/TheAlgo7/wearwise-by-algothrim)
 
-Photograph your clothes once. Every time you open the app, get 2–3 complete outfits built for today's weather, your location, and whatever mode you're in — Church on Sundays, Travel, Impress, or just a quick morning grab. A hidden Style Blueprint is injected on every call so the output sounds like your own judgement, not a generic fashion bot.
+*WearWise is not a fashion mood board generator. It is a wardrobe engine: photograph your real clothes once, tag them, store them, then let the system build grounded outfits around weather, occasion, mode, and your own style profile.*
 
----
-
-## How It Works
-
-**Stage 1 — The Bouncer**
-Filters your wardrobe by real constraints before AI ever sees it: temperature (bottoms always pass through), formality range, vibe tags, and recency scoring. Results are sliced by layer — tops, bottoms, footwear, watches, and accessories each have their own guaranteed slots so nothing gets crowded out.
-
-**Stage 2 — The Stylist**
-Takes the shortlist and generates 2–3 complete outfits with reasoning. Multi-provider fallback: Groq → OpenRouter → Gemini so generation always works. Watch and belt are included by default when they exist in candidates. Server-side rules enforce one item per layer slot, ties only with dress shirts, and no duplicate items — even when the model ignores the prompt.
+</div>
 
 ---
 
-## Features
+## Overview
 
-| Feature | Description |
-| --- | --- |
-| **Generate Fit** | Tap once — 2–3 outfits for today's weather, mode, and environment |
-| **10 Modes** | Quick · Home · Casual · Smart · Gym · Church · Travel · Impress · Night · Describe |
-| **Describe Mode** | Type the occasion in plain English — the AI dresses accordingly |
-| **When Chips** | Plan for right now, tonight, or tomorrow |
-| **Trip Mode** | Enter any city — uses that forecast instead of your GPS |
-| **Indoor AC** | Overrides effective temperature to 22°C |
-| **Watch + Belt** | Always included when available and formality matches |
-| **Add Item** | Photograph a piece — AI removes background and auto-tags everything |
-| **Outfit History** | Every "Wearing this" tap is logged with weather and mode context |
-| **Style Blueprint** | Private profile of fits, palette, and rules injected into every prompt |
-| **Church Auto-mode** | Sundays default to Church mode automatically |
-| **PWA** | Installs to home screen, service worker for offline resilience |
-| **AMOLED design** | Pure black, flat matte cards, crimson accent — Samsung One UI 8.5 |
+The point of WearWise is not to sound clever. It is to be useful before 9 AM. The app filters your wardrobe by real-world constraints first, then uses AI for the part AI is actually good at: assembling combinations, reasoning about vibe, and explaining why the outfit works.
 
----
+The result feels closer to a personal stylist with memory than a random outfit generator.
 
-## Stack
+## How The Engine Works
 
-| Layer | Tech |
-| --- | --- |
-| Framework | Next.js 16 App Router · React 19 · TypeScript 5.7 |
-| Styling | Tailwind CSS — Samsung One UI 8.5 design language |
-| Database | Supabase (Postgres + Storage) with RLS |
-| AI — Outfits | Groq `llama-3.3-70b` → OpenRouter → Gemini 2.0 Flash |
-| AI — Tagging | Gemini 2.0 Flash Vision — auto-tags new items from photo |
-| AI — BG Removal | Gemini 2.0 Flash Image |
-| Weather | OpenWeather API |
-| Hosting | Vercel |
+**Stage 1 — The Bouncer**  
+Filters the wardrobe by temperature, formality, vibe, and recency before any model sees the candidate set.
 
----
+**Stage 2 — The Stylist**  
+Builds 2–3 complete outfits with reasoning using a multi-provider pipeline and a private style blueprint.
 
-## Project Structure
+## Core Features
 
-```text
-src/
-  app/
-    api/           generate · tag-item · clean-image · upload · weather
-    page.tsx       Home — greeting, controls, outfit cards
-    wardrobe/      Grid, add flow, item detail
-    outfits/       Outfit history
-    profile/       Style Blueprint editor
-    modes/         Mode picker
-  components/
-    oneui/         Design system — Button, Chip, Toggle, Header, Sheet
-    OutfitCard     Scrollable item strip, name pills, reasoning, actions
-    OutfitDetailSheet  Full-screen outfit breakdown
-    WeatherWidget  Live weather card
-    AddItemForm    Photo → AI tag → confirm → save
-  lib/
-    filter-engine  Temperature, formality, vibe, and recency gates
-    llm            Multi-provider JSON generation
-    prompts        System prompt + candidate builder
-    style-profile  Style Blueprint fetcher and formatter
-    modes          Default mode rules and Sunday auto-detection
-public/
-  icons/           icon-192.png · icon-512.png · icon-maskable-512.png · icon.ico
-  manifest.webmanifest
-  sw.js            Service worker
-supabase/
-  schema.sql       Full schema — tables, triggers, RLS, storage policy
-  seed.sql         29 categories, 10 modes, style_profile seed
-```
+- **AI outfit generation** tuned to your actual wardrobe instead of a generic catalog.
+- **Photo-to-closet flow** with background cleanup and AI-assisted tagging.
+- **Modes and timing controls** for Church, Travel, Impress, tonight, tomorrow, and more.
+- **Weather-aware suggestions** with location-sensitive output.
+- **Outfit history** so the system remembers what has already been worn.
+- **Personal style blueprint** injected into generation so the voice stays yours.
 
----
-
-## Run Locally
+## Quick Start
 
 ```bash
 git clone https://github.com/TheAlgo7/wearwise-by-algothrim
@@ -113,10 +62,64 @@ OPENROUTER_API_KEY=
 NEXT_PUBLIC_DEFAULT_CITY=New Delhi,IN
 ```
 
-Run `supabase/schema.sql` then `supabase/seed.sql` against a new Supabase project.
+Then initialize the database with:
 
----
+- `supabase/schema.sql`
+- `supabase/seed.sql`
 
-**Built for one person. Works exactly for that one person.**
+Useful commands:
 
-`v1.3` · Samsung One UI 8.5 · April 2026
+```bash
+npm run build
+npm run start
+npm run lint
+npm run type-check
+```
+
+## Project Structure
+
+```text
+src/
+├── app/
+│   ├── api/
+│   ├── wardrobe/
+│   ├── outfits/
+│   ├── profile/
+│   └── modes/
+├── components/
+├── hooks/
+├── lib/
+└── types/
+public/
+├── icons/
+├── manifest.webmanifest
+└── sw.js
+supabase/
+├── schema.sql
+└── seed.sql
+```
+
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| Framework | Next.js 16 App Router + React 19 |
+| Language | TypeScript |
+| Styling | Tailwind CSS with Samsung One UI-inspired direction |
+| Data | Supabase Postgres + Storage |
+| AI | Gemini, Groq, OpenRouter |
+| Weather | OpenWeather API |
+| Hosting | Vercel |
+
+## Design Language
+
+- **AMOLED-first.** Matte blacks, strong contrast, and disciplined red accents.
+- **Samsung-inspired UI.** Rounded, touch-forward, modern without looking playful.
+- **High signal, low noise.** Every screen is built to make getting dressed easier.
+- **Personal by design.** The product is unapologetically built around one real wardrobe and one real taste profile.
+
+<div align="center">
+
+Built for **real clothes, real context, and better judgment at speed**.
+
+</div>
