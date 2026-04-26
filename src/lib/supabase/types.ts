@@ -98,6 +98,8 @@ export interface ModeRules {
   favor_signature?: boolean;
   avoid_recently_worn_days?: number;
   palette_boost?: 'dark' | 'light';
+  excluded_layers?: string[];       // layer_types to hard-exclude (e.g. 'timepiece' for home)
+  footwear_vibes_any?: string[];    // require footwear to match at least one vibe
 }
 
 export interface Mode {

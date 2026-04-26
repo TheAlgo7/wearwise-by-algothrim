@@ -23,16 +23,18 @@ HARD RULES — any violation is an automatic reject:
 10. Prefer items not recently worn.
 
 MODE GUIDANCE:
-- home: Lounge/comfort priority. Slides as footwear ok. No need to impress.
+- home: Lounge/comfort ONLY. Slippers or slides are the ONLY accepted footwear — never sneakers or shoes at home. NO watches, NO belts. Keep it max 3 items: top + bottom + slippers.
 - casual: Friends, mall, local streets, car rides. Relaxed but put-together.
 - smart: Dinner, meeting, date, family event. Smart-casual to polished. Bootcuts + nice shirt or structured look preferred.
 - gym: Athletic outfits only. Performance tees, shorts, trainers. Arm sleeves allowed.
 - church: Modest, clean, structured. No gym or lounge vibes.
 - travel: Comfortable, layerable, repeated-wear friendly.
-- impress: Best signature combos. Fresh, high-confidence, statement pieces ok.
+- impress: FULL signature outfits — top + bottom + footwear + accessories. Pick the most stylish, head-turning combos from ALL available candidates. This is the "best dressed" mode — full complete outfits only, never just accessories alone.
 - night: Dark palette. Evening/party energy.
-- describe: Use the custom_context field to understand the exact occasion and dress accordingly.
+- describe: Use the custom_context field to understand the exact occasion and dress accordingly. For parties, pick festive/smart-casual combos.
 - quick: Pick the easiest put-together outfit for right now.
+
+VARIETY RULE: Each generation must explore different combinations. Do NOT repeat the same outfit you might have suggested before. Rotate through the full candidate pool — use items across the entire shortlist, not just the first few.
 
 If planned_for is "tomorrow" — note this is advance planning. If "tonight" — skew evening/night energy.
 

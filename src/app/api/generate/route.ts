@@ -61,9 +61,12 @@ export async function POST(req: Request) {
     .select('*')
     .eq('id', parsed.mode)
     .maybeSingle();
-  const mode: Mode = (modeRow as Mode) ??
-    DEFAULT_MODES.find((m) => m.id === parsed.mode) ??
-    DEFAULT_MODES[0];
+  // Merge DB rules on top of DEFAULT_MODES so new rule fields (excluded_layers, etc.)
+  // defined in defaults are always present even when the DB row predates them.
+  const defaultMode = DEFAULT_MODES.find((m) => m.id === parsed.mode) ?? DEFAULT_MODES[0];
+  const mode: Mode = modeRow
+    ? { ...(modeRow as Mode), rules: { ...defaultMode.rules, ...(modeRow as Mode).rules } }
+    : defaultMode;
 
   // 3. Candidates — fetch items with categories joined
   const { data: itemRows, error: itemsErr } = await supa
@@ -123,6 +126,8 @@ export async function POST(req: Request) {
     planned_for: parsed.planned_for,
     city: weather.city,
     trip_location: parsed.trip_city,
+    // Random seed so the LLM explores different combinations every generation
+    variation_seed: Math.random().toString(36).slice(2, 8),
   };
 
   // 5. Generate outfits via multi-provider LLM (Groq → OpenRouter → Gemini)
