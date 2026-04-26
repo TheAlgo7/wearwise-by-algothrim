@@ -39,7 +39,14 @@ VARIETY RULE: Each generation must explore different combinations. Do NOT repeat
 If planned_for is "tomorrow" — note this is advance planning. If "tonight" — skew evening/night energy.
 
 OUTPUT: strict JSON only — no prose, no markdown fences.
-Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}`;
+Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}
+
+REASONING FIELD — this is the most important field. Write 2–3 punchy sentences that cover ALL of these:
+1. Why this specific combo suits the occasion/mode and Gaurav's personal style
+2. Color story — how the pieces harmonise (e.g. "the navy tones down the white so it reads clean, not stark")
+3. Body/fit note — how the silhouette works for the owner (e.g. "bootcut balances the shoulder line", "oversized top over slim bottom creates contrast")
+4. One actionable styling tip (e.g. "tuck just the front", "fold the sleeves once", "let the open shirt hang loose over the tee")
+Reference actual item names and colors. Be specific — NOT generic filler like "this is comfortable" or "this looks good".`;
 
 /** Build the user prompt for one generation call. */
 export function buildGeneratePrompt(args: {

@@ -144,10 +144,13 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           {/* Reasoning */}
           {outfit.reasoning && (
             <div
-              className="mt-5 rounded-[16px] px-4 py-3.5"
-              style={{ background: 'rgba(255,255,255,0.04)' }}
+              className="mt-5 rounded-[16px] px-4 py-4"
+              style={{ background: 'rgba(226,51,93,0.06)', border: '1px solid rgba(226,51,93,0.12)' }}
             >
-              <p className="text-[13px] leading-[1.65] text-[#D9C8CC]">{outfit.reasoning}</p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#FF86A0' }}>
+                Why this works
+              </p>
+              <p className="text-[13px] leading-[1.7] text-[#D9C8CC]">{outfit.reasoning}</p>
             </div>
           )}
 

@@ -76,7 +76,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
           </div>
 
           {/* Reasoning — clamped, tap to see full */}
-          <p className="mt-3 text-oneui-body text-[#FFD9DA]/70 text-pretty line-clamp-2">{outfit.reasoning}</p>
+          <p className="mt-3 text-[13px] leading-[1.6] text-[#FFD9DA]/70 text-pretty line-clamp-3">{outfit.reasoning}</p>
 
           <p className="mt-1.5 text-[11px] text-[#FF86A0]/50 font-medium">Tap to view full outfit →</p>
         </button>

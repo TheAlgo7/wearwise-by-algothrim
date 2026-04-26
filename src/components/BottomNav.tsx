@@ -36,7 +36,11 @@ export function BottomNav() {
                 )}
               >
                 {active && (
-                  <span aria-hidden className="absolute inset-0 rounded-full bg-[#E2335D]/30" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full bg-[#E2335D]/30"
+                    style={{ animation: 'page-enter 180ms cubic-bezier(0.22,1,0.36,1) both' }}
+                  />
                 )}
                 <Icon size={20} className="relative" strokeWidth={active ? 2.4 : 1.8} />
                 <span className="relative text-oneui-tab">{label}</span>
