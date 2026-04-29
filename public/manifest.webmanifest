@@ -15,22 +15,16 @@
   "categories": ["lifestyle", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -38,19 +32,19 @@
       "name": "Generate Fit",
       "short_name": "Fit",
       "url": "/",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Add Item",
       "short_name": "Add",
       "url": "/wardrobe/add",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Wardrobe",
       "short_name": "Closet",
       "url": "/wardrobe",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
