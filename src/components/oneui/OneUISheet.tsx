@@ -3,6 +3,7 @@
 import { cn } from '@/lib/cn';
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface OneUISheetProps {
   open: boolean;
@@ -27,8 +28,8 @@ export function OneUISheet({ open, onClose, title, children, className }: OneUIS
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-end justify-center">
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-oneui-fade"
         onClick={onClose}
@@ -36,7 +37,7 @@ export function OneUISheet({ open, onClose, title, children, className }: OneUIS
       />
       <div
         className={cn(
-          'relative w-full max-w-xl bg-ink-100 rounded-t-squircle-xl shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
+          'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto bg-ink-100 rounded-t-squircle-xl shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
           className
         )}
         role="dialog"
@@ -60,6 +61,7 @@ export function OneUISheet({ open, onClose, title, children, className }: OneUIS
         ) : null}
         <div className="px-5 pb-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

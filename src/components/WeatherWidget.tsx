@@ -9,6 +9,7 @@ interface Props {
   loading?: boolean;
   effectiveTempC?: number;
   tripCity?: string | null;
+  variant?: 'full' | 'compact';
   className?: string;
 }
 
@@ -28,8 +29,17 @@ const iconFor = (code: string) => {
   }
 };
 
-export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, className }: Props) {
+export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, variant = 'full', className }: Props) {
   if (loading || !weather) {
+    if (variant === 'compact') {
+      return (
+        <div className={cn('glass-card h-14 w-[126px] animate-pulse rounded-full px-4 py-3', className)}>
+          <div className="h-4 w-14 bg-white/10 rounded-full" />
+          <div className="mt-1 h-2 w-20 bg-white/10 rounded-full" />
+        </div>
+      );
+    }
+
     return (
       <div className={cn('glass-card p-5 min-h-[130px] animate-pulse', className)}>
         <div className="h-3 w-20 bg-white/10 rounded-full" />
@@ -41,6 +51,28 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, clas
 
   const Icon = iconFor(weather.icon);
   const overridden = effectiveTempC !== undefined && Math.abs(effectiveTempC - weather.temp_c) > 0.1;
+  const temp = Math.round(overridden ? effectiveTempC! : weather.temp_c);
+
+  if (variant === 'compact') {
+    return (
+      <div className={cn('glass-card rounded-full px-3.5 py-2.5 flex items-center gap-2.5 min-w-0', className)}>
+        <div className="shrink-0 h-8 w-8 rounded-full bg-white/[0.07] flex items-center justify-center">
+          <Icon size={18} style={{ color: '#FF86A0' }} strokeWidth={1.7} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[20px] leading-none font-bold tracking-tight text-[#FFEDE8]">{temp}°</span>
+            {overridden && (
+              <span className="text-[11px] text-[#FFD9DA]/45 line-through">{Math.round(weather.temp_c)}°</span>
+            )}
+          </div>
+          <p className="mt-0.5 text-[10px] leading-none font-semibold uppercase tracking-wide text-[#FF86A0] truncate">
+            {tripCity ? 'Trip' : weather.city}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('glass-card p-5', className)}>
@@ -56,7 +88,7 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, clas
           </div>
           <div className="flex items-baseline gap-3 mt-1">
             <span className="text-[60px] leading-none font-bold tracking-tight text-[#FFEDE8]">
-              {Math.round(overridden ? effectiveTempC! : weather.temp_c)}°
+              {temp}°
             </span>
             {overridden && (
               <span className="text-oneui-cap text-[#FFD9DA]/50 line-through">

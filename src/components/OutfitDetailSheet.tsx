@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { BookmarkCheck, BookmarkPlus, Check, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { GeneratedOutfit, Item } from '@/types';
 
 interface Props {
@@ -35,11 +36,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
   useEffect(() => {
     if (!open) return;
+    const original = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = original;
       window.removeEventListener('keydown', onKey);
     };
   }, [open, onClose]);
@@ -49,7 +51,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
   if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center">
       {/* Backdrop */}
       <div
@@ -96,7 +98,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-4">
+        <div className="overflow-y-auto flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
           {/* Item grid */}
           <div className={cn('grid gap-3', resolved.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
             {resolved.map((it) => (
@@ -155,7 +157,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           )}
 
           {/* Actions */}
-          <div className="mt-4 mb-2 flex gap-2">
+          <div className="mt-4 flex gap-2">
             <OneUIButton
               intent={worn ? 'secondary' : 'primary'}
               size="md"
@@ -176,6 +178,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -51,7 +51,7 @@
 
   /* Reach zone — bottom padding for floating pill nav */
   .reach-zone {
-    @apply flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+96px)];
+    @apply flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+132px)];
   }
 
   .oneui-hero     { @apply text-oneui-hero text-[#FFEDE8]; }
@@ -82,6 +82,6 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }

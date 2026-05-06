@@ -3,11 +3,53 @@
 import { OneUIButton, OneUIChip, Squircle } from '@/components/oneui';
 import { FITS } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
-import { STYLE_PROFILE_ID, type StyleProfile } from '@/lib/supabase/types';
-import { Check, Loader2, Save } from 'lucide-react';
+import { STYLE_PROFILE_ID, type AvoidedCombination, type SignatureCombo, type StyleProfile } from '@/lib/supabase/types';
+import { Check, Loader2, Palette, Ruler, Save, Sparkles, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const DEFAULT_COLORS = ['black','white','cream','beige','olive','charcoal','navy','denim','tan','grey','brown','rust','burgundy'];
+
+const COLOR_HEX: Record<string, string> = {
+  black: '#050505',
+  white: '#F5EEF0',
+  cream: '#EFE3C7',
+  beige: '#CBB795',
+  olive: '#6F7751',
+  charcoal: '#2F2C30',
+  navy: '#192A43',
+  denim: '#3B5F86',
+  tan: '#B9895D',
+  grey: '#7A6870',
+  brown: '#6F4D37',
+  rust: '#9B4B32',
+  burgundy: '#6F1635',
+};
+
+const serializeSignatureCombos = (combos: SignatureCombo[]) =>
+  combos.map((c) => [c.name, c.vibe].filter(Boolean).join(' | ')).join('\n');
+
+const parseSignatureCombos = (text: string): SignatureCombo[] =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, vibe] = line.split('|').map((part) => part.trim());
+      return { name, vibe: vibe || undefined, items: [] };
+    });
+
+const serializeAvoidedCombos = (combos: AvoidedCombination[]) =>
+  combos.map((c) => [c.reason, c.items.join(', ')].filter(Boolean).join(' | ')).join('\n');
+
+const parseAvoidedCombos = (text: string): AvoidedCombination[] =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [reason, items = ''] = line.split('|').map((part) => part.trim());
+      return { reason, items: items ? items.split(',').map((item) => item.trim()).filter(Boolean) : [] };
+    });
 
 export function StyleBlueprint() {
   const [profile, setProfile] = useState<StyleProfile | null>(null);
@@ -76,6 +118,29 @@ export function StyleBlueprint() {
 
   return (
     <div className="flex flex-col gap-3">
+      <Squircle variant="raised" className="p-4">
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-[#E2335D]/15">
+            <Sparkles size={20} style={{ color: '#FF86A0' }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-oneui-h text-[#FFEDE8]">Style DNA</p>
+            <p className="mt-1 text-oneui-cap text-[#FFD9DA]/60 text-pretty">
+              {[
+                profile.height_cm ? `${profile.height_cm} cm` : null,
+                profile.weight_kg ? `${profile.weight_kg} kg` : null,
+                profile.preferred_fits.length ? `${profile.preferred_fits.slice(0, 3).join(', ')} fits` : null,
+              ].filter(Boolean).join(' · ') || 'Add your fit, frame, and rules.'}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <Stat icon={<Ruler size={15} />} label="Frame" value={profile.body_type ? 'Set' : 'Open'} />
+          <Stat icon={<Palette size={15} />} label="Palette" value={`${profile.preferred_colors.length}`} />
+          <Stat icon={<TriangleAlert size={15} />} label="Avoid" value={`${profile.avoided_colors.length}`} />
+        </div>
+      </Squircle>
+
       <Squircle variant="raised" className="p-4 flex flex-col gap-3">
         <Field label="Owner name">
           <input
@@ -128,7 +193,12 @@ export function StyleBlueprint() {
         <Field label="Preferred palette">
           <div className="flex flex-wrap gap-2">
             {DEFAULT_COLORS.map((c) => (
-              <OneUIChip key={c} active={profile.preferred_colors.includes(c)} onClick={() => toggle('preferred_colors', c)}>
+              <OneUIChip
+                key={c}
+                active={profile.preferred_colors.includes(c)}
+                onClick={() => toggle('preferred_colors', c)}
+                leftIcon={<Swatch color={COLOR_HEX[c]} />}
+              >
                 {c}
               </OneUIChip>
             ))}
@@ -140,11 +210,40 @@ export function StyleBlueprint() {
         <Field label="Avoid these colors">
           <div className="flex flex-wrap gap-2">
             {DEFAULT_COLORS.map((c) => (
-              <OneUIChip key={c} active={profile.avoided_colors.includes(c)} onClick={() => toggle('avoided_colors', c)}>
+              <OneUIChip
+                key={c}
+                active={profile.avoided_colors.includes(c)}
+                onClick={() => toggle('avoided_colors', c)}
+                leftIcon={<Swatch color={COLOR_HEX[c]} />}
+              >
                 {c}
               </OneUIChip>
             ))}
           </div>
+        </Field>
+      </Squircle>
+
+      <Squircle variant="raised" className="p-4">
+        <Field label="Signature combos">
+          <textarea
+            rows={3}
+            value={serializeSignatureCombos(profile.signature_combos)}
+            placeholder="black tee + relaxed denim | casual"
+            onChange={(e) => set('signature_combos', parseSignatureCombos(e.target.value))}
+            className="w-full min-h-24 p-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+          />
+        </Field>
+      </Squircle>
+
+      <Squircle variant="raised" className="p-4">
+        <Field label="Avoided combinations">
+          <textarea
+            rows={3}
+            value={serializeAvoidedCombos(profile.avoided_combinations)}
+            placeholder="skinny jeans with chunky sneakers | bad proportion"
+            onChange={(e) => set('avoided_combinations', parseAvoidedCombos(e.target.value))}
+            className="w-full min-h-24 p-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+          />
         </Field>
       </Squircle>
 
@@ -169,6 +268,28 @@ export function StyleBlueprint() {
         {saving ? 'Saving…' : saved ? 'Saved' : 'Save blueprint'}
       </OneUIButton>
     </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-[16px] bg-white/[0.05] border border-white/[0.06] px-3 py-2">
+      <div className="flex items-center gap-1.5 text-[#FF86A0]">
+        {icon}
+        <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="mt-1 text-[15px] leading-none font-semibold text-[#FFEDE8]">{value}</p>
+    </div>
+  );
+}
+
+function Swatch({ color }: { color: string }) {
+  return (
+    <span
+      className="h-3.5 w-3.5 rounded-full border border-white/20"
+      style={{ background: color }}
+      aria-hidden
+    />
   );
 }
 

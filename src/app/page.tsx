@@ -152,29 +152,38 @@ export default function HomePage() {
     <main className="min-h-dvh">
 
       {/* ── VIEWING AREA ── */}
-      <div className="px-5 pt-16 pb-6">
-        <p suppressHydrationWarning className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
-          {today}{weather?.city ? ` · ${weather.city}` : ''}
-        </p>
-        <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
-          {greeting}
-        </h1>
+      <div className="px-5 pt-14 pb-4">
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p suppressHydrationWarning className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-2 truncate">
+              {today}{weather?.city ? ` · ${weather.city}` : ''}
+            </p>
+            <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
+              {greeting}
+            </h1>
+          </div>
+          <WeatherWidget
+            weather={weather}
+            effectiveTempC={environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : undefined}
+            tripCity={tripCity}
+            variant="compact"
+            className="shrink-0 w-[126px]"
+          />
+        </div>
       </div>
 
       {/* ── INTERACTION AREA ── */}
       <div className="reach-zone">
 
-        {/* Weather glass card */}
-        <WeatherWidget
-          weather={weather}
-          effectiveTempC={environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : undefined}
-          tripCity={tripCity}
-        />
-
         {/* Controls glass card */}
-        <div className="glass-card p-5 flex flex-col gap-4">
+        <div className="glass-card p-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase">
+              Dress for
+            </p>
+            <TripModePicker tripCity={tripCity} onChange={setTripCity} />
+          </div>
           <EnvironmentToggle value={environment} onChange={setEnvironment} />
-          <TripModePicker tripCity={tripCity} onChange={setTripCity} />
           <ModeSelector value={mode} onChange={setMode} customContext={customContext} onCustomContextChange={setCustomContext} />
 
           {/* When? chips */}
@@ -218,22 +227,35 @@ export default function HomePage() {
 
         {/* Outfit cards */}
         {outfits.length > 0 && (
-          <div className="flex flex-col gap-3 mt-1">
-            <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase px-1">
-              Fresh for you
-            </p>
-            {outfits.map((o, idx) => (
-              <OutfitCard
-                key={idx}
-                outfit={o}
-                items={items}
-                saved={savedIdxs.has(idx)}
-                worn={wornOutfitIdx === idx}
-                onSave={() => toggleSave(idx)}
-                onWear={() => markWorn(idx)}
-              />
-            ))}
-          </div>
+          <section className="mt-1">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase">
+                Fresh for you
+              </p>
+              <p className="text-[11px] font-semibold text-[#FFD9DA]/45">
+                {outfits.length} looks
+              </p>
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-4 px-4 pb-2">
+              {outfits.map((o, idx) => (
+                <OutfitCard
+                  key={idx}
+                  outfit={o}
+                  items={items}
+                  saved={savedIdxs.has(idx)}
+                  worn={wornOutfitIdx === idx}
+                  onSave={() => toggleSave(idx)}
+                  onWear={() => markWorn(idx)}
+                  className="w-[calc(100vw-2rem)] max-w-[544px] shrink-0 snap-center"
+                />
+              ))}
+            </div>
+            <div className="mt-1 flex justify-center gap-1.5" aria-hidden>
+              {outfits.map((_, idx) => (
+                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-[#FFD9DA]/25" />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Empty wardrobe nudge */}
