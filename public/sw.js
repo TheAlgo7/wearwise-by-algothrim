@@ -4,7 +4,7 @@
 //
 // Bump SW_VERSION to force all clients to pick up changes.
 
-const SW_VERSION = 'v1.0.0';
+const SW_VERSION = 'v1.0.1';
 const RUNTIME_CACHE = `wearwise-runtime-${SW_VERSION}`;
 const PRECACHE = `wearwise-precache-${SW_VERSION}`;
 
@@ -12,9 +12,9 @@ const APP_SHELL = [
   '/',
   '/offline',
   '/manifest.webmanifest',
-  '/icons/icon.svg',
-  '/icons/icon-maskable.svg',
-  '/icons/apple-touch-icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.ico',
 ];
 
 self.addEventListener('install', (event) => {

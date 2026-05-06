@@ -42,7 +42,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # ─── Local agent / AI notes ──────────────────────────────────────────────────
+# Personal AI context & design notes — not intended for a public repo
 .impeccable.md
+*.impeccable.md
 
 # ─── OS artifacts ────────────────────────────────────────────────────────────
 .DS_Store
