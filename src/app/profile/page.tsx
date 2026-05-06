@@ -14,7 +14,7 @@ export default function ProfilePage() {
       <div className="reach-zone">
         <StyleBlueprint />
         <p className="text-center text-[11px] mt-6" style={{ color: 'rgba(255,217,218,0.3)' }}>
-          {APP_TAGLINE} · v0.1
+          {APP_TAGLINE} · v1.4
         </p>
       </div>
     </main>
