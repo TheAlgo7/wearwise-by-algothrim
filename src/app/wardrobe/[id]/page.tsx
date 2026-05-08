@@ -89,7 +89,7 @@ export default function ItemDetailPage({ params }: PageProps) {
         }
       />
       <div className="reach-zone">
-        <div className={cn('relative overflow-hidden rounded-[28px] bg-[#1A1819] border border-white/[0.07]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
+        <div className={cn('relative overflow-hidden rounded-[28px] bg-black border-2 border-white/[0.15]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
           {item.image_url ? (
             <div className={cn('absolute', footwear ? 'inset-[12%]' : 'inset-[8%]')}>
               <Image

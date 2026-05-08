@@ -11,5 +11,5 @@ export function isFootwear(item: Pick<Item, 'category' | 'name'>) {
 }
 
 export function itemImageInset(item: Pick<Item, 'category' | 'name'>) {
-  return isFootwear(item) ? 'inset-[12%]' : 'inset-0';
+  return isFootwear(item) ? 'inset-[6%]' : 'inset-0';
 }

@@ -25,7 +25,7 @@ export function OneUIHeader({ title, eyebrow, subtitle, right, className }: OneU
           <p className="mt-2 text-oneui-body text-[#FFD9DA]/80 text-pretty">{subtitle}</p>
         ) : null}
       </div>
-      {right ? <div className="shrink-0 pb-1">{right}</div> : null}
+      {right ? <div className="shrink-0 self-start">{right}</div> : null}
     </header>
   );
 }
