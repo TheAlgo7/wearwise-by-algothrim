@@ -10,6 +10,6 @@ export function isFootwear(item: Pick<Item, 'category' | 'name'>) {
   return layer === 'footwear' || FOOTWEAR_TERMS.some((term) => category.includes(term) || name.includes(term));
 }
 
-export function itemImagePadding(item: Pick<Item, 'category' | 'name'>) {
-  return isFootwear(item) ? 'p-[12%]' : 'p-0';
+export function itemImageInset(item: Pick<Item, 'category' | 'name'>) {
+  return isFootwear(item) ? 'inset-[12%]' : 'inset-0';
 }

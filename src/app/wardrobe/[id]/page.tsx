@@ -2,7 +2,7 @@
 
 import { OneUIButton, OneUIHeader, Squircle } from '@/components/oneui';
 import { cn } from '@/lib/cn';
-import { isFootwear, itemImagePadding } from '@/lib/item-presentation';
+import { isFootwear } from '@/lib/item-presentation';
 import { createClient } from '@/lib/supabase/client';
 import type { Item } from '@/types';
 import { Archive, ArrowLeft, ChevronDown, RotateCcw, Trash2 } from 'lucide-react';
@@ -89,9 +89,9 @@ export default function ItemDetailPage({ params }: PageProps) {
         }
       />
       <div className="reach-zone">
-        <div className={cn('relative overflow-hidden rounded-[28px] bg-black border border-white/[0.05]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
+        <div className={cn('relative overflow-hidden rounded-[28px] bg-[#1A1819] border border-white/[0.07]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
           {item.image_url ? (
-            <div className={cn('absolute inset-0', itemImagePadding(item))}>
+            <div className={cn('absolute', footwear ? 'inset-[12%]' : 'inset-[8%]')}>
               <Image
                 src={item.image_url}
                 alt={item.name}

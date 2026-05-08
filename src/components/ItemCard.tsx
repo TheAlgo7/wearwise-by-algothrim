@@ -2,7 +2,7 @@
 
 import { Squircle } from '@/components/oneui';
 import { cn } from '@/lib/cn';
-import { itemImagePadding } from '@/lib/item-presentation';
+import { itemImageInset } from '@/lib/item-presentation';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Item } from '@/types';
@@ -21,7 +21,7 @@ export function ItemCard({ item, compact, priority, className }: Props) {
       <Squircle variant="flat" className={cn('overflow-hidden', compact && 'rounded-squircle-sm')}>
         <div className={cn('relative w-full bg-black rounded-b-[16px]', compact ? 'aspect-square' : 'aspect-[3/4]')}>
           {item.image_url ? (
-            <div className={cn('absolute inset-0', itemImagePadding(item))}>
+            <div className={cn('absolute', itemImageInset(item))}>
               <Image
                 src={item.image_url}
                 alt={item.name}
