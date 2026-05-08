@@ -57,16 +57,16 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
     return (
       <div className={cn('glass-card rounded-full px-3.5 py-2.5 flex items-center gap-2.5 min-w-0', className)}>
         <div className="shrink-0 h-8 w-8 rounded-full bg-white/[0.07] flex items-center justify-center">
-          <Icon size={18} style={{ color: '#FF86A0' }} strokeWidth={1.7} />
+          <Icon size={18} className="text-crimson-300" strokeWidth={1.7} />
         </div>
         <div className="min-w-0">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[20px] leading-none font-bold tracking-tight text-[#FFEDE8]">{temp}°</span>
+            <span className="text-[20px] leading-none font-bold tracking-tight text-crimson-50">{temp}°</span>
             {overridden && (
-              <span className="text-[11px] text-[#FFD9DA]/45 line-through">{Math.round(weather.temp_c)}°</span>
+              <span className="text-[11px] text-crimson-100/45 line-through">{Math.round(weather.temp_c)}°</span>
             )}
           </div>
-          <p className="mt-0.5 text-[10px] leading-none font-semibold uppercase tracking-wide text-[#FF86A0] truncate">
+          <p className="mt-0.5 text-[10px] leading-none font-semibold uppercase tracking-wide text-crimson-300 truncate">
             {tripCity ? 'Trip' : weather.city}
           </p>
         </div>
@@ -80,39 +80,39 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             {tripCity && (
-              <span className="text-[#E2335D] text-oneui-cap font-bold tracking-widest uppercase">TRIP ·</span>
+              <span className="text-crimson-400 text-oneui-cap font-bold tracking-widest uppercase">TRIP ·</span>
             )}
-            <span className="text-[#FF86A0] text-oneui-cap font-semibold tracking-wider uppercase truncate">
+            <span className="text-crimson-300 text-oneui-cap font-semibold tracking-wider uppercase truncate">
               {weather.city}, {weather.country}
             </span>
           </div>
           <div className="flex items-baseline gap-3 mt-1">
-            <span className="text-[60px] leading-none font-bold tracking-tight text-[#FFEDE8]">
+            <span className="text-[60px] leading-none font-bold tracking-tight text-crimson-50">
               {temp}°
             </span>
             {overridden && (
-              <span className="text-oneui-cap text-[#FFD9DA]/50 line-through">
+              <span className="text-oneui-cap text-crimson-100/50 line-through">
                 {Math.round(weather.temp_c)}°
               </span>
             )}
           </div>
-          <p className="mt-1 text-oneui-body text-[#FFD9DA]/80 capitalize">{weather.condition}</p>
+          <p className="mt-1 text-oneui-body text-crimson-100/80 capitalize">{weather.condition}</p>
         </div>
         <div className="shrink-0 h-[64px] w-[64px] rounded-full bg-white/[0.07] flex items-center justify-center">
-          <Icon size={38} style={{ color: '#FF86A0' }} strokeWidth={1.5} />
+          <Icon size={38} className="text-crimson-300" strokeWidth={1.5} />
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-5 text-oneui-cap text-[#FFD9DA]/60">
+      <div className="mt-4 flex items-center gap-5 text-oneui-cap text-crimson-100/60">
         <span className="flex items-center gap-1.5">
-          <Droplets size={13} style={{ color: '#FF86A0' }} />
+          <Droplets size={13} className="text-crimson-300" />
           {weather.humidity}%
         </span>
         <span className="flex items-center gap-1.5">
-          <Wind size={13} style={{ color: '#FF86A0' }} />
+          <Wind size={13} className="text-crimson-300" />
           {weather.wind_kph} kph
         </span>
         {weather.is_night && (
-          <span className="flex items-center gap-1.5" style={{ color: '#FF86A0' }}>
+          <span className="flex items-center gap-1.5 text-crimson-300">
             <Moon size={13} />night
           </span>
         )}

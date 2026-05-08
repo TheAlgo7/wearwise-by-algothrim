@@ -270,16 +270,18 @@ export function AddItemForm() {
         </Squircle>
       )}
 
-      <Field label="Name">
+      <Field label="Name" htmlFor="item-name">
         <input
+          id="item-name"
           value={tags.name ?? ''}
           onChange={(e) => setTags({ ...tags, name: e.target.value })}
           className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
         />
       </Field>
 
-      <Field label="Category">
+      <Field label="Category" htmlFor="item-category">
         <select
+          id="item-category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
@@ -319,9 +321,10 @@ export function AddItemForm() {
         </div>
       </Field>
 
-      <Field label={`Can be worn open (button-downs)`}>
+      <Field label="Can be worn open (button-downs)" htmlFor="item-worn-open">
         <label className="flex items-center gap-3 h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06]">
           <input
+            id="item-worn-open"
             type="checkbox"
             checked={!!tags.can_be_worn_open}
             onChange={(e) => setTags({ ...tags, can_be_worn_open: e.target.checked })}
@@ -331,8 +334,9 @@ export function AddItemForm() {
         </label>
       </Field>
 
-      <Field label={`Formality (1 gym · 5 black-tie): ${tags.formality ?? 3}`}>
+      <Field label={`Formality (1 gym · 5 black-tie): ${tags.formality ?? 3}`} htmlFor="item-formality">
         <input
+          id="item-formality"
           type="range"
           min={1}
           max={5}
@@ -345,6 +349,8 @@ export function AddItemForm() {
       <Field label={`Temperature range: ${tags.min_temp_c ?? '–'}°C to ${tags.max_temp_c ?? '–'}°C`}>
         <div className="grid grid-cols-2 gap-2">
           <input
+            id="item-temp-min"
+            aria-label="Minimum temperature °C"
             type="number"
             placeholder="min °C"
             value={tags.min_temp_c ?? ''}
@@ -352,6 +358,8 @@ export function AddItemForm() {
             className="h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
           />
           <input
+            id="item-temp-max"
+            aria-label="Maximum temperature °C"
             type="number"
             placeholder="max °C"
             value={tags.max_temp_c ?? ''}
@@ -419,10 +427,10 @@ export function AddItemForm() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="oneui-hero-sub text-fog-400">{label}</span>
+      <label htmlFor={htmlFor} className="oneui-hero-sub text-fog-400">{label}</label>
       {children}
     </div>
   );

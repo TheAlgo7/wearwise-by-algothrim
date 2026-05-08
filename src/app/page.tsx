@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { cn } from '@/lib/cn';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { EnvironmentToggle } from '@/components/EnvironmentToggle';
 import { TripModePicker } from '@/components/TripModePicker';
@@ -39,26 +40,31 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const supa = createClient();
     (async () => {
       const { data } = await supa
         .from('items')
         .select('*, category:categories(*)')
-        .eq('archived', false);
-      setItems((data ?? []) as Item[]);
+        .eq('archived', false)
+        .abortSignal(controller.signal);
+      if (!controller.signal.aborted) setItems((data ?? []) as Item[]);
     })();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchWeather = async (params: string) => {
-      const r = await fetch(`/api/weather?${params}`);
+      const r = await fetch(`/api/weather?${params}`, { signal: controller.signal });
       if (r.ok) setWeather(await r.json());
       else setWeather(null);
     };
 
-    if (tripCity) { void fetchWeather(`city=${encodeURIComponent(tripCity)}`); return; }
+    if (tripCity) { void fetchWeather(`city=${encodeURIComponent(tripCity)}`); return () => controller.abort(); }
 
-    if (!navigator.geolocation) { void fetchWeather(''); return; }
+    if (!navigator.geolocation) { void fetchWeather(''); return () => controller.abort(); }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -68,6 +74,7 @@ export default function HomePage() {
       () => { void fetchWeather(''); },
       { maximumAge: 600_000, timeout: 6000 }
     );
+    return () => controller.abort();
   }, [tripCity]);
 
   const effectiveTempC = useMemo(
@@ -115,13 +122,15 @@ export default function HomePage() {
       is_saved: savedIdxs.has(idx),
       context: { temp_c: effectiveTempC ?? weather?.temp_c, condition: weather?.condition, environment, mode, city: weather?.city },
     });
-    for (const id of o.items) {
-      const current = items.find((i) => i.id === id);
-      await supa
-        .from('items')
-        .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
-        .eq('id', id);
-    }
+    await Promise.all(
+      o.items.map((id) => {
+        const current = items.find((i) => i.id === id);
+        return supa
+          .from('items')
+          .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
+          .eq('id', id);
+      })
+    );
   }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode, items]);
 
   const toggleSave = useCallback((idx: number) => {
@@ -155,10 +164,10 @@ export default function HomePage() {
       <div className="px-5 pt-14 pb-4">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p suppressHydrationWarning className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-2 truncate">
+            <p suppressHydrationWarning className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase mb-2 truncate">
               {today}{weather?.city ? ` · ${weather.city}` : ''}
             </p>
-            <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-[#FFEDE8]">
+            <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-crimson-50">
               {greeting}
             </h1>
           </div>
@@ -178,7 +187,7 @@ export default function HomePage() {
         {/* Controls glass card */}
         <div className="glass-card p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3 px-1">
-            <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase">
+            <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
               Dress for
             </p>
             <TripModePicker tripCity={tripCity} onChange={setTripCity} />
@@ -195,12 +204,12 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setPlannedFor(t)}
-                  className="press rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors"
-                  style={{
-                    background: active ? 'rgba(226,51,93,0.20)' : 'rgba(255,255,255,0.06)',
-                    color: active ? '#FF86A0' : '#A89098',
-                    border: `1px solid ${active ? 'rgba(226,51,93,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                  }}
+                  className={cn(
+                    'press rounded-full px-4 py-3 text-[12px] font-semibold transition-colors border',
+                    active
+                      ? 'bg-crimson-400/20 text-crimson-300 border-crimson-400/35'
+                      : 'bg-white/[0.06] text-fog-300 border-white/[0.08]'
+                  )}
                 >
                   {labels[t]}
                 </button>
@@ -214,13 +223,7 @@ export default function HomePage() {
 
         {/* Error */}
         {error && (
-          <div
-            className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-[#FFEDE8]"
-            style={{
-              background: 'rgba(226,51,93,0.15)',
-              border: '1px solid rgba(226,51,93,0.35)',
-            }}
-          >
+          <div className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-crimson-50 bg-crimson-400/15 border border-crimson-400/35">
             {error}
           </div>
         )}
@@ -229,10 +232,10 @@ export default function HomePage() {
         {outfits.length > 0 && (
           <section className="mt-1">
             <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase">
+              <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
                 Fresh for you
               </p>
-              <p className="text-[11px] font-semibold text-[#FFD9DA]/45">
+              <p className="text-[11px] font-semibold text-crimson-100/45">
                 {outfits.length} looks
               </p>
             </div>
@@ -252,7 +255,7 @@ export default function HomePage() {
             </div>
             <div className="mt-1 flex justify-center gap-1.5" aria-hidden>
               {outfits.map((_, idx) => (
-                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-[#FFD9DA]/25" />
+                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-crimson-100/25" />
               ))}
             </div>
           </section>
@@ -260,14 +263,11 @@ export default function HomePage() {
 
         {/* Empty wardrobe nudge */}
         {items.length === 0 && !generating && (
-          <div
-            className="rounded-[2rem] px-5 py-6 text-center"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <p className="text-[#FFD9DA]/70 text-oneui-body">
+          <div className="rounded-[2rem] px-5 py-6 text-center bg-white/[0.04] border border-white/[0.07]">
+            <p className="text-crimson-100/70 text-oneui-body">
               Your wardrobe is empty.
             </p>
-            <p className="text-[#FF86A0] text-oneui-cap mt-1">
+            <p className="text-crimson-300 text-oneui-cap mt-1">
               Add a few pieces, then come back here.
             </p>
           </div>

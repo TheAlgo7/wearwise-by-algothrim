@@ -9,11 +9,12 @@ interface OneUISheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  'aria-label'?: string;
   children: ReactNode;
   className?: string;
 }
 
-export function OneUISheet({ open, onClose, title, children, className }: OneUISheetProps) {
+export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, children, className }: OneUISheetProps) {
   useEffect(() => {
     if (!open) return;
     const original = document.body.style.overflow;
@@ -42,6 +43,8 @@ export function OneUISheet({ open, onClose, title, children, className }: OneUIS
         )}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={title ? 'oneui-sheet-title' : undefined}
+        aria-label={!title ? ariaLabel : undefined}
       >
         {/* grabber */}
         <div className="pt-2 pb-1 flex justify-center">
@@ -49,7 +52,7 @@ export function OneUISheet({ open, onClose, title, children, className }: OneUIS
         </div>
         {title ? (
           <div className="flex items-center justify-between px-5 pt-1 pb-3">
-            <h2 className="text-oneui-h text-fog-100">{title}</h2>
+            <h2 id="oneui-sheet-title" className="text-oneui-h text-fog-100">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Close"

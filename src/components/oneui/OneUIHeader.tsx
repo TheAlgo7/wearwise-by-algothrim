@@ -14,15 +14,15 @@ export function OneUIHeader({ title, eyebrow, subtitle, right, className }: OneU
     <header className={cn('flex items-end justify-between gap-4 px-5 pt-14 pb-5', className)}>
       <div className="min-w-0 flex-1">
         {eyebrow ? (
-          <div className="text-oneui-cap text-[#FF86A0] font-semibold tracking-widest uppercase mb-3">
+          <div className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase mb-3">
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="text-[30px] font-semibold leading-[1.15] tracking-tight text-[#FFEDE8] text-balance">
+        <h1 className="text-[30px] font-semibold leading-[1.15] tracking-tight text-crimson-50 text-balance">
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-2 text-oneui-body text-[#FFD9DA]/80 text-pretty">{subtitle}</p>
+          <p className="mt-2 text-oneui-body text-crimson-100/80 text-pretty">{subtitle}</p>
         ) : null}
       </div>
       {right ? <div className="shrink-0 self-start">{right}</div> : null}

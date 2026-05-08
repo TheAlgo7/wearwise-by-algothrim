@@ -54,6 +54,7 @@ const config: Config = {
       },
       boxShadow: {
         'card': '0 1px 0 rgba(255,255,255,0.04) inset',
+        'crimson-glow': '0 0 20px rgba(226,51,93,0.4)',
       },
       backgroundImage: {
         'crimson-gradient': 'linear-gradient(135deg, #E2335D 0%, #BB165F 100%)',

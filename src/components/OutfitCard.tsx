@@ -41,11 +41,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
             {resolved.map((it) => (
               <div
                 key={it.id}
-                className="shrink-0 w-[88px] h-[88px] rounded-[1.25rem] overflow-hidden flex items-center justify-center"
-                style={{
-                  background: '#000',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
+                className="shrink-0 w-[88px] h-[88px] rounded-[1.25rem] overflow-hidden flex items-center justify-center bg-ink-0 border border-white/[0.1]"
               >
                 {it.image_url ? (
                   <Image
@@ -57,7 +53,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
                     unoptimized
                   />
                 ) : (
-                  <Shirt size={28} className="text-[#FFD9DA]/30" strokeWidth={1.4} />
+                  <Shirt size={28} className="text-crimson-100/30" strokeWidth={1.4} />
                 )}
               </div>
             ))}
@@ -68,7 +64,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
             {resolved.map((it) => (
               <span
                 key={it.id}
-                className="shrink-0 text-oneui-cap text-[#FF86A0] bg-[#E2335D]/10 rounded-full px-2.5 py-0.5"
+                className="shrink-0 text-oneui-cap text-crimson-300 bg-crimson-400/10 rounded-full px-2.5 py-0.5"
               >
                 {it.name}
               </span>
@@ -76,9 +72,9 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
           </div>
 
           {/* Reasoning — clamped, tap to see full */}
-          <p className="mt-3 text-[13px] leading-[1.6] text-[#FFD9DA]/70 text-pretty line-clamp-3">{outfit.reasoning}</p>
+          <p className="mt-3 text-[13px] leading-[1.6] text-crimson-100/70 text-pretty line-clamp-3">{outfit.reasoning}</p>
 
-          <p className="mt-1.5 text-[11px] text-[#FF86A0]/50 font-medium">Tap to view full outfit →</p>
+          <p className="mt-1.5 text-[11px] text-crimson-300/50 font-medium">Tap to view full outfit →</p>
         </button>
 
         {/* Actions — stopPropagation so they don't open the sheet */}
@@ -106,11 +102,11 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
         {onRate && (
           <div className="pb-4 flex items-center gap-1.5 justify-center" onClick={(e) => e.stopPropagation()}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} onClick={() => onRate(n)} aria-label={`Rate ${n}`} className="press p-1">
+              <button key={n} onClick={() => onRate(n)} aria-label={`Rate ${n}`} className="press p-2.5">
                 <Star
                   size={18}
-                  className={n <= (rating ?? 0) ? '' : 'text-white/20'}
-                  style={n <= (rating ?? 0) ? { color: '#E2335D', fill: '#E2335D' } : {}}
+                  className={n <= (rating ?? 0) ? 'text-crimson-400' : 'text-white/20'}
+                  style={n <= (rating ?? 0) ? { fill: '#E2335D' } : {}}
                 />
               </button>
             ))}

@@ -21,6 +21,7 @@ export default function ItemDetailPage({ params }: PageProps) {
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [manageOpen, setManageOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     const supa = createClient();
@@ -42,7 +43,7 @@ export default function ItemDetailPage({ params }: PageProps) {
   };
 
   const remove = async () => {
-    if (!confirm('Delete this item permanently? This cannot be undone.')) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
     const supa = createClient();
     if (item?.image_path) {
       await supa.storage.from('items').remove([item.image_path]);
@@ -143,19 +144,20 @@ export default function ItemDetailPage({ params }: PageProps) {
 
         <div className="pt-1">
           <button
-            onClick={() => setManageOpen((v) => !v)}
-            className="press w-full h-11 rounded-full bg-white/[0.06] border border-white/[0.06] px-4 flex items-center justify-between text-oneui-cap font-semibold text-[#D9C8CC] outline-none focus-visible:ring-2 focus-visible:ring-[#E2335D]"
+            onClick={() => { setManageOpen((v) => !v); setConfirmDelete(false); }}
+            aria-expanded={manageOpen}
+            aria-controls="manage-panel"
+            className="press w-full h-11 rounded-full bg-white/[0.06] border border-white/[0.06] px-4 flex items-center justify-between text-oneui-cap font-semibold text-fog-200 outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
           >
             <span>Manage item</span>
             <ChevronDown
               size={15}
-              className={manageOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-              style={{ color: '#FF86A0' }}
+              className={cn(manageOpen ? 'rotate-180' : '', 'transition-transform text-crimson-300')}
             />
           </button>
 
           {manageOpen && (
-            <Squircle variant="flat" className="mt-3 p-3 animate-oneui-fade">
+            <Squircle id="manage-panel" variant="flat" className="mt-3 p-3 animate-oneui-fade">
               <div className="grid grid-cols-2 gap-2">
                 <OneUIButton
                   intent="secondary"
@@ -164,13 +166,24 @@ export default function ItemDetailPage({ params }: PageProps) {
                 >
                   {item.archived ? 'Unarchive' : 'Archive'}
                 </OneUIButton>
-                <OneUIButton intent="outline" leftIcon={<Trash2 size={16} />} onClick={remove}>
-                  Delete
+                <OneUIButton
+                  intent={confirmDelete ? 'danger' : 'outline'}
+                  leftIcon={<Trash2 size={16} />}
+                  onClick={remove}
+                >
+                  {confirmDelete ? 'Confirm delete' : 'Delete'}
                 </OneUIButton>
               </div>
-              <p className="mt-2 px-1 text-[11px] leading-[1.4] text-[#FFD9DA]/45">
-                Delete asks for confirmation. Archive hides this piece from outfit generation.
-              </p>
+              {confirmDelete && (
+                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-crimson-300">
+                  Tap again to permanently delete. This cannot be undone.
+                </p>
+              )}
+              {!confirmDelete && (
+                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-crimson-100/45">
+                  Archive hides this piece from outfit generation.
+                </p>
+              )}
             </Squircle>
           )}
         </div>

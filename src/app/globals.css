@@ -9,11 +9,15 @@
     --sar: env(safe-area-inset-right);
     --sab: env(safe-area-inset-bottom);
     --sal: env(safe-area-inset-left);
+    /* Motion timing: use fast for micro-interactions, base for page-level */
+    --duration-fast: 180ms;
+    --duration-base: 240ms;
+    --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   html, body {
     background: #000000;
-    color: #F5EEF0;
+    color: theme('colors.fog.100');
     font-family: 'SamsungOne', 'SF Pro Display', system-ui, -apple-system, Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -40,12 +44,12 @@
 @layer components {
   /* Flat matte card */
   .app-card {
-    @apply bg-[#1A1819] rounded-[20px] border border-white/[0.05];
+    @apply bg-ink-200 rounded-[20px] border border-white/[0.05];
   }
 
   /* Legacy aliases kept so existing components compile */
   .glass-card    { @apply app-card; }
-  .glass-card-sm { @apply bg-[#1A1819] rounded-[16px] border border-white/[0.05]; }
+  .glass-card-sm { @apply bg-ink-200 rounded-[16px] border border-white/[0.05]; }
   .oneui-card        { @apply app-card; }
   .oneui-card-raised { @apply app-card; }
 
@@ -54,8 +58,8 @@
     @apply flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+132px)];
   }
 
-  .oneui-hero     { @apply text-oneui-hero text-[#FFEDE8]; }
-  .oneui-hero-sub { @apply text-oneui-cap text-[#FF86A0] tracking-widest uppercase font-semibold; }
+  .oneui-hero     { @apply text-oneui-hero text-crimson-50; }
+  .oneui-hero-sub { @apply text-oneui-cap text-crimson-300 tracking-widest uppercase font-semibold; }
 
   .chip-row {
     @apply flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4;
@@ -76,12 +80,16 @@
 
 /* Page transition — runs on every route change via template.tsx */
 @keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

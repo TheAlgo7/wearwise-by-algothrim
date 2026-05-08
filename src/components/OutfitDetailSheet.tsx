@@ -22,6 +22,7 @@ interface Props {
 export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, onSave, onWear }: Props) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
     if (open) {
@@ -68,11 +69,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           background: '#0E0D0C',
           maxHeight: '92dvh',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 420ms cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: reducedMotion ? 'none' : 'transform 400ms var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1))',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
         }}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="outfit-sheet-title"
       >
         {/* Drag handle */}
         <div className="pt-3 pb-0 flex justify-center shrink-0">
@@ -82,8 +84,8 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex items-start justify-between shrink-0">
           <div>
-            <p className="text-[11px] font-semibold text-[#FF86A0] tracking-widest uppercase">Today's pick</p>
-            <h2 className="text-[24px] font-semibold text-[#FFEDE8] leading-[1.15] tracking-tight mt-1">
+            <p className="text-[11px] font-semibold text-crimson-300 tracking-widest uppercase">Today's pick</p>
+            <h2 id="outfit-sheet-title" className="text-[24px] font-semibold text-crimson-50 leading-[1.15] tracking-tight mt-1">
               {resolved.length} piece outfit
             </h2>
           </div>
@@ -121,7 +123,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
                       unoptimized
                     />
                   ) : (
-                    <span className="text-[#FFD9DA]/30 text-[11px] text-center px-4 leading-relaxed">
+                    <span className="text-crimson-100/30 text-[11px] text-center px-4 leading-relaxed">
                       {it.name}
                     </span>
                   )}
@@ -129,12 +131,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
                 {/* Item info */}
                 <div className="mt-2.5 px-0.5">
-                  <p className="text-[14px] font-semibold text-[#FFEDE8] leading-tight">{it.name}</p>
-                  <p className="text-[11px] text-[#A89098] mt-0.5 capitalize">
+                  <p className="text-[14px] font-semibold text-crimson-50 leading-tight">{it.name}</p>
+                  <p className="text-[11px] text-fog-300 mt-0.5 capitalize">
                     {[it.category?.name, it.fit].filter(Boolean).join(' · ')}
                   </p>
                   {it.material.length > 0 && (
-                    <p className="text-[11px] mt-0.5 capitalize" style={{ color: '#FF86A0', opacity: 0.7 }}>
+                    <p className="text-[11px] mt-0.5 capitalize text-crimson-300/70">
                       {it.material.join(', ')}
                     </p>
                   )}
@@ -145,14 +147,11 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
           {/* Reasoning */}
           {outfit.reasoning && (
-            <div
-              className="mt-5 rounded-[16px] px-4 py-4"
-              style={{ background: 'rgba(226,51,93,0.06)', border: '1px solid rgba(226,51,93,0.12)' }}
-            >
-              <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#FF86A0' }}>
+            <div className="mt-5 rounded-[16px] px-4 py-4 bg-crimson-400/[0.06] border border-crimson-400/[0.12]">
+              <p className="text-[10px] font-semibold tracking-widest uppercase mb-2 text-crimson-300">
                 Why this works
               </p>
-              <p className="text-[13px] leading-[1.7] text-[#D9C8CC]">{outfit.reasoning}</p>
+              <p className="text-[13px] leading-[1.7] text-fog-200">{outfit.reasoning}</p>
             </div>
           )}
 

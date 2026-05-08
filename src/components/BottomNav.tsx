@@ -39,7 +39,7 @@ export function BottomNav() {
                   <span
                     aria-hidden
                     className="absolute inset-0 rounded-full bg-[#E2335D]/30"
-                    style={{ animation: 'page-enter 180ms cubic-bezier(0.22,1,0.36,1) both' }}
+                    style={{ animation: 'page-enter var(--duration-fast) var(--ease-spring) both' }}
                   />
                 )}
                 <Icon size={20} className="relative" strokeWidth={active ? 2.4 : 1.8} />
