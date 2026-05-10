@@ -90,7 +90,7 @@ export function StyleBlueprint() {
 
   const toggle = (k: 'preferred_fits' | 'preferred_colors' | 'avoided_colors', v: string) => {
     if (!profile) return;
-    const arr = profile[k];
+    const arr = (profile[k] as string[]) ?? [];
     set(k, (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]) as StyleProfile[typeof k]);
   };
 
@@ -137,7 +137,7 @@ export function StyleBlueprint() {
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Stat icon={<Ruler size={15} />} label="Frame" value={profile.body_type ? 'Set' : 'Open'} />
           <Stat icon={<Palette size={15} />} label="Palette" value={`${profile.preferred_colors.length}`} />
-          <Stat icon={<TriangleAlert size={15} />} label="Avoid" value={`${profile.avoided_colors.length}`} />
+          <Stat icon={<TriangleAlert size={15} />} label="Avoid" value={`${(profile.avoided_colors ?? []).length}`} />
         </div>
       </Squircle>
 
@@ -212,7 +212,7 @@ export function StyleBlueprint() {
             {DEFAULT_COLORS.map((c) => (
               <OneUIChip
                 key={c}
-                active={profile.avoided_colors.includes(c)}
+                active={(profile.avoided_colors ?? []).includes(c)}
                 onClick={() => toggle('avoided_colors', c)}
                 leftIcon={<Swatch color={COLOR_HEX[c]} />}
               >

@@ -23,9 +23,10 @@ interface Props {
 export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear, onRate, className }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const byId = new Map(items.map((i) => [i.id, i]));
+  const LAYER_ORDER: Record<string, number> = { base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4, timepiece: 5, accessory: 6, eyewear: 7, headwear: 8, jewelry: 9 };
   const resolved = Array.from(
     new Map(outfit.items.map((id) => byId.get(id)).filter(Boolean).map((i) => [i!.id, i!])).values()
-  );
+  ).sort((a, b) => (LAYER_ORDER[a.category?.layer_type ?? ''] ?? 99) - (LAYER_ORDER[b.category?.layer_type ?? ''] ?? 99));
 
   return (
     <>

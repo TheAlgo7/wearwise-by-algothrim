@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     event: parsed.event,
     mode_rules: mode.rules,
   });
-  const ranked = rankCandidates(shortlist, mode.rules);
+  const ranked = rankCandidates(shortlist, mode.rules, temp_c);
 
   // Layer-aware candidate selection — guarantee tops + bottoms always reach the LLM
   // so accessories don't crowd them out of a blind top-N slice.
@@ -100,11 +100,30 @@ export async function POST(req: Request) {
     ...byLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 7),
   ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx); // dedup
 
+  // BUG-008 fallback: if temp gate wiped out the wardrobe, surface best-available items
+  // with a heat advisory rather than returning an error.
+  let heatAdvisory = false;
+  let finalCandidates = candidates;
   if (candidates.length < 3) {
+    // Relax: skip all weather/formality gates — rank everything and pick the best
+    const fallbackRanked = rankCandidates(all.filter((i) => !i.archived), mode.rules, temp_c);
+    const fallbackByLayer = (layers: string[], cap: number) =>
+      fallbackRanked.filter((i) => layers.includes(i.category?.layer_type ?? '')).slice(0, cap);
+    finalCandidates = [
+      ...fallbackByLayer(['base', 'mid', 'outer'], 7),
+      ...fallbackByLayer(['bottom'], 5),
+      ...fallbackByLayer(['footwear'], 4),
+      ...fallbackByLayer(['timepiece'], 3),
+      ...fallbackByLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 7),
+    ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx);
+    heatAdvisory = true;
+  }
+
+  if (finalCandidates.length < 3) {
     return NextResponse.json(
       {
-        error: 'Not enough candidates to build outfits. Add more items or relax the mode.',
-        candidate_count: candidates.length,
+        error: 'Not enough wardrobe items to build outfits. Add more items.',
+        candidate_count: finalCandidates.length,
         context: { temp_c, condition: weather.condition, time_of_day: tod, environment: parsed.environment, mode: parsed.mode, city: weather.city },
       },
       { status: 422 }
@@ -131,7 +150,7 @@ export async function POST(req: Request) {
   };
 
   // 5. Generate outfits via multi-provider LLM (Groq → OpenRouter → Gemini)
-  const prompt = buildGeneratePrompt({ blueprint, context, candidates });
+  const prompt = buildGeneratePrompt({ blueprint, context, candidates: finalCandidates });
 
   let outfits;
   try {
@@ -145,12 +164,13 @@ export async function POST(req: Request) {
   }
 
   // 6. Validate + deduplicate by layer_type (AI sometimes stacks 2 shirts or 2 trousers)
-  const validIds = new Set(candidates.map((i) => i.id));
-  const itemById = new Map(candidates.map((i) => [i.id, i]));
+  const validIds = new Set(finalCandidates.map((i) => i.id));
+  const itemById = new Map(finalCandidates.map((i) => [i.id, i]));
 
   const cleaned = (outfits as { items: string[]; reasoning: string; confidence: number }[])
     .map((o) => {
       // Remove ids the AI hallucinated and deduplicate
+      const hallucinated = o.items.filter((id) => !validIds.has(id));
       const valid = [...new Set(o.items)].filter((id) => validIds.has(id));
       // Deduplicate clothing layers (base/mid/outer/bottom) but allow multiple accessories
       const DUPE_LAYERS = new Set(['base', 'mid', 'outer', 'bottom']);
@@ -172,13 +192,28 @@ export async function POST(req: Request) {
         ? deduped
         : deduped.filter((id) => itemById.get(id)?.category?.name !== 'Tie');
 
-      return { ...o, items: final };
+      // If the AI referenced items not in the candidate pool, note it in reasoning
+      // so the frontend can surface it for debugging without showing ghost item names
+      const reasoning = hallucinated.length > 0
+        ? `${o.reasoning} [Note: ${hallucinated.length} item(s) referenced by AI were not in your wardrobe candidates and have been removed.]`
+        : o.reasoning;
+
+      return { ...o, items: final, reasoning };
     })
-    .filter((o) => o.items.length >= 2);
+    .filter((o) => {
+      // Require at least one top (base/mid/outer) and one bottom for a complete outfit
+      const hasTop = o.items.some((id) => {
+        const layer = itemById.get(id)?.category?.layer_type ?? '';
+        return layer === 'base' || layer === 'mid' || layer === 'outer';
+      });
+      const hasBottom = o.items.some((id) => itemById.get(id)?.category?.layer_type === 'bottom');
+      return hasTop && hasBottom;
+    });
 
   return NextResponse.json({
     outfits: cleaned,
     context,
-    candidate_count: candidates.length,
+    candidate_count: finalCandidates.length,
+    ...(heatAdvisory && { heat_advisory: `It's ${temp_c}°C — your tagged wardrobe is optimised for cooler temps, so these are the most heat-appropriate pieces available.` }),
   });
 }

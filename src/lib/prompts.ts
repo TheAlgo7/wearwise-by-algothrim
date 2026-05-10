@@ -34,6 +34,12 @@ MODE GUIDANCE:
 - describe: Use the custom_context field to understand the exact occasion and dress accordingly. For parties, pick festive/smart-casual combos.
 - quick: Pick the easiest put-together outfit for right now.
 
+HEAT RULE (apply when temp_c ≥ 30°C outdoor):
+- Strongly prefer light colours: white, cream, beige, light grey, pastels. Penalise all-black or dark heavy outfits.
+- Prefer short sleeves, sleeveless, or rolled sleeves. Avoid full-length long sleeves unless no alternative exists.
+- Avoid dense synthetic or thick cotton; prefer linen, light cotton, or moisture-wicking fabrics where noted.
+- If including a long-sleeve item, call it out explicitly in reasoning and suggest rolling the sleeves.
+
 VARIETY RULE: Each generation must explore different combinations. Do NOT repeat the same outfit you might have suggested before. Rotate through the full candidate pool — use items across the entire shortlist, not just the first few.
 
 If planned_for is "tomorrow" — note this is advance planning. If "tonight" — skew evening/night energy.
@@ -41,12 +47,11 @@ If planned_for is "tomorrow" — note this is advance planning. If "tonight" —
 OUTPUT: strict JSON only — no prose, no markdown fences.
 Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}
 
-REASONING FIELD — this is the most important field. Write 2–3 punchy sentences that cover ALL of these:
-1. Why this specific combo suits the occasion/mode and Gaurav's personal style
-2. Color story — how the pieces harmonise (e.g. "the navy tones down the white so it reads clean, not stark")
-3. Body/fit note — how the silhouette works for the owner (e.g. "bootcut balances the shoulder line", "oversized top over slim bottom creates contrast")
-4. One actionable styling tip (e.g. "tuck just the front", "fold the sleeves once", "let the open shirt hang loose over the tee")
-Reference actual item names and colors. Be specific — NOT generic filler like "this is comfortable" or "this looks good".`;
+REASONING FIELD — MANDATORY. Write 2–3 punchy sentences. Every reasoning MUST include ALL THREE of these:
+1. Color story — how the pieces harmonise (e.g. "the navy tones down the white so it reads clean, not stark")
+2. Silhouette note for Gaurav's frame (6'1", lean, long torso, bootcut signature) — e.g. "bootcut flares balance the shoulder line", "oversized top over slim bottom creates proportion contrast"
+3. ONE actionable styling instruction — ALWAYS one of: (a) tuck or untuck call ("front-tuck only" / "leave untucked"), (b) sleeve instruction ("fold once to the elbow" / "keep rolled"), OR (c) a specific layering tip. This field is MANDATORY in every single outfit — never omit it.
+Reference actual item names — but ONLY items you included in the items[] array for this outfit. Never mention items not in your items list.`;
 
 /** Build the user prompt for one generation call. */
 export function buildGeneratePrompt(args: {
@@ -72,9 +77,14 @@ export function buildGeneratePrompt(args: {
       ...(isAccessory && c.notes ? { note: c.notes } : {}),
     };
   });
+  const heatWarning =
+    context.environment !== 'indoor-ac' && typeof context.temp_c === 'number' && context.temp_c >= 30
+      ? `\n⚠️ HEAT ALERT: ${context.temp_c}°C outdoor. Enforce the HEAT RULE — prioritise light colours and short sleeves. Reject dark all-black outfits unless no other option exists.`
+      : '';
+
   return [
     `STYLE BLUEPRINT:\n${blueprint}`,
-    `CONTEXT:\n${JSON.stringify(context, null, 2)}`,
+    `CONTEXT:\n${JSON.stringify(context, null, 2)}${heatWarning}`,
     `CANDIDATES (${slim.length} items):\n${JSON.stringify(slim, null, 2)}`,
     `Return 2–3 outfits. Use only these ids.`,
   ].join('\n\n');

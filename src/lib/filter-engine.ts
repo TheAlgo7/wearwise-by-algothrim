@@ -70,15 +70,15 @@ function passesGates(it: Item, ctx: FilterContext): boolean {
 
 /** Score items so we can boost signature/rare items when many candidates pass.
  *  Items with equal scores are shuffled randomly so every generation has variety. */
-export function rankCandidates(items: Item[], rules: ModeRules): Item[] {
+export function rankCandidates(items: Item[], rules: ModeRules, temp_c?: number): Item[] {
   const now = Date.now();
   // Attach a small random tiebreaker so same-scored items shuffle each call
-  const scored = items.map((it) => ({ it, s: score(it, rules, now) + Math.random() * 0.5 }));
+  const scored = items.map((it) => ({ it, s: score(it, rules, now, temp_c) + Math.random() * 0.5 }));
   scored.sort((a, b) => b.s - a.s);
   return scored.map((x) => x.it);
 }
 
-function score(it: Item, rules: ModeRules, now: number): number {
+function score(it: Item, rules: ModeRules, now: number, temp_c?: number): number {
   let s = 0;
   // Recency penalty — prefer items not worn recently
   if (it.last_worn_at) {
@@ -97,6 +97,11 @@ function score(it: Item, rules: ModeRules, now: number): number {
   if (rules.avoid_recently_worn_days && it.last_worn_at) {
     const daysAgo = (now - new Date(it.last_worn_at).getTime()) / 86_400_000;
     if (daysAgo < rules.avoid_recently_worn_days) s -= 10;
+  }
+  // Soft max_temp penalty — items above their tagged ceiling get deprioritised
+  // but are NOT hard-excluded (avoids empty shortlists in Delhi peak summer)
+  if (temp_c != null && it.max_temp_c != null && temp_c > it.max_temp_c) {
+    s -= 3;
   }
   return s;
 }
