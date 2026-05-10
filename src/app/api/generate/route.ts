@@ -119,6 +119,15 @@ export async function POST(req: Request) {
     heatAdvisory = true;
   }
 
+  // Debug log — prints candidate pool so we can verify the bouncer isn't blocking tops/bottoms
+  console.log('[generate] candidate pool:', finalCandidates.map((i) => ({
+    id: i.id,
+    name: i.name,
+    layer: i.category?.layer_type,
+    cat: i.category?.name,
+    formality: i.formality,
+  })));
+
   if (finalCandidates.length < 3) {
     return NextResponse.json(
       {
