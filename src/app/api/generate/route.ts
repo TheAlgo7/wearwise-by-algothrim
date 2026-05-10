@@ -200,18 +200,37 @@ export async function POST(req: Request) {
 
       return { ...o, items: final, reasoning };
     })
-    .filter((o) => {
-      // Require at least one top (base/mid/outer) and one bottom for a complete outfit
+    .map((o) => {
       const hasTop = o.items.some((id) => {
         const layer = itemById.get(id)?.category?.layer_type ?? '';
         return layer === 'base' || layer === 'mid' || layer === 'outer';
       });
       const hasBottom = o.items.some((id) => itemById.get(id)?.category?.layer_type === 'bottom');
-      return hasTop && hasBottom;
+      return { ...o, _hasTop: hasTop, _hasBottom: hasBottom };
     });
 
+  // 3-tier fallback — never return a blank screen
+  const tier1 = mapped.filter((o) => o._hasTop && o._hasBottom);
+  let finalOutfits: typeof mapped;
+
+  if (tier1.length > 0) {
+    finalOutfits = tier1;
+  } else {
+    const tier2 = mapped.filter((o) => o._hasTop || o._hasBottom);
+    if (tier2.length > 0) {
+      console.warn('[generate] Tier-2 fallback: no outfit has both top+bottom — returning partial outfits');
+      finalOutfits = tier2.map((o) => ({ ...o, partial_outfit: true }));
+    } else {
+      console.warn('[generate] Tier-3 fallback: no outfit has any clothing — returning raw AI output');
+      finalOutfits = mapped.map((o) => ({ ...o, incomplete: true }));
+    }
+  }
+
+  // Strip internal classification flags before sending
+  const outfits = finalOutfits.map(({ _hasTop: _t, _hasBottom: _b, ...o }) => o);
+
   return NextResponse.json({
-    outfits: cleaned,
+    outfits,
     context,
     candidate_count: finalCandidates.length,
     ...(heatAdvisory && { heat_advisory: `It's ${temp_c}°C — your tagged wardrobe is optimised for cooler temps, so these are the most heat-appropriate pieces available.` }),
