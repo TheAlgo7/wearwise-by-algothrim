@@ -61,6 +61,7 @@ const config: Config = {
       boxShadow: {
         'card':         '0 1px 0 rgba(255,255,255,0.04) inset',
         'crimson-glow': '0 0 20px rgba(226,51,93,0.4)',
+        'oneui-raised': '0 -4px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
       },
       animation: {
         'oneui-pop':  'oneui-pop 180ms cubic-bezier(0.22, 1, 0.36, 1)',

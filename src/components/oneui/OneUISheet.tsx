@@ -44,7 +44,7 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
       <div
         ref={trapRef}
         className={cn(
-          'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto bg-ink-100 rounded-t-squircle-xl shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
+          'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto bg-ink-100 rounded-t-[32px] shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
           className
         )}
         role="dialog"

@@ -4,7 +4,7 @@ import { OneUIButton } from '@/components/oneui';
 import { cn } from '@/lib/cn';
 import { BookmarkCheck, BookmarkPlus, Check, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { GeneratedOutfit, Item } from '@/types';
@@ -60,8 +60,8 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
   // Focus trap — keeps keyboard navigation inside the dialog while open
   const trapRef = useFocusTrap(visible);
 
-  const byId = new Map(items.map((i) => [i.id, i]));
-  const resolved = outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[];
+  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  const resolved = useMemo(() => outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[], [outfit.items, byId]);
 
   if (!mounted) return null;
 
@@ -113,7 +113,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
+        <div
+          className="overflow-y-auto flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)]"
+          role="region"
+          aria-label="Outfit details"
+          tabIndex={0}
+        >
           {/* Item grid */}
           <div className={cn('grid gap-3', resolved.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
             {resolved.map((it) => (

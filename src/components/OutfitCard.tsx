@@ -49,7 +49,7 @@ export function OutfitCard({ outfit, items, itemById: externalMap, saved, worn, 
         <button
           className="press w-full text-left p-5 pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-inset"
           onClick={() => setSheetOpen(true)}
-          aria-label="View outfit details"
+          aria-label={`View outfit — ${resolved.length} piece${resolved.length !== 1 ? 's' : ''}`}
         >
           {/* Item strip — scrollable */}
           <div className="flex gap-2.5 overflow-x-auto pb-0.5 no-scrollbar">
@@ -89,11 +89,11 @@ export function OutfitCard({ outfit, items, itemById: externalMap, saved, worn, 
           {/* Reasoning — clamped, tap to see full */}
           <p className="mt-3 text-[13px] leading-[1.6] text-crimson-100/70 text-pretty line-clamp-3">{outfit.reasoning}</p>
 
-          <p className="mt-1.5 text-[11px] text-crimson-300/50 font-medium">Tap to view full outfit →</p>
+          <p className="mt-1.5 text-[11px] text-crimson-300/50 font-medium">Tap to view full outfit <span aria-hidden="true">→</span></p>
         </button>
 
         {/* Actions */}
-        <div className="px-5 pb-5 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 pb-5 flex items-center gap-2">
           <OneUIButton
             intent={worn ? 'secondary' : 'primary'}
             size="sm"
@@ -115,7 +115,7 @@ export function OutfitCard({ outfit, items, itemById: externalMap, saved, worn, 
 
         {/* Rating — p-3.5 = 46px touch target (WCAG minimum) */}
         {onRate && (
-          <div className="pb-4 flex items-center gap-0.5 justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="pb-4 flex items-center gap-0.5 justify-center">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
