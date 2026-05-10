@@ -5,12 +5,18 @@ import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
 import { Check, BookmarkPlus, BookmarkCheck, Star, Shirt } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Item, GeneratedOutfit } from '@/types';
+
+const LAYER_ORDER: Record<string, number> = {
+  base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4,
+  timepiece: 5, accessory: 6, eyewear: 7, headwear: 8, jewelry: 9,
+};
 
 interface Props {
   outfit: GeneratedOutfit;
   items: Item[];
+  itemById?: Map<string, Item>; // pre-built by parent — avoids rebuilding on every render
   saved?: boolean;
   worn?: boolean;
   rating?: number;
@@ -20,25 +26,33 @@ interface Props {
   className?: string;
 }
 
-export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear, onRate, className }: Props) {
+export function OutfitCard({ outfit, items, itemById: externalMap, saved, worn, rating, onSave, onWear, onRate, className }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const byId = new Map(items.map((i) => [i.id, i]));
-  const LAYER_ORDER: Record<string, number> = { base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4, timepiece: 5, accessory: 6, eyewear: 7, headwear: 8, jewelry: 9 };
-  const resolved = Array.from(
-    new Map(outfit.items.map((id) => byId.get(id)).filter(Boolean).map((i) => [i!.id, i!])).values()
-  ).sort((a, b) => (LAYER_ORDER[a.category?.layer_type ?? ''] ?? 99) - (LAYER_ORDER[b.category?.layer_type ?? ''] ?? 99));
+
+  // Use pre-built map from parent when available; fall back to local construction
+  const byId = useMemo(
+    () => externalMap ?? new Map(items.map((i) => [i.id, i])),
+    [externalMap, items]
+  );
+
+  const resolved = useMemo(() =>
+    Array.from(
+      new Map(outfit.items.map((id) => byId.get(id)).filter(Boolean).map((i) => [i!.id, i!])).values()
+    ).sort((a, b) => (LAYER_ORDER[a.category?.layer_type ?? ''] ?? 99) - (LAYER_ORDER[b.category?.layer_type ?? ''] ?? 99)),
+    [outfit.items, byId]
+  );
 
   return (
     <>
       <div className={cn('glass-card animate-oneui-fade', className)}>
-        {/* Tappable preview area → opens detail sheet */}
+        {/* Tappable preview area opens detail sheet */}
         <button
-          className="press w-full text-left p-5 pb-3"
+          className="press w-full text-left p-5 pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-inset"
           onClick={() => setSheetOpen(true)}
           aria-label="View outfit details"
         >
           {/* Item strip — scrollable */}
-          <div className="flex gap-2.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex gap-2.5 overflow-x-auto pb-0.5 no-scrollbar">
             {resolved.map((it) => (
               <div
                 key={it.id}
@@ -51,7 +65,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
                     width={88}
                     height={88}
                     className="w-full h-full object-contain"
-                    unoptimized
+                    sizes="88px"
                   />
                 ) : (
                   <Shirt size={28} className="text-crimson-100/30" strokeWidth={1.4} />
@@ -78,7 +92,7 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
           <p className="mt-1.5 text-[11px] text-crimson-300/50 font-medium">Tap to view full outfit →</p>
         </button>
 
-        {/* Actions — stopPropagation so they don't open the sheet */}
+        {/* Actions */}
         <div className="px-5 pb-5 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <OneUIButton
             intent={worn ? 'secondary' : 'primary'}
@@ -99,15 +113,20 @@ export function OutfitCard({ outfit, items, saved, worn, rating, onSave, onWear,
           </OneUIButton>
         </div>
 
-        {/* Rating */}
+        {/* Rating — p-3.5 = 46px touch target (WCAG minimum) */}
         {onRate && (
-          <div className="pb-4 flex items-center gap-1.5 justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="pb-4 flex items-center gap-0.5 justify-center" onClick={(e) => e.stopPropagation()}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} onClick={() => onRate(n)} aria-label={`Rate ${n}`} className="press p-2.5">
+              <button
+                key={n}
+                onClick={() => onRate(n)}
+                aria-label={`Rate ${n} star${n !== 1 ? 's' : ''}`}
+                aria-pressed={n <= (rating ?? 0)}
+                className="press p-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 rounded-full"
+              >
                 <Star
                   size={18}
-                  className={n <= (rating ?? 0) ? 'text-crimson-400' : 'text-white/20'}
-                  style={n <= (rating ?? 0) ? { fill: '#E2335D' } : {}}
+                  className={n <= (rating ?? 0) ? 'text-crimson-400 fill-crimson-400' : 'text-white/20'}
                 />
               </button>
             ))}

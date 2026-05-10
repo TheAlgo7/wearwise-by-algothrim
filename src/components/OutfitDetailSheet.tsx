@@ -4,8 +4,9 @@ import { OneUIButton } from '@/components/oneui';
 import { cn } from '@/lib/cn';
 import { BookmarkCheck, BookmarkPlus, Check, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { GeneratedOutfit, Item } from '@/types';
 
 interface Props {
@@ -22,7 +23,16 @@ interface Props {
 export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, onSave, onWear }: Props) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
-  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Reactive reduced-motion: re-read on each open rather than once at module load
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -47,6 +57,9 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
     };
   }, [open, onClose]);
 
+  // Focus trap — keeps keyboard navigation inside the dialog while open
+  const trapRef = useFocusTrap(visible);
+
   const byId = new Map(items.map((i) => [i.id, i]));
   const resolved = outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[];
 
@@ -64,12 +77,13 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
       {/* Sheet */}
       <div
+        ref={trapRef}
         className="relative w-full max-w-xl flex flex-col rounded-t-[28px] overflow-hidden"
         style={{
-          background: '#0E0D0C',
+          background: 'var(--color-ink-100, #121012)',
           maxHeight: '92dvh',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: reducedMotion ? 'none' : 'transform 400ms var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1))',
+          transition: reducedMotion ? 'none' : 'transform 400ms var(--ease-spring)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
         }}
         role="dialog"
@@ -92,10 +106,9 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           <button
             onClick={onClose}
             aria-label="Close"
-            className="press mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(255,255,255,0.07)' }}
+            className="press mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0 bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
-            <X size={18} style={{ color: '#A89098' }} />
+            <X size={18} className="text-fog-300" />
           </button>
         </div>
 
@@ -107,11 +120,8 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
               <div key={it.id}>
                 {/* Photo */}
                 <div
-                  className="rounded-[20px] overflow-hidden flex items-center justify-center"
-                  style={{
-                    background: '#000',
-                    aspectRatio: resolved.length === 1 ? '4/3' : '1',
-                  }}
+                  className="rounded-[20px] overflow-hidden flex items-center justify-center bg-ink-0"
+                  style={{ aspectRatio: resolved.length === 1 ? '4/3' : '1' }}
                 >
                   {it.image_url ? (
                     <Image
@@ -120,7 +130,6 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
                       width={400}
                       height={400}
                       className="w-full h-full object-contain"
-                      unoptimized
                     />
                   ) : (
                     <span className="text-crimson-100/30 text-[11px] text-center px-4 leading-relaxed">

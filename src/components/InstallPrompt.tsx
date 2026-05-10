@@ -35,7 +35,7 @@ export function InstallPrompt() {
   return (
     <div className="fixed left-3 right-3 bottom-24 z-40 max-w-xl mx-auto pointer-events-auto">
       <Squircle variant="glass" className="p-4 flex items-center gap-3 animate-oneui-pop">
-        <div className="h-11 w-11 rounded-full bg-crimson-gradient flex items-center justify-center shrink-0 shadow-crimson-glow">
+        <div className="h-11 w-11 rounded-full bg-crimson-400 flex items-center justify-center shrink-0 shadow-crimson-glow">
           <Download size={18} className="text-white" />
         </div>
         <div className="flex-1 min-w-0">

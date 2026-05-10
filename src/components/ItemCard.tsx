@@ -30,7 +30,6 @@ export function ItemCard({ item, compact, priority, className }: Props) {
                 className="object-contain"
                 loading={priority ? 'eager' : 'lazy'}
                 fetchPriority={priority ? 'high' : 'auto'}
-                unoptimized
               />
             </div>
           ) : (

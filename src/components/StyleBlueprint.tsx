@@ -120,12 +120,12 @@ export function StyleBlueprint() {
     <div className="flex flex-col gap-3">
       <Squircle variant="raised" className="p-4">
         <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-[#E2335D]/15">
-            <Sparkles size={20} style={{ color: '#FF86A0' }} />
+          <div className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-crimson-400/15">
+            <Sparkles size={20} className="text-crimson-300" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-oneui-h text-[#FFEDE8]">Style DNA</p>
-            <p className="mt-1 text-oneui-cap text-[#FFD9DA]/60 text-pretty">
+            <p className="text-oneui-h text-crimson-50">Style DNA</p>
+            <p className="mt-1 text-oneui-cap text-crimson-100/60 text-pretty">
               {[
                 profile.height_cm ? `${profile.height_cm} cm` : null,
                 profile.weight_kg ? `${profile.weight_kg} kg` : null,
@@ -142,24 +142,27 @@ export function StyleBlueprint() {
       </Squircle>
 
       <Squircle variant="raised" className="p-4 flex flex-col gap-3">
-        <Field label="Owner name">
+        <Field label="Owner name" htmlFor="bp-owner-name">
           <input
+            id="bp-owner-name"
             value={profile.user_name}
             onChange={(e) => set('user_name', e.target.value)}
             className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Height (cm)">
+          <Field label="Height (cm)" htmlFor="bp-height">
             <input
+              id="bp-height"
               type="number"
               value={profile.height_cm ?? ''}
               onChange={(e) => set('height_cm', e.target.value === '' ? null : Number(e.target.value))}
               className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
             />
           </Field>
-          <Field label="Weight (kg)">
+          <Field label="Weight (kg)" htmlFor="bp-weight">
             <input
+              id="bp-weight"
               type="number"
               value={profile.weight_kg ?? ''}
               onChange={(e) => set('weight_kg', e.target.value === '' ? null : Number(e.target.value))}
@@ -167,8 +170,9 @@ export function StyleBlueprint() {
             />
           </Field>
         </div>
-        <Field label="Body type">
+        <Field label="Body type" htmlFor="bp-body-type">
           <input
+            id="bp-body-type"
             value={profile.body_type ?? ''}
             placeholder='e.g. "lean athletic", "stocky", "tall slim"'
             onChange={(e) => set('body_type', e.target.value || null)}
@@ -224,8 +228,9 @@ export function StyleBlueprint() {
       </Squircle>
 
       <Squircle variant="raised" className="p-4">
-        <Field label="Signature combos">
+        <Field label="Signature combos" htmlFor="bp-sig-combos">
           <textarea
+            id="bp-sig-combos"
             rows={3}
             value={serializeSignatureCombos(profile.signature_combos)}
             placeholder="black tee + relaxed denim | casual"
@@ -236,8 +241,9 @@ export function StyleBlueprint() {
       </Squircle>
 
       <Squircle variant="raised" className="p-4">
-        <Field label="Avoided combinations">
+        <Field label="Avoided combinations" htmlFor="bp-avoided-combos">
           <textarea
+            id="bp-avoided-combos"
             rows={3}
             value={serializeAvoidedCombos(profile.avoided_combinations)}
             placeholder="skinny jeans with chunky sneakers | bad proportion"
@@ -248,8 +254,9 @@ export function StyleBlueprint() {
       </Squircle>
 
       <Squircle variant="raised" className="p-4">
-        <Field label="Style rules">
+        <Field label="Style rules" htmlFor="bp-style-rules">
           <textarea
+            id="bp-style-rules"
             rows={4}
             value={profile.notes ?? ''}
             placeholder='e.g. "never tuck in oversized tees", "always silver jewelry, no gold"'
@@ -274,11 +281,11 @@ export function StyleBlueprint() {
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-[16px] bg-white/[0.05] border border-white/[0.06] px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[#FF86A0]">
+      <div className="flex items-center gap-1.5 text-crimson-300">
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
       </div>
-      <p className="mt-1 text-[15px] leading-none font-semibold text-[#FFEDE8]">{value}</p>
+      <p className="mt-1 text-[15px] leading-none font-semibold text-crimson-50">{value}</p>
     </div>
   );
 }
@@ -293,10 +300,14 @@ function Swatch({ color }: { color: string }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="oneui-hero-sub text-fog-400">{label}</span>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="oneui-hero-sub text-fog-400">{label}</label>
+      ) : (
+        <span className="oneui-hero-sub text-fog-400">{label}</span>
+      )}
       {children}
     </div>
   );

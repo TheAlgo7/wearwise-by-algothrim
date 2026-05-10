@@ -34,6 +34,12 @@ const config: Config = {
           600: '#8B0F47',
           700: '#5E0A31',
         },
+        // Error state — visually distinct from the crimson CTA
+        error: {
+          DEFAULT:   '#7A1A1A',
+          border:    '#9B2020',
+          text:      '#FFCDD2',
+        },
       },
       fontFamily: {
         sans: ['SamsungOne', '"SF Pro Display"', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'],
@@ -53,11 +59,8 @@ const config: Config = {
         'squircle-xl': '32px',
       },
       boxShadow: {
-        'card': '0 1px 0 rgba(255,255,255,0.04) inset',
+        'card':         '0 1px 0 rgba(255,255,255,0.04) inset',
         'crimson-glow': '0 0 20px rgba(226,51,93,0.4)',
-      },
-      backgroundImage: {
-        'crimson-gradient': 'linear-gradient(135deg, #E2335D 0%, #BB165F 100%)',
       },
       animation: {
         'oneui-pop':  'oneui-pop 180ms cubic-bezier(0.22, 1, 0.36, 1)',

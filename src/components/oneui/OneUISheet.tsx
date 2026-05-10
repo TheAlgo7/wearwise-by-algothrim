@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/cn';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -27,16 +28,21 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
     };
   }, [open, onClose]);
 
+  // Focus trap — keeps keyboard navigation inside the dialog
+  const trapRef = useFocusTrap(open);
+
   if (!open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
+      {/* Backdrop — no backdrop-blur (GPU cost on mid-range Android; dark overlay is sufficient) */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-oneui-fade"
+        className="absolute inset-0 bg-black/75 animate-oneui-fade"
         onClick={onClose}
         aria-hidden
       />
       <div
+        ref={trapRef}
         className={cn(
           'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto bg-ink-100 rounded-t-squircle-xl shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
           className
@@ -56,7 +62,7 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
             <button
               onClick={onClose}
               aria-label="Close"
-              className="press h-9 w-9 rounded-full bg-ink-200 flex items-center justify-center text-fog-200"
+              className="press h-9 w-9 rounded-full bg-ink-200 flex items-center justify-center text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <X size={18} />
             </button>

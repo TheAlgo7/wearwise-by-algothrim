@@ -14,10 +14,16 @@ const radiusMap = {
   xl: 'rounded-[32px]',
 } as const;
 
-export function Squircle({ variant: _v = 'flat', radius = 'md', className, children, ...rest }: SquircleProps) {
+const variantMap = {
+  flat: 'bg-ink-200 border border-white/[0.05]',
+  raised: 'bg-ink-200 border border-white/[0.07] shadow-card',
+  glass: 'bg-white/[0.04] border border-white/[0.06]',
+} as const;
+
+export function Squircle({ variant = 'flat', radius = 'md', className, children, ...rest }: SquircleProps) {
   return (
     <div
-      className={cn('bg-[#1A1819] border border-white/[0.05]', radiusMap[radius], className)}
+      className={cn(variantMap[variant], radiusMap[radius], className)}
       {...rest}
     >
       {children}

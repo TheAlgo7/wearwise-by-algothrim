@@ -17,10 +17,11 @@ export function GenerateButton({ onClick, loading, disabled, label = 'Generate F
       onClick={onClick}
       disabled={loading || disabled}
       className={cn(
-        'press w-full h-14 rounded-full bg-[#E2335D] text-white',
+        'press w-full h-14 rounded-full bg-crimson-400 text-white',
         'flex items-center justify-center gap-2.5 text-[16px] font-semibold tracking-tight',
-        'transition-colors duration-200 hover:bg-[#BB165F]',
+        'transition-colors duration-200 hover:bg-crimson-500',
         'disabled:opacity-40 disabled:pointer-events-none',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-100',
         className
       )}
     >

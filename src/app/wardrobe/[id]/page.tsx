@@ -100,7 +100,6 @@ export default function ItemDetailPage({ params }: PageProps) {
                 sizes="(max-width: 480px) 100vw, 560px"
                 className="object-contain"
                 priority
-                unoptimized
               />
             </div>
           ) : (

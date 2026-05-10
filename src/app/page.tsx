@@ -12,7 +12,6 @@ import { createClient } from '@/lib/supabase/client';
 import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import { modeForDate } from '@/lib/modes';
 import type { Environment, Item, WeatherSnapshot, GeneratedOutfit } from '@/types';
-import Link from 'next/link';
 
 export default function HomePage() {
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
@@ -39,6 +38,8 @@ export default function HomePage() {
   const [wornOutfitIdx, setWornOutfitIdx] = useState<number | null>(null);
   const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  // Screen-reader status message for generation state changes
+  const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -70,9 +71,7 @@ export default function HomePage() {
         if (r.ok) {
           setWeather(await r.json());
         } else {
-          // Fall back to local weather silently, show inline notice
           setTripCityError(`"${tripCity}" not found — using your current location.`);
-          // Fetch local weather as fallback
           if (!navigator.geolocation) { void fetchWeather(''); return; }
           navigator.geolocation.getCurrentPosition(
             (pos) => { void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`); },
@@ -102,16 +101,19 @@ export default function HomePage() {
     [environment, weather?.temp_c]
   );
 
+  // Memoize byId map — only rebuild when items list changes (not on every parent re-render)
+  const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+
   const generate = useCallback(async () => {
     setGenerating(true);
     setError(null);
     setOutfits([]);
     setWornOutfitIdx(null);
     setSavedIdxs(new Set());
+    setStatusMsg('Generating your outfit…');
     try {
       const body: Record<string, unknown> = { mode, environment, planned_for: plannedFor };
       if (mode === 'describe' && customContext.trim()) body.custom_context = customContext.trim();
-      // Only send trip_city if it resolved successfully; otherwise use local coords
       if (tripCity && !tripCityError) body.trip_city = tripCity;
       if ((!tripCity || tripCityError) && coords) { body.lat = coords.lat; body.lon = coords.lon; }
       const res = await fetch('/api/generate', {
@@ -120,10 +122,18 @@ export default function HomePage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) setError((data.error ?? 'Generation failed') + (data.details ? ` — ${data.details}` : ''));
-      else setOutfits(data.outfits as GeneratedOutfit[]);
+      if (!res.ok) {
+        const msg = (data.error ?? 'Generation failed') + (data.details ? ` — ${data.details}` : '');
+        setError(msg);
+        setStatusMsg(`Error: ${msg}`);
+      } else {
+        setOutfits(data.outfits as GeneratedOutfit[]);
+        setStatusMsg(`${(data.outfits as GeneratedOutfit[]).length} outfit${(data.outfits as GeneratedOutfit[]).length === 1 ? '' : 's'} ready.`);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Network error');
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setError(msg);
+      setStatusMsg(`Error: ${msg}`);
     } finally {
       setGenerating(false);
     }
@@ -145,14 +155,14 @@ export default function HomePage() {
     });
     await Promise.all(
       o.items.map((id) => {
-        const current = items.find((i) => i.id === id);
+        const current = itemById.get(id);
         return supa
           .from('items')
           .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
           .eq('id', id);
       })
     );
-  }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode, items]);
+  }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode, itemById]);
 
   const toggleSave = useCallback((idx: number) => {
     setSavedIdxs((prev) => {
@@ -180,6 +190,10 @@ export default function HomePage() {
 
   return (
     <main className="min-h-dvh">
+      {/* Screen-reader live region — announces generation state changes */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {statusMsg}
+      </div>
 
       {/* ── VIEWING AREA ── */}
       <div className="px-5 pt-14 pb-4">
@@ -205,7 +219,7 @@ export default function HomePage() {
       {/* ── INTERACTION AREA ── */}
       <div className="reach-zone">
 
-        {/* Controls glass card */}
+        {/* Controls card */}
         <div className="glass-card p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3 px-1">
             <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
@@ -220,7 +234,7 @@ export default function HomePage() {
           <ModeSelector value={mode} onChange={setMode} customContext={customContext} onCustomContextChange={setCustomContext} />
 
           {/* When? chips */}
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="group" aria-label="When">
             {(['now', 'tonight', 'tomorrow'] as const).map((t) => {
               const labels = { now: 'Right now', tonight: 'Tonight', tomorrow: 'Tomorrow' };
               const active = plannedFor === t;
@@ -228,8 +242,9 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setPlannedFor(t)}
+                  aria-pressed={active}
                   className={cn(
-                    'press rounded-full px-4 py-3 text-[12px] font-semibold transition-colors border',
+                    'press rounded-full px-4 py-3 text-[12px] font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
                     active
                       ? 'bg-crimson-400/20 text-crimson-300 border-crimson-400/35'
                       : 'bg-white/[0.06] text-fog-300 border-white/[0.08]'
@@ -245,16 +260,19 @@ export default function HomePage() {
         {/* Generate */}
         <GenerateButton onClick={generate} loading={generating} />
 
-        {/* Error */}
+        {/* Error — distinct muted-red, never the CTA crimson */}
         {error && (
-          <div className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-[#FFCDD2] bg-[#7A1A1A]/40 border border-[#9B2020]/50">
+          <div
+            role="alert"
+            className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-error-text bg-error/40 border border-error-border"
+          >
             {error}
           </div>
         )}
 
         {/* Outfit cards */}
         {outfits.length > 0 && (
-          <section className="mt-1">
+          <section className="mt-1" aria-label="Generated outfits">
             <div className="mb-2 flex items-center justify-between px-1">
               <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
                 Fresh for you
@@ -269,6 +287,7 @@ export default function HomePage() {
                   key={idx}
                   outfit={o}
                   items={items}
+                  itemById={itemById}
                   saved={savedIdxs.has(idx)}
                   worn={wornOutfitIdx === idx}
                   onSave={() => toggleSave(idx)}

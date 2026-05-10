@@ -1,144 +1,224 @@
-# WearWise — Design Reference
+# Design System
 
-> Quick reference for colors, type, components, and icon specs. Updated when the design system changes.
+## Theme
+
+Dark. Forced — not a preference. The physical scene is a dim bedroom at 7am, a phone in one hand. The surface is deep near-black with warm undertones; not cold grey, not pure black. The crimson accent cuts through cleanly in low ambient light without glaring.
+
+Color strategy: **Restrained**. Tinted near-black neutrals dominate. Crimson carries all active, primary, and AI-generated states — never scattered decoratively.
 
 ---
 
 ## Color Palette
 
-| Token | Hex | Usage |
-| --- | --- | --- |
-| `#000000` | Pure black | App background (AMOLED) |
-| `#1A1819` | Card surface | All cards, nav pill |
-| `#E2335D` | Crimson — primary accent | Buttons, active states, highlights |
-| `#BB165F` | Crimson dark | Button hover, pressed state |
-| `#FF86A0` | Crimson light | Labels, eyebrows, icons |
-| `#FFEDE8` | Fog 100 | Primary headings |
-| `#FFD9DA` | Fog 200 | Body text |
-| `#D9C8CC` | Fog 300 | Secondary text |
-| `#A89098` | Fog 400 | Muted / disabled text |
-| `rgba(255,255,255,0.05)` | — | Card border |
-| `rgba(255,255,255,0.08)` | — | Secondary button bg |
+### Background (ink scale)
 
-**Rule:** Never use pure white `#fff` or neutral gray. All text and surfaces are tinted toward crimson.
+| Token | Hex | Role |
+|---|---|---|
+| `ink-0` | `#000000` | Base canvas, document background |
+| `ink-50` | `#0A0A0C` | Page-level background |
+| `ink-100` | `#121012` | Primary app background |
+| `ink-200` | `#1A1819` | Card and surface background |
+| `ink-300` | `#1C1A1D` | Elevated surface (sheet backgrounds) |
+| `ink-400` | `#252225` | Input backgrounds |
+| `ink-500` | `#2F2C30` | Dividers, subtle borders |
+| `ink-600` | `#3A363B` | Strong borders |
+
+### Text (fog scale)
+
+| Token | Hex | Role |
+|---|---|---|
+| `fog-100` | `#F5EEF0` | Primary body text |
+| `fog-200` | `#D9C8CC` | Secondary text, inactive labels |
+| `fog-300` | `#A89098` | Placeholder text, tertiary |
+| `fog-400` | `#7A6870` | Disabled, ghost |
+| `fog-500` | `#4A3A40` | Subtle divider tint |
+
+### Accent (crimson scale)
+
+| Token | Hex | Role |
+|---|---|---|
+| `crimson-50` | `#FFEDE8` | High-emphasis text on dark (headings) |
+| `crimson-100` | `#FFD9DA` | Secondary emphasis text |
+| `crimson-200` | `#FFDAC7` | Warm highlight |
+| `crimson-300` | `#FF86A0` | Icons on dark backgrounds, captions |
+| `crimson-400` | `#E2335D` | Primary CTA, active states, generate button |
+| `crimson-500` | `#BB165F` | Hover state for crimson-400 |
+| `crimson-600` | `#8B0F47` | Pressed state |
+| `crimson-700` | `#5E0A31` | Deep accent, rarely used |
+
+### Semantic
+
+| Token | Hex | Role |
+|---|---|---|
+| `error` | `#7A1A1A` | Error background |
+| `error-border` | `#9B2020` | Error border |
+| `error-text` | `#FFCDD2` | Error text |
 
 ---
 
 ## Typography
 
-Font stack: `SamsungOne`, `SF Pro Display`, `system-ui`, `-apple-system`, `Roboto`, sans-serif
+Font stack: `SamsungOne`, `SF Pro Display`, `system-ui`, `Roboto`, `sans-serif`. Mimics the native Samsung OneUI system font experience.
 
-| Class | Size | Weight | Line-height | Use |
-| --- | --- | --- | --- | --- |
-| `text-oneui-hero` | 32px | 600 | 38px | Page hero numbers |
-| `text-oneui-title` | 26px | 600 | 32px | Section titles |
-| `text-oneui-h` | 20px | 600 | 26px | Card headings |
-| `text-oneui-body` | 15px | 400 | 21px | Body text, reasoning |
-| `text-oneui-cap` | 12px | 500 | 17px | Labels, chips, metadata |
-| `text-oneui-tab` | 11px | 600 | 14px | Nav labels, micro text |
+### Type scale
 
-Page headers use `text-[30px] font-semibold leading-[1.2] tracking-tight`.
+| Token | Size / Leading | Weight | Usage |
+|---|---|---|---|
+| `text-oneui-hero` | 32px / 38px, -0.01em | 600 | Page hero titles, major headings |
+| `text-oneui-title` | 26px / 32px, -0.01em | 600 | Section titles |
+| `text-oneui-h` | 20px / 26px | 600 | Card headings, list item titles |
+| `text-oneui-body` | 15px / 21px | 400 | Body text, descriptions |
+| `text-oneui-cap` | 12px / 17px | 500 | Captions, labels, chips, metadata |
+| `text-oneui-tab` | 11px / 14px | 600 | Bottom nav labels |
 
----
-
-## Cards
-
-All cards use `.glass-card` (aliased to `.app-card`):
-
-```css
-background: #1A1819;
-border-radius: 20px;
-border: 1px solid rgba(255, 255, 255, 0.05);
-```
-
-**Never** nest cards inside cards. **Never** use glassmorphism (blur/backdrop-filter).
-
-Squircle radius variants:
-- `sm` → `rounded-[14px]`
-- `md` → `rounded-[20px]` (default)
-- `lg` → `rounded-[26px]`
-- `xl` → `rounded-[32px]`
+Hierarchy uses scale + weight contrast. Headings use `crimson-50`; captions use `fog-200` to `fog-400` depending on emphasis level.
 
 ---
 
-## Spacing
+## Elevation and Surfaces
 
-Base unit: 4px. Scale: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 96
+Three surface levels. Never nest — a raised card inside a raised card is always wrong.
 
-Page horizontal padding: `px-4` (16px) or `px-5` (20px) for headers.
-Reach zone gap between cards: `gap-3` (12px).
+| Level | Class | Visual treatment |
+|---|---|---|
+| Page | — | `ink-100` background, no border |
+| Flat card | `.app-card`, `.glass-card` | `ink-200`, `border-white/[0.05]`, `rounded-squircle` |
+| Raised card | `Squircle variant="raised"` | `ink-200`, `border-white/[0.07]`, `shadow-card`, `rounded-squircle` |
+| Glass card | `Squircle variant="glass"` | `bg-white/[0.04]`, `border-white/[0.06]`, `rounded-squircle` |
 
----
+Sheet backgrounds (drawers, modals): `var(--color-ink-100, #121012)`.
 
-## Interactions
-
-Every tap target gets `.press`:
-
-```css
-transition: transform 100ms;
-active: scale(0.97);
-```
-
-No bounce easing. No elastic. Deceleration only.
+`shadow-card`: `0 1px 0 rgba(255,255,255,0.04) inset` — inner top highlight, gives perceived lift without a drop shadow.
 
 ---
 
-## Bottom Nav
+## Border Radius
 
-Floating pill, fixed bottom, `z-50`. Height: `h-14` (56px) per tab.
-Active state: `bg-[#E2335D]/30` fill, `text-[#FFEDE8]`, stroke-width 2.4.
-Inactive: `text-white/40`, stroke-width 1.8.
-Safe area: `padding-bottom: calc(env(safe-area-inset-bottom) + 16px)`.
+| Token | Value | Usage |
+|---|---|---|
+| `rounded-squircle-sm` | 14px | Small chips, tags, inputs |
+| `rounded-squircle` | 20px | Standard cards |
+| `rounded-squircle-lg` | 26px | Large cards, modal drawers |
+| `rounded-squircle-xl` | 32px | Extra-large panels |
+| `rounded-full` | 50% | Pills, icon buttons, nav items, chips |
 
 ---
 
-## App Icons
+## Components
 
-Current icon: stylized **W** — two chevrons + hanger dot, crimson gradient on AMOLED black.
+### Buttons (OneUIButton)
 
-### Files to replace for a custom icon
+Pill-shaped (`rounded-full`). Five intents:
 
-| File | Purpose | Notes |
-| --- | --- | --- |
-| `public/icons/icon.svg` | Main icon (PWA, browser tab, shortcuts) | 512×512 viewBox |
-| `public/icons/icon-maskable.svg` | Android adaptive icon | Content must sit within the **central 80%** (≈ x:51–461, y:51–461 on a 512×512 canvas). Corners get clipped by the OS. |
-| `public/icons/apple-touch-icon.svg` | iOS home screen icon | 180×180 effective size. iOS adds its own rounded corners — do not add them yourself. |
+- `primary`: `bg-crimson-400`, white text. The generate action.
+- `secondary`: `bg-white/[0.08]`, `text-crimson-50`, subtle border. Secondary or cancel actions.
+- `ghost`: transparent, `text-crimson-100`. Tertiary.
+- `outline`: transparent, `border-white/[0.12]`. Structural alternative.
+- `danger`: `bg-error`, `text-error-text`. Destructive actions.
 
-### How to add a custom photo/image as the icon
+Sizes: sm (h-10), md (h-12, default), lg (h-14), xl (h-16), icon (h-11 w-11).
 
-1. Prepare a **square PNG, minimum 1024×1024**. Use a photo of a clothing item, a logo, or any personal image.
-2. Open in [Figma](https://figma.com), [Photopea](https://photopea.com), or any image editor.
-3. For `icon.svg` / `apple-touch-icon.svg`: place your image centered on a `#000000` square background, export as SVG (embed the image as base64) or swap to PNG and update `manifest.webmanifest` + `layout.tsx` to point to `.png` files.
-4. For `icon-maskable.svg`: keep the image content within the central 80% — add ~10% padding on each side.
-5. Update `manifest.webmanifest` if you change file names or formats.
+Focus ring: `focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2`.
 
-### Quickest path (PNG swap)
+### Chips (OneUIChip)
 
-```
-public/icons/icon-192.png       → 192×192 PNG
-public/icons/icon-512.png       → 512×512 PNG
-public/icons/icon-maskable.png  → 512×512 PNG (content in central 80%)
-```
+Filter chips: h-9, `px-4`, `text-[13px]`. Mode chips: h-11, `px-5`, `text-[14px]`.
 
-Then in `manifest.webmanifest`:
-```json
-"icons": [
-  { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-  { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-  { "src": "/icons/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-]
-```
+Active: `bg-crimson-400`, white text, no border. Inactive: `bg-white/[0.08]`, `text-fog-200`, `border-white/[0.08]`.
 
-And in `src/app/layout.tsx` update the `icons` field in metadata to point to the new PNGs.
+### Squircle
+
+Structural card primitive with `variant` prop (`flat` | `raised` | `glass`). Always use the variant prop — never override background via className.
+
+### Bottom Nav (BottomNav)
+
+Fixed to bottom. Pill container: `bg-ink-200 border-white/[0.07] rounded-full`. Active nav item: `text-crimson-50`, `bg-crimson-400/30` pill highlight with `animate-oneui-pop`. Inactive: `text-white/40`. Tab label: `text-oneui-tab`.
+
+### Generate Button (GenerateButton)
+
+Full-width pill. `bg-crimson-400`, h-14, `text-[16px] font-semibold`. Loading state: `Loader2` spinner + "Styling you…". This is the primary action across the entire app.
+
+### Mode Cards
+
+Featured mode icon circle: `h-11 w-11 rounded-full bg-crimson-400/15`. Secondary mode icon circle: `bg-crimson-400/10`. Icon color: `text-crimson-300`, size 19–20.
+
+### OneUIHeader
+
+Page header component. Structure: eyebrow cap → hero title → subtitle. Uses `.oneui-hero` (crimson-50) + `.oneui-hero-sub` (crimson-300, uppercase, tracking-widest).
+
+---
+
+## Motion
+
+### Timing
+
+| Variable | Value | Usage |
+|---|---|---|
+| `--duration-fast` | 180ms | Micro-interactions, chip toggles |
+| `--duration-base` | 240ms | Page-level transitions |
+| `--ease-spring` | `cubic-bezier(0.22, 1, 0.36, 1)` | All easing. Ease-out expo feel. |
+
+Never ease-in. No bounce, no elastic. Exponential out only.
+
+### Named animations
+
+- `animate-oneui-pop`: scale 0.97→1 + opacity 0→1, 180ms spring. Active state appearances (nav pill, modal entry).
+- `animate-oneui-fade`: translateY 6px→0 + opacity 0→1, 220ms ease-out. Filter panel reveal.
+
+### Reduced motion
+
+Reactive via `MediaQueryList` event listener — not a one-time read. When `prefers-reduced-motion: reduce`, skip translate and scale animations.
+
+### Press feedback
+
+`.press`: `transition-transform duration-100 active:scale-[0.97]`. Applied to all interactive cards and buttons.
+
+---
+
+## Layout
+
+### Reach zone
+
+`.reach-zone`: `flex flex-col gap-3 px-4`, bottom padding accounts for nav + safe area inset. All main page content lives inside this.
+
+### Horizontal safe area
+
+`body` padding accounts for `env(safe-area-inset-*)` on all sides.
+
+### Max width
+
+Nav container uses `max-w-xl` centered. Pages themselves flow edge-to-edge within the safe area.
+
+### Spacing rhythm
+
+- Between cards: `gap-3` (12px)
+- Internal card padding: `p-4`
+- Header eyebrow margin: `mb-2`
+- Between sections: `pt-1` to `pt-4`
+- Page horizontal: `px-4` (16px)
+
+---
+
+## Accessibility
+
+- All interactive elements: visible `focus-visible` ring (`ring-2 ring-crimson-400 ring-offset-2`).
+- All form inputs: `<label>` with `htmlFor` or `aria-label`.
+- Outfit generation status: `role="status" aria-live="polite"` region (screen-reader only).
+- Error banners: `role="alert"`.
+- Mode selectors: `role="radiogroup"` + `role="radio"` + `aria-checked`.
+- Time-of-day chips: `role="group"` + `aria-pressed`.
+- Bottom nav: `aria-label="Primary"` on `<nav>`.
+- Touch targets: minimum 44px on all interactive elements.
+- Images: `alt` text always provided; `sizes` hints for responsive loading.
 
 ---
 
 ## Greeting Logic
 
-Home page heading changes by hour (`src/app/page.tsx`):
+Home page heading changes by hour:
 
 | Hours | Greeting |
-| --- | --- |
+|---|---|
 | 4–6 AM | "Can't sleep?" |
 | 6–9 AM | "Early start." |
 | 9 AM–12 PM | "Morning, Gaurav." |
@@ -150,16 +230,14 @@ Home page heading changes by hour (`src/app/page.tsx`):
 
 ---
 
-## Mode Icons
+## App Icons
 
-| Mode | Icon (Lucide) | Color |
-| --- | --- | --- |
-| Quick Fit | `Zap` | `#E2335D` on `#E2335D/15` bg |
-| Church | `Church` | same |
-| Travel | `Plane` | same |
-| Impress | `Star` | same |
-| Night | `Moon` | same |
+PWA icons at `public/icons/`. Formats: SVG (primary), PNG fallbacks.
 
----
+| File | Purpose | Notes |
+|---|---|---|
+| `icon.svg` | Main icon (PWA, browser tab) | 512×512 viewBox |
+| `icon-maskable.svg` | Android adaptive icon | Content within central 80% |
+| `apple-touch-icon.svg` | iOS home screen | 180×180 effective size; no rounded corners needed |
 
-*Last updated: April 2026*
+*Last updated: May 2026*

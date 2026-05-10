@@ -94,35 +94,35 @@ export function WardrobeGrid({ items }: Props) {
   return (
     <div>
       <div className="glass-card h-12 px-4 flex items-center gap-3 mb-3">
-        <Search size={17} style={{ color: '#FF86A0' }} />
+        <Search size={17} className="text-crimson-300" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search wardrobe"
-          className="min-w-0 flex-1 bg-transparent outline-none text-[15px] text-[#FFEDE8] placeholder:text-[#A89098]"
+          className="min-w-0 flex-1 bg-transparent outline-none text-[15px] text-crimson-50 placeholder:text-fog-300"
         />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-3 px-1">
         <button
           onClick={() => setFiltersOpen((v) => !v)}
-          className="press inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.08] px-3.5 text-[13px] font-semibold text-[#D9C8CC]"
+          className="press inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.08] px-3.5 text-[13px] font-semibold text-fog-200"
         >
           <span>{filter === 'all' ? 'All pieces' : LAYER_LABELS[filter]}</span>
           <ChevronDown
             size={14}
             className={filtersOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-            style={{ color: '#FF86A0' }}
+            className="text-crimson-300"
           />
         </button>
-        <p className="text-oneui-cap text-[#FFD9DA]/45">
+        <p className="text-oneui-cap text-crimson-100/45">
           {visible.length} shown · {SORTS.find((s) => s.id === sort)?.label}
         </p>
       </div>
 
       {filtersOpen && (
         <div className="glass-card p-3 mb-4 animate-oneui-fade">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#FF86A0] px-1 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mb-2">
             Category
           </p>
           <div className="flex flex-wrap gap-2">
@@ -136,7 +136,7 @@ export function WardrobeGrid({ items }: Props) {
             ))}
           </div>
 
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#FF86A0] px-1 mt-4 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mt-4 mb-2">
             Sort
           </p>
           <div className="flex flex-wrap gap-2">

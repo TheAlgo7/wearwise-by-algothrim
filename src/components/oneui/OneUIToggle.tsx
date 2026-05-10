@@ -9,6 +9,7 @@ interface OneUIToggleProps {
   onChange: (value: string) => void;
   className?: string;
   size?: 'sm' | 'md';
+  'aria-label'?: string;
 }
 
 export function OneUIToggle({
@@ -17,6 +18,7 @@ export function OneUIToggle({
   onChange,
   className,
   size = 'md',
+  'aria-label': ariaLabel,
 }: OneUIToggleProps) {
   const pad = size === 'sm' ? 'h-10 text-[13px]' : 'h-12 text-[14px]';
   return (
@@ -26,22 +28,24 @@ export function OneUIToggle({
         className
       )}
       style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
-      role="tablist"
+      role="radiogroup"
+      aria-label={ariaLabel ?? 'Toggle'}
     >
       {options.map((opt) => {
         const active = opt.value === value;
         return (
           <button
             key={opt.value}
-            role="tab"
-            aria-selected={active}
+            type="button"
+            role="radio"
+            aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'press rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-200',
+              'press rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
               pad,
               active
-                ? 'bg-[#E2335D] text-white'
-                : 'text-[#A89098] hover:text-[#FFEDE8]'
+                ? 'bg-crimson-400 text-white'
+                : 'text-fog-300 hover:text-fog-100'
             )}
           >
             {opt.icon}

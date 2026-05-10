@@ -189,7 +189,7 @@ export function AddItemForm() {
           onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
         />
         <Squircle variant="raised" className="p-6 flex flex-col items-center gap-4 text-center">
-          <div className="h-20 w-20 rounded-full bg-crimson-gradient flex items-center justify-center shadow-crimson-glow">
+          <div className="h-20 w-20 rounded-full bg-crimson-400 flex items-center justify-center shadow-crimson-glow">
             <Camera size={32} strokeWidth={1.6} className="text-white" />
           </div>
           <h3 className="text-oneui-h text-fog-100">Snap a clothing item</h3>
@@ -246,7 +246,7 @@ export function AddItemForm() {
       <Squircle variant="raised" className="p-10 flex flex-col items-center gap-3">
         {step === 'done' ? (
           <>
-            <div className="h-14 w-14 rounded-full bg-crimson-gradient flex items-center justify-center">
+            <div className="h-14 w-14 rounded-full bg-crimson-400 flex items-center justify-center">
               <Check size={28} className="text-white" strokeWidth={2.8} />
             </div>
             <p className="text-oneui-body text-fog-100">Added to wardrobe</p>
