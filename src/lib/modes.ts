@@ -21,3 +21,36 @@ export function modeForDate(d: Date = new Date()): string {
 export function mergeModeRules(base: ModeRules, extra?: ModeRules): ModeRules {
   return { ...base, ...(extra ?? {}) };
 }
+
+/**
+ * Keyword map for Describe mode — parses the user's free-text prompt and
+ * returns a min_formality override so the Bouncer can filter candidates
+ * before the LLM sees them. Only overrides when a confident signal is found.
+ *
+ * Formality scale: 1 = lounge/gym, 2 = casual, 3 = smart-casual, 4 = formal, 5 = black-tie
+ */
+const FORMALITY_SIGNALS: { keywords: string[]; min: number; max?: number }[] = [
+  // Black-tie / very formal
+  { keywords: ['black tie', 'gala', 'black-tie', 'tuxedo'], min: 5 },
+  // Formal / office / professional
+  { keywords: ['wedding', 'interview', 'office', 'corporate', 'presentation', 'conference'], min: 4 },
+  // Smart / dinner / date / meeting
+  { keywords: ['dinner', 'date', 'meeting', 'restaurant', 'family event', 'anniversary', 'farewell', 'graduation', 'church', 'pray', 'sunday'], min: 3, max: 5 },
+  // Smart-casual / party / social
+  { keywords: ['party', 'rooftop', 'club', 'lounge', 'bar', 'brunch', 'outing', 'catch up', 'social'], min: 2, max: 4 },
+  // Casual / chill
+  { keywords: ['casual', 'chill', 'mall', 'market', 'coffee', 'walk', 'hangout', 'friends', 'errand', 'grocery'], min: 1, max: 3 },
+  // Active / gym
+  { keywords: ['gym', 'workout', 'run', 'jog', 'sport', 'exercise', 'yoga', 'hiking', 'trek'], min: 1, max: 2 },
+];
+
+export function extractDescribeFormality(prompt: string): { min_formality?: number; max_formality?: number } {
+  if (!prompt) return {};
+  const lower = prompt.toLowerCase();
+  for (const signal of FORMALITY_SIGNALS) {
+    if (signal.keywords.some((kw) => lower.includes(kw))) {
+      return { min_formality: signal.min, ...(signal.max !== undefined ? { max_formality: signal.max } : {}) };
+    }
+  }
+  return {};
+}

@@ -19,6 +19,7 @@ export default function HomePage() {
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [environment, setEnvironment] = useState<Environment>('outdoor');
   const [tripCity, setTripCity] = useState<string | null>(null);
+  const [tripCityError, setTripCityError] = useState<string | null>(null);
   const [mode, setMode] = useState<string>(() => modeForDate());
   const [customContext, setCustomContext] = useState('');
   const [plannedFor, setPlannedFor] = useState<'now' | 'tonight' | 'tomorrow'>('now');
@@ -62,7 +63,26 @@ export default function HomePage() {
       else setWeather(null);
     };
 
-    if (tripCity) { void fetchWeather(`city=${encodeURIComponent(tripCity)}`); return () => controller.abort(); }
+    if (tripCity) {
+      setTripCityError(null);
+      (async () => {
+        const r = await fetch(`/api/weather?city=${encodeURIComponent(tripCity)}`, { signal: controller.signal });
+        if (r.ok) {
+          setWeather(await r.json());
+        } else {
+          // Fall back to local weather silently, show inline notice
+          setTripCityError(`"${tripCity}" not found — using your current location.`);
+          // Fetch local weather as fallback
+          if (!navigator.geolocation) { void fetchWeather(''); return; }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => { void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`); },
+            () => { void fetchWeather(''); },
+            { maximumAge: 600_000, timeout: 6000 }
+          );
+        }
+      })();
+      return () => controller.abort();
+    }
 
     if (!navigator.geolocation) { void fetchWeather(''); return () => controller.abort(); }
 
@@ -91,8 +111,9 @@ export default function HomePage() {
     try {
       const body: Record<string, unknown> = { mode, environment, planned_for: plannedFor };
       if (mode === 'describe' && customContext.trim()) body.custom_context = customContext.trim();
-      if (tripCity) body.trip_city = tripCity;
-      if (!tripCity && coords) { body.lat = coords.lat; body.lon = coords.lon; }
+      // Only send trip_city if it resolved successfully; otherwise use local coords
+      if (tripCity && !tripCityError) body.trip_city = tripCity;
+      if ((!tripCity || tripCityError) && coords) { body.lat = coords.lat; body.lon = coords.lon; }
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,7 +127,7 @@ export default function HomePage() {
     } finally {
       setGenerating(false);
     }
-  }, [mode, environment, tripCity, coords, customContext, plannedFor]);
+  }, [mode, environment, tripCity, tripCityError, coords, customContext, plannedFor]);
 
   const markWorn = useCallback(async (idx: number) => {
     const o = outfits[idx];
@@ -190,8 +211,11 @@ export default function HomePage() {
             <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
               Dress for
             </p>
-            <TripModePicker tripCity={tripCity} onChange={setTripCity} />
+            <TripModePicker tripCity={tripCity} onChange={(v) => { setTripCity(v); setTripCityError(null); }} />
           </div>
+          {tripCityError && (
+            <p className="text-[12px] text-fog-400 px-1 -mt-2">{tripCityError}</p>
+          )}
           <EnvironmentToggle value={environment} onChange={setEnvironment} />
           <ModeSelector value={mode} onChange={setMode} customContext={customContext} onCustomContextChange={setCustomContext} />
 
@@ -223,7 +247,7 @@ export default function HomePage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-crimson-50 bg-crimson-400/15 border border-crimson-400/35">
+          <div className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-[#FFCDD2] bg-[#7A1A1A]/40 border border-[#9B2020]/50">
             {error}
           </div>
         )}

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
 import { generateJSON } from '@/lib/llm';
 import { effectiveTempC, getWeatherByCity, getWeatherByCoords, timeOfDay } from '@/lib/weather';
-import { DEFAULT_MODES } from '@/lib/modes';
+import { DEFAULT_MODES, extractDescribeFormality } from '@/lib/modes';
 import { filterItems, rankCandidates } from '@/lib/filter-engine';
 import { formatBlueprint, getStyleProfile } from '@/lib/style-profile';
 import { GENERATE_SYSTEM, buildGeneratePrompt } from '@/lib/prompts';
@@ -64,9 +64,18 @@ export async function POST(req: Request) {
   // Merge DB rules on top of DEFAULT_MODES so new rule fields (excluded_layers, etc.)
   // defined in defaults are always present even when the DB row predates them.
   const defaultMode = DEFAULT_MODES.find((m) => m.id === parsed.mode) ?? DEFAULT_MODES[0];
+  const baseRules = modeRow
+    ? { ...defaultMode.rules, ...(modeRow as Mode).rules }
+    : defaultMode.rules;
+  // For Describe mode, parse the user's prompt for formality signals and inject
+  // them into the Bouncer rules so casual tees are blocked for "dinner meetings".
+  const describeOverride =
+    parsed.mode === 'describe' && parsed.custom_context
+      ? extractDescribeFormality(parsed.custom_context)
+      : {};
   const mode: Mode = modeRow
-    ? { ...(modeRow as Mode), rules: { ...defaultMode.rules, ...(modeRow as Mode).rules } }
-    : defaultMode;
+    ? { ...(modeRow as Mode), rules: { ...baseRules, ...describeOverride } }
+    : { ...defaultMode, rules: { ...baseRules, ...describeOverride } };
 
   // 3. Candidates — fetch items with categories joined
   const { data: itemRows, error: itemsErr } = await supa
