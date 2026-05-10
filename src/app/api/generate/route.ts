@@ -152,11 +152,11 @@ export async function POST(req: Request) {
   // 5. Generate outfits via multi-provider LLM (Groq → OpenRouter → Gemini)
   const prompt = buildGeneratePrompt({ blueprint, context, candidates: finalCandidates });
 
-  let outfits;
+  let rawOutfits;
   try {
     const text = await generateJSON(GENERATE_SYSTEM, prompt);
     const parsedOut = JSON.parse(text);
-    outfits = parsedOut.outfits;
+    rawOutfits = parsedOut.outfits;
   } catch (err) {
     const details = err instanceof Error ? err.message : String(err);
     console.error('[generate] LLM error:', details);
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
   const validIds = new Set(finalCandidates.map((i) => i.id));
   const itemById = new Map(finalCandidates.map((i) => [i.id, i]));
 
-  const cleaned = (outfits as { items: string[]; reasoning: string; confidence: number }[])
+  const cleaned = (rawOutfits as { items: string[]; reasoning: string; confidence: number }[])
     .map((o) => {
       // Remove ids the AI hallucinated and deduplicate
       const hallucinated = o.items.filter((id) => !validIds.has(id));
@@ -210,27 +210,27 @@ export async function POST(req: Request) {
     });
 
   // 3-tier fallback — never return a blank screen
-  const tier1 = mapped.filter((o) => o._hasTop && o._hasBottom);
-  let finalOutfits: typeof mapped;
+  const tier1 = cleaned.filter((o) => o._hasTop && o._hasBottom);
+  let finalOutfits: typeof cleaned;
 
   if (tier1.length > 0) {
     finalOutfits = tier1;
   } else {
-    const tier2 = mapped.filter((o) => o._hasTop || o._hasBottom);
+    const tier2 = cleaned.filter((o) => o._hasTop || o._hasBottom);
     if (tier2.length > 0) {
       console.warn('[generate] Tier-2 fallback: no outfit has both top+bottom — returning partial outfits');
       finalOutfits = tier2.map((o) => ({ ...o, partial_outfit: true }));
     } else {
       console.warn('[generate] Tier-3 fallback: no outfit has any clothing — returning raw AI output');
-      finalOutfits = mapped.map((o) => ({ ...o, incomplete: true }));
+      finalOutfits = cleaned.map((o) => ({ ...o, incomplete: true }));
     }
   }
 
   // Strip internal classification flags before sending
-  const outfits = finalOutfits.map(({ _hasTop: _t, _hasBottom: _b, ...o }) => o);
+  const strippedOutfits = finalOutfits.map(({ _hasTop: _t, _hasBottom: _b, ...o }) => o);
 
   return NextResponse.json({
-    outfits,
+    outfits: strippedOutfits,
     context,
     candidate_count: finalCandidates.length,
     ...(heatAdvisory && { heat_advisory: `It's ${temp_c}°C — your tagged wardrobe is optimised for cooler temps, so these are the most heat-appropriate pieces available.` }),
