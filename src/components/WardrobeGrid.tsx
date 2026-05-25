@@ -4,6 +4,7 @@ import { ItemCard } from '@/components/ItemCard';
 import { OneUIChip } from '@/components/oneui';
 import { LAYER_TYPES, type LayerType } from '@/lib/constants';
 import type { Item } from '@/types';
+import { cn } from '@/lib/cn';
 import { ChevronDown, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -111,8 +112,7 @@ export function WardrobeGrid({ items }: Props) {
           <span>{filter === 'all' ? 'All pieces' : LAYER_LABELS[filter]}</span>
           <ChevronDown
             size={14}
-            className={filtersOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-            className="text-crimson-300"
+            className={cn('transition-transform text-crimson-300', filtersOpen && 'rotate-180')}
           />
         </button>
         <p className="text-oneui-cap text-crimson-100/45">
