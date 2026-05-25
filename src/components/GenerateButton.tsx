@@ -16,6 +16,7 @@ export function GenerateButton({ onClick, loading, disabled, label = 'Generate F
     <button
       onClick={onClick}
       disabled={loading || disabled}
+      aria-busy={loading}
       className={cn(
         'press w-full h-14 rounded-full bg-crimson-400 text-white',
         'flex items-center justify-center gap-2.5 text-[16px] font-semibold tracking-tight',

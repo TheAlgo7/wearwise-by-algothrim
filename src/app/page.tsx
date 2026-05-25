@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { EnvironmentToggle } from '@/components/EnvironmentToggle';
@@ -20,6 +20,7 @@ export default function HomePage() {
   const [tripCity, setTripCity] = useState<string | null>(null);
   const [tripCityError, setTripCityError] = useState<string | null>(null);
   const [mode, setMode] = useState<string>(() => modeForDate());
+  const modeIsAuto = useRef(true);
   const [customContext, setCustomContext] = useState('');
   const [plannedFor, setPlannedFor] = useState<'now' | 'tonight' | 'tomorrow'>('now');
 
@@ -28,8 +29,20 @@ export default function HomePage() {
     const urlMode = new URLSearchParams(window.location.search).get('mode');
     if (urlMode) {
       setMode(urlMode);
+      modeIsAuto.current = false;
       window.history.replaceState(null, '', window.location.pathname);
     }
+  }, []);
+
+  // Reset auto-set mode when the day changes (e.g. PWA left open overnight on Sunday)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && modeIsAuto.current) {
+        setMode(modeForDate());
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const [items, setItems] = useState<Item[]>([]);
@@ -231,7 +244,12 @@ export default function HomePage() {
             <p className="text-[12px] text-fog-400 px-1 -mt-2">{tripCityError}</p>
           )}
           <EnvironmentToggle value={environment} onChange={setEnvironment} />
-          <ModeSelector value={mode} onChange={setMode} customContext={customContext} onCustomContextChange={setCustomContext} />
+          <ModeSelector
+            value={mode}
+            onChange={(v) => { modeIsAuto.current = false; setMode(v); }}
+            customContext={customContext}
+            onCustomContextChange={setCustomContext}
+          />
 
           {/* When? chips */}
           <div className="flex gap-2" role="group" aria-label="When">
@@ -272,7 +290,7 @@ export default function HomePage() {
 
         {/* Outfit cards */}
         {outfits.length > 0 && (
-          <section className="mt-1" aria-label="Generated outfits">
+          <section className="mt-1" aria-label={`Generated outfits — ${outfits.length} look${outfits.length !== 1 ? 's' : ''}`}>
             <div className="mb-2 flex items-center justify-between px-1">
               <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
                 Fresh for you

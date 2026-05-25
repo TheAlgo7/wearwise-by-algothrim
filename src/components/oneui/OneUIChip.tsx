@@ -25,6 +25,7 @@ export function OneUIChip({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         'press shrink-0 inline-flex items-center gap-2 rounded-full font-semibold border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
         isMode ? 'h-11 px-5 text-[14px]' : 'h-9 px-4 text-[13px]',

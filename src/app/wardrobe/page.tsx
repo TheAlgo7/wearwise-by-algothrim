@@ -15,15 +15,20 @@ export default function WardrobePage() {
   useScrollRestoration('wardrobe', !loading);
 
   useEffect(() => {
+    const controller = new AbortController();
     const supa = createClient();
     (async () => {
       const { data } = await supa
         .from('items')
         .select('*, category:categories(*)')
-        .order('created_at', { ascending: false });
-      setItems((data ?? []) as Item[]);
-      setLoading(false);
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
+      if (!controller.signal.aborted) {
+        setItems((data ?? []) as Item[]);
+        setLoading(false);
+      }
     })();
+    return () => controller.abort();
   }, []);
 
   return (
@@ -46,8 +51,7 @@ export default function WardrobePage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="aspect-[3/4] rounded-[2rem] animate-pulse"
-                style={{ background: 'rgba(255,255,255,0.05)' }}
+                className="aspect-[3/4] rounded-[2rem] animate-pulse bg-white/[0.05]"
               />
             ))}
           </div>

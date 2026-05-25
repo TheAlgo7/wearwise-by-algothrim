@@ -16,7 +16,7 @@
   }
 
   html, body {
-    background: #000000;
+    background: theme('colors.ink.0');
     color: theme('colors.fog.100');
     font-family: 'SamsungOne', 'SF Pro Display', system-ui, -apple-system, Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
