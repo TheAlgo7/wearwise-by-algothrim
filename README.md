@@ -17,7 +17,13 @@
   <img src="./docs/assets/hero.png" width="400" alt="WearWise App" />
 </p>
 
-WearWise is not a fashion mood board generator. It is a wardrobe engine: photograph your real clothes once, tag them, store them, then let the system build grounded outfits around weather, occasion, mode, and your own style profile. The point is not to sound clever — it is to be useful before 9 AM. Built as a personal tool for The Algothrim, made public so you can see what a custom AI wardrobe system looks like. Want one built for you? [Get in touch.](https://thealgothrim.com)
+## Why This Exists
+
+Most AI apps are built around a generic user persona. WearWise was built around one real person: Gaurav Kumar, standing in front of his wardrobe at 7 AM, needing an answer — not options, not inspiration, not a mood board. An answer.
+
+That constraint is the whole product. It forces every decision to be concrete: which clothes he actually owns, what the weather is right now, where he is going today, what his body proportions need, what he has already worn this week. The AI does not guess at a persona. It works from a real wardrobe, a real style blueprint, and a real context — or it does not run.
+
+**This repo is a public case study in bespoke AI software.** The point is not "sign up and manage your wardrobe." The point is: look what happens when software is built around one real life instead of a hypothetical average user. Want something like this built for you? [Get in touch.](https://thealgothrim.com)
 
 ## How The Engine Works
 
@@ -26,6 +32,8 @@ Filters the wardrobe by temperature, formality, vibe, and recency before any mod
 
 **Stage 2 — The Stylist**
 Builds 2–3 complete outfits with reasoning using a multi-provider pipeline and a private style blueprint.
+
+The LLM is the last mile, not the whole pipeline. The filtering, scoring, and context assembly happen in code — so the model gets a tight, relevant candidate set instead of a raw wardrobe dump.
 
 ## Features
 
@@ -67,6 +75,10 @@ Builds 2–3 complete outfits with reasoning using a multi-provider pipeline and
 - **Samsung-inspired UI.** Rounded, touch-forward, modern without looking playful.
 - **High signal, low noise.** Every screen is built to make getting dressed easier.
 - **Personal by design.** The product is unapologetically built around one real wardrobe and one real taste profile.
+
+## Security Note
+
+Supabase RLS is intentionally open for V1 — this is a single-user personal tool with no public auth. If you fork this for your own use, tighten row-level security before exposing it to other users or storing sensitive data.
 
 <details>
 <summary>Quick Start</summary>
