@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body>
-        <div className="mx-auto max-w-xl min-h-dvh">
+        <div className="mx-auto max-w-xl min-h-dvh pb-nav">
           {children}
         </div>
         <BottomNav />
