@@ -128,9 +128,8 @@ export function StyleBlueprint() {
             <p className="mt-1 text-oneui-cap text-crimson-100/60 text-pretty">
               {[
                 profile.height_cm ? `${profile.height_cm} cm` : null,
-                profile.weight_kg ? `${profile.weight_kg} kg` : null,
                 profile.preferred_fits.length ? `${profile.preferred_fits.slice(0, 3).join(', ')} fits` : null,
-              ].filter(Boolean).join(' · ') || 'Add your fit, frame, and rules.'}
+              ].filter(Boolean).join(' · ') || 'Add your fit and rules.'}
             </p>
           </div>
         </div>
@@ -150,32 +149,12 @@ export function StyleBlueprint() {
             className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Height (cm)" htmlFor="bp-height">
-            <input
-              id="bp-height"
-              type="number"
-              value={profile.height_cm ?? ''}
-              onChange={(e) => set('height_cm', e.target.value === '' ? null : Number(e.target.value))}
-              className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
-            />
-          </Field>
-          <Field label="Weight (kg)" htmlFor="bp-weight">
-            <input
-              id="bp-weight"
-              type="number"
-              value={profile.weight_kg ?? ''}
-              onChange={(e) => set('weight_kg', e.target.value === '' ? null : Number(e.target.value))}
-              className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
-            />
-          </Field>
-        </div>
-        <Field label="Body type" htmlFor="bp-body-type">
+        <Field label="Height (cm)" htmlFor="bp-height">
           <input
-            id="bp-body-type"
-            value={profile.body_type ?? ''}
-            placeholder='e.g. "lean athletic", "stocky", "tall slim"'
-            onChange={(e) => set('body_type', e.target.value || null)}
+            id="bp-height"
+            type="number"
+            value={profile.height_cm ?? ''}
+            onChange={(e) => set('height_cm', e.target.value === '' ? null : Number(e.target.value))}
             className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
           />
         </Field>

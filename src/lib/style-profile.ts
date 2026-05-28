@@ -2,6 +2,19 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { STYLE_PROFILE_ID, type StyleProfile } from '@/lib/supabase/types';
 
 /**
+ * Internal physical/grooming constants — used only for AI context, never rendered in the UI.
+ * Keep these server-side only.
+ */
+const INTERNAL = {
+  height_cm: 178,
+  weight_kg: 65,
+  body_type: 'tall, lean frame — long torso, long legs, narrow shoulders, narrow upper arms with defined forearms. Warm tan complexion.',
+  hairstyle: `Textured Side-Swept Undercut with a Fade (Modern Textured Quiff).
+Cut: high mid-fade / blended skin fade on sides and back. Top kept ~3–4 inches, heavily layered and texturized (point-cut) for movement and volume. Fringe swept diagonally across the forehead. Slight disconnection at the part line — top sweeps cleanly over faded sides without blending.
+Styling: swept up and to the side with sea salt spray + volumizing powder; matte, piecey finish (not slicked back).`,
+};
+
+/**
  * Gaurav's style profile — hardcoded as the baseline.
  * This is a single-user private app; this profile is always the floor.
  * Supabase row (if it exists) merges on top of this, so any saved tweaks win.
@@ -9,9 +22,9 @@ import { STYLE_PROFILE_ID, type StyleProfile } from '@/lib/supabase/types';
 const FALLBACK: StyleProfile = {
   id: STYLE_PROFILE_ID,
   user_name: 'Gaurav Kumar',
-  height_cm: 178,
-  weight_kg: 65,
-  body_type: 'tall, lean frame — long torso, long legs, narrow shoulders, thin upper arms with good forearm definition. Warm tan complexion.',
+  height_cm: INTERNAL.height_cm,
+  weight_kg: INTERNAL.weight_kg,
+  body_type: INTERNAL.body_type,
   preferred_fits: ['bootcut', 'oversized', 'relaxed'],
   preferred_colors: ['black', 'navy', 'white', 'cream', 'charcoal', 'olive', 'tan', 'burgundy'],
   avoided_colors: [],
@@ -43,7 +56,7 @@ Pants: slim through thighs, subtle flare from knee — mid-rise, deliberate long
 Gurkha/extended-tab waistband → dressy colours (black, light beige) → shirt always tucked.
 Normal tab → casual colours (dark grey, sand, coffee brown) → oversized tee worn untucked.
 Tops: must add upper-body volume to balance wide hem — boxy/drop-shoulder/oversized only.
-Sleeve hack: roll button-down sleeves to just below elbow — hides thin biceps, shows forearms.
+Sleeve hack: roll button-down sleeves to just below elbow — forearms on show, cleaner proportion.
 Footwear: chunky to match bootcut puddle hem — Chelsea boots for formal/smart, heavy sneakers for casual/street.
 Accessories: silver only (no gold). Watch always on left wrist.
 Body note: long torso needs mid-rise (not low-rise) to avoid exaggerating height imbalance.`,
@@ -86,6 +99,7 @@ export function formatBlueprint(p: StyleProfile): string {
   const parts: string[] = [];
   parts.push(`Owner: ${p.user_name}${p.height_cm ? ` · ${p.height_cm}cm` : ''}`);
   if (p.body_type) parts.push(`Build: ${p.body_type}`);
+  parts.push(`Hairstyle: ${INTERNAL.hairstyle.replace(/\n+/g, ' ').trim()}`);
   if (p.preferred_fits.length)   parts.push(`Fits: ${p.preferred_fits.join(', ')}`);
   if (p.preferred_colors.length) parts.push(`Palette: ${p.preferred_colors.join(', ')}`);
   if (p.avoided_colors.length)   parts.push(`Avoid colours: ${p.avoided_colors.join(', ')}`);
