@@ -34,6 +34,11 @@ export async function createClient() {
 /**
  * Admin client using the service role key. Only usable in route handlers /
  * server actions. Never import into client components.
+ *
+ * Bypasses RLS by design. In V1, RLS is disabled anyway (single-user app — see
+ * schema.sql), so reads/writes would work with the anon client too; using the
+ * service role here keeps generation routes independent of request cookies and
+ * ready for the day RLS is switched on for multi-user.
  */
 export function createAdminClient() {
   return createSupabaseClient(

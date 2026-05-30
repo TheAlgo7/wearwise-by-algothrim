@@ -4,7 +4,7 @@ import { OneUIButton } from '@/components/oneui';
 import { cn } from '@/lib/cn';
 import { BookmarkCheck, BookmarkPlus, Check, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { GeneratedOutfit, Item } from '@/types';
@@ -23,12 +23,13 @@ interface Props {
 export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, onSave, onWear }: Props) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
-  // Reactive reduced-motion: re-read on each open rather than once at module load
-  const [reducedMotion, setReducedMotion] = useState(false);
+  // Reactive reduced-motion: seed from the current match (lazy, SSR-safe), then keep in sync.
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
@@ -36,6 +37,8 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
   useEffect(() => {
     if (open) {
+      // Mount-then-animate: this enter/exit orchestration is inherently effect-driven.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMounted(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
     } else {

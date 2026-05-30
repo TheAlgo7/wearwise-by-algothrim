@@ -62,3 +62,12 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+.env*.local
+
+# ─── Internal notes — never publish to the public repo ───────────────────────
+# Planning docs, bug reports, and agent scratch space. Kept locally, out of git.
+/About_App.txt
+/WearWise_Bug_Report.md
+/docs/superpowers/
+/WEARWISE_AUDIT_*.md

@@ -28,6 +28,8 @@ export default function HomePage() {
     if (typeof window === 'undefined') return;
     const urlMode = new URLSearchParams(window.location.search).get('mode');
     if (urlMode) {
+      // One-time read of the ?mode= param on mount — inherently effect-driven.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode(urlMode);
       modeIsAuto.current = false;
       window.history.replaceState(null, '', window.location.pathname);
@@ -78,6 +80,8 @@ export default function HomePage() {
     };
 
     if (tripCity) {
+      // Clear any stale "city not found" error before refetching for the new city.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTripCityError(null);
       (async () => {
         const r = await fetch(`/api/weather?city=${encodeURIComponent(tripCity)}`, { signal: controller.signal });

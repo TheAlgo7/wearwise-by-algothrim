@@ -2,7 +2,7 @@
 
 import { OneUIButton, OneUISheet } from '@/components/oneui';
 import { MapPin, Plane, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Props {
   tripCity: string | null;
@@ -13,9 +13,11 @@ export function TripModePicker({ tripCity, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState(tripCity ?? '');
 
-  useEffect(() => {
-    if (open) setInput(tripCity ?? '');
-  }, [open, tripCity]);
+  // Sync the field to the current trip city at open time (no effect needed).
+  const openSheet = () => {
+    setInput(tripCity ?? '');
+    setOpen(true);
+  };
 
   return (
     <>
@@ -23,7 +25,7 @@ export function TripModePicker({ tripCity, onChange }: Props) {
         <div className="inline-flex max-w-full items-center rounded-full bg-ink-100 border border-white/[0.06] h-10 text-oneui-cap text-fog-200 overflow-hidden self-start">
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={openSheet}
             className="press flex min-w-0 items-center gap-2 h-full pl-4 pr-2 hover:text-fog-100"
           >
             <Plane size={14} className="text-crimson-300 shrink-0" />
@@ -44,7 +46,7 @@ export function TripModePicker({ tripCity, onChange }: Props) {
       ) : (
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={openSheet}
           className="press flex items-center gap-2 rounded-full bg-ink-100 border border-white/[0.06] px-4 h-10 text-oneui-cap text-fog-200 hover:text-fog-100 self-start"
         >
           <MapPin size={14} />

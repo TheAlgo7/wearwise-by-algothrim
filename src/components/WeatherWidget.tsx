@@ -1,5 +1,6 @@
 'use client';
 
+import { createElement } from 'react';
 import { cn } from '@/lib/cn';
 import { CloudRain, Cloud, CloudSun, Sun, Moon, Snowflake, CloudLightning, Wind, Droplets } from 'lucide-react';
 import type { WeatherSnapshot } from '@/types';
@@ -49,7 +50,8 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
     );
   }
 
-  const Icon = iconFor(weather.icon);
+  // iconFor returns a stable module-level lucide reference; render via createElement
+  // so we don't trip react-hooks/static-components (no component assigned during render).
   const overridden = effectiveTempC !== undefined && Math.abs(effectiveTempC - weather.temp_c) > 0.1;
   const temp = Math.round(overridden ? effectiveTempC! : weather.temp_c);
 
@@ -57,7 +59,7 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
     return (
       <div className={cn('glass-card rounded-full px-3.5 py-2.5 flex items-center gap-2.5 min-w-0', className)}>
         <div className="shrink-0 h-8 w-8 rounded-full bg-white/[0.07] flex items-center justify-center">
-          <Icon size={18} className="text-crimson-300" strokeWidth={1.7} />
+          {createElement(iconFor(weather.icon), { size: 18, className: 'text-crimson-300', strokeWidth: 1.7 })}
         </div>
         <div className="min-w-0">
           <div className="flex items-baseline gap-1.5">
@@ -99,7 +101,7 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
           <p className="mt-1 text-oneui-body text-crimson-100/80 capitalize">{weather.condition}</p>
         </div>
         <div className="shrink-0 h-[64px] w-[64px] rounded-full bg-white/[0.07] flex items-center justify-center">
-          <Icon size={38} className="text-crimson-300" strokeWidth={1.5} />
+          {createElement(iconFor(weather.icon), { size: 38, className: 'text-crimson-300', strokeWidth: 1.5 })}
         </div>
       </div>
       <div className="mt-4 flex items-center gap-5 text-oneui-cap text-crimson-100/60">

@@ -57,6 +57,12 @@ const config: Config = {
         'squircle':    '20px',
         'squircle-lg': '26px',
         'squircle-xl': '32px',
+        // Sibling-app aliases: same values, the names WearWise Go uses. Keeps the
+        // two design systems on one shared radius vocabulary so components copy cleanly.
+        'oneui-sm':    '14px',
+        'oneui':       '20px',
+        'oneui-lg':    '26px',
+        'oneui-xl':    '32px',
       },
       boxShadow: {
         'card':         '0 1px 0 rgba(255,255,255,0.04) inset',
