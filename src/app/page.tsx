@@ -160,26 +160,27 @@ export default function HomePage() {
     const o = outfits[idx];
     if (!o) return;
     setWornOutfitIdx(idx);
-    const supa = createClient();
-    const now = new Date().toISOString();
-    await supa.from('outfits').insert({
-      items: o.items,
-      ai_reasoning: o.reasoning,
-      confidence: o.confidence,
-      worn_at: now,
-      is_saved: savedIdxs.has(idx),
-      context: { temp_c: effectiveTempC ?? weather?.temp_c, condition: weather?.condition, environment, mode, city: weather?.city },
-    });
-    await Promise.all(
-      o.items.map((id) => {
-        const current = itemById.get(id);
-        return supa
-          .from('items')
-          .update({ times_worn: (current?.times_worn ?? 0) + 1, last_worn_at: now })
-          .eq('id', id);
-      })
-    );
-  }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode, itemById]);
+    try {
+      const res = await fetch('/api/wear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: o.items,
+          reasoning: o.reasoning,
+          confidence: o.confidence,
+          is_saved: savedIdxs.has(idx),
+          context: { temp_c: effectiveTempC ?? weather?.temp_c, condition: weather?.condition, environment, mode, city: weather?.city },
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
+      setStatusMsg('Outfit logged. Wear history updated.');
+    } catch (err) {
+      // Don't pretend it was logged — clear the worn state and surface the failure.
+      setWornOutfitIdx(null);
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setStatusMsg(`Couldn't log outfit: ${msg}`);
+    }
+  }, [outfits, savedIdxs, effectiveTempC, weather, environment, mode]);
 
   const toggleSave = useCallback((idx: number) => {
     setSavedIdxs((prev) => {
@@ -213,7 +214,8 @@ export default function HomePage() {
       </div>
 
       {/* ── VIEWING AREA ── */}
-      <div className="px-5 pt-14 pb-4">
+      {/* Bottom padding clears the floating pill nav so outfit actions stay tappable */}
+      <div className="px-5 pt-14 pb-[calc(env(safe-area-inset-bottom)+132px)]">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             <p suppressHydrationWarning className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase mb-2 truncate">

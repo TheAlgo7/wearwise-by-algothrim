@@ -37,19 +37,18 @@ export default function ItemDetailPage({ params }: PageProps) {
   }, [id]);
 
   const archive = async () => {
-    const supa = createClient();
-    await supa.from('items').update({ archived: !item?.archived }).eq('id', id);
-    router.push('/wardrobe');
+    const res = await fetch(`/api/items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived: !item?.archived }),
+    });
+    if (res.ok) router.push('/wardrobe');
   };
 
   const remove = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
-    const supa = createClient();
-    if (item?.image_path) {
-      await supa.storage.from('items').remove([item.image_path]);
-    }
-    await supa.from('items').delete().eq('id', id);
-    router.push('/wardrobe');
+    const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+    if (res.ok) router.push('/wardrobe');
   };
 
   if (loading) {

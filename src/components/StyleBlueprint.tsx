@@ -98,13 +98,19 @@ export function StyleBlueprint() {
     if (!profile) return;
     setSaving(true);
     setSaved(false);
-    const supa = createClient();
     const { id: _ignore, created_at: _c, updated_at: _u, ...rest } = profile;
     void _ignore; void _c; void _u;
-    await supa.from('style_profile').upsert({ id: STYLE_PROFILE_ID, ...rest });
+    const res = await fetch('/api/style-profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rest),
+    }).catch(() => null);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    // Only claim "Saved" when it actually saved.
+    if (res?.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    }
   };
 
   if (!profile) {

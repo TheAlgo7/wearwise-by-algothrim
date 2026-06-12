@@ -142,7 +142,6 @@ export function AddItemForm() {
       const up = await upRes.json();
       if (!upRes.ok) throw new Error(up.error ?? 'Upload failed');
 
-      const supa = createClient();
       const row: Partial<Item> = {
         name: tags.name ?? 'Unnamed item',
         category_id: category,
@@ -161,8 +160,15 @@ export function AddItemForm() {
         occasions: tags.occasions ?? [],
         notes: tags.notes ?? null,
       };
-      const { error: insertErr } = await supa.from('items').insert(row);
-      if (insertErr) throw new Error(insertErr.message);
+      const insertRes = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(row),
+      });
+      if (!insertRes.ok) {
+        const body = await insertRes.json().catch(() => ({}));
+        throw new Error(body.error ?? `Save failed (HTTP ${insertRes.status})`);
+      }
       setStep('done');
       setTimeout(() => router.push('/wardrobe'), 600);
     } catch (e) {

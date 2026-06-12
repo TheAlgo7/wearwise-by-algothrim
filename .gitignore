@@ -71,3 +71,6 @@ desktop.ini
 /WearWise_Bug_Report.md
 /docs/superpowers/
 /WEARWISE_AUDIT_*.md
+
+# Test/debug artifacts
+.playwright-mcp/

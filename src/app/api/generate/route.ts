@@ -10,7 +10,8 @@ import { GENERATE_SYSTEM, buildGeneratePrompt } from '@/lib/prompts';
 import type { Item, Mode } from '@/types';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+// Worst case walks the whole provider chain (each rung capped at 12s in llm.ts).
+export const maxDuration = 60;
 
 const Body = z.object({
   mode: z.string().default('quick'),
@@ -24,6 +25,17 @@ const Body = z.object({
   planned_for: z.enum(['now', 'tonight', 'tomorrow']).default('now'),
 });
 
+// Shape of what the LLM must return — anything else is a provider bug, not a 500.
+const LLMOutput = z.object({
+  outfits: z.array(
+    z.object({
+      items: z.array(z.string()),
+      reasoning: z.string().catch(''),
+      confidence: z.number().catch(0.7),
+    })
+  ).min(1),
+});
+
 export async function POST(req: Request) {
   let parsed;
   try {
@@ -34,33 +46,36 @@ export async function POST(req: Request) {
 
   const supa = createAdminClient();
 
-  // 1. Weather — trip city overrides current location
-  let weather;
-  try {
-    if (parsed.trip_city) {
-      weather = await getWeatherByCity(parsed.trip_city);
-    } else if (parsed.lat && parsed.lon) {
-      weather = await getWeatherByCoords(parsed.lat, parsed.lon);
-    } else {
-      weather = await getWeatherByCity(process.env.NEXT_PUBLIC_DEFAULT_CITY ?? 'New Delhi,IN');
-    }
-  } catch (err) {
+  // 1. Weather, mode rules, wardrobe, and style profile are independent —
+  // fetch them in parallel so generation latency is bounded by the slowest one.
+  const weatherPromise = parsed.trip_city
+    ? getWeatherByCity(parsed.trip_city)
+    : parsed.lat && parsed.lon
+      ? getWeatherByCoords(parsed.lat, parsed.lon)
+      : getWeatherByCity(process.env.NEXT_PUBLIC_DEFAULT_CITY ?? 'New Delhi,IN');
+
+  const [weatherResult, { data: modeRow }, { data: itemRows, error: itemsErr }, profile] =
+    await Promise.all([
+      weatherPromise.then((w) => ({ ok: true as const, weather: w })).catch((err: unknown) => ({ ok: false as const, err })),
+      supa.from('modes').select('*').eq('id', parsed.mode).maybeSingle(),
+      supa.from('items').select('*, category:categories(*)').eq('archived', false),
+      getStyleProfile(),
+    ]);
+
+  if (!weatherResult.ok) {
+    const err = weatherResult.err;
     return NextResponse.json(
       { error: 'Weather fetch failed', details: err instanceof Error ? err.message : String(err) },
       { status: 502 }
     );
   }
+  const weather = weatherResult.weather;
 
   const rawTemp = parsed.override_temp_c ?? weather.temp_c;
   const temp_c = effectiveTempC(rawTemp, parsed.environment);
   const tod = weather.is_night ? 'night' : timeOfDay();
 
   // 2. Mode rules
-  const { data: modeRow } = await supa
-    .from('modes')
-    .select('*')
-    .eq('id', parsed.mode)
-    .maybeSingle();
   // Merge DB rules on top of DEFAULT_MODES so new rule fields (excluded_layers, etc.)
   // defined in defaults are always present even when the DB row predates them.
   const defaultMode = DEFAULT_MODES.find((m) => m.id === parsed.mode) ?? DEFAULT_MODES[0];
@@ -77,11 +92,7 @@ export async function POST(req: Request) {
     ? { ...(modeRow as Mode), rules: { ...baseRules, ...describeOverride } }
     : { ...defaultMode, rules: { ...baseRules, ...describeOverride } };
 
-  // 3. Candidates — fetch items with categories joined
-  const { data: itemRows, error: itemsErr } = await supa
-    .from('items')
-    .select('*, category:categories(*)')
-    .eq('archived', false);
+  // 3. Candidates
   if (itemsErr) {
     return NextResponse.json({ error: itemsErr.message }, { status: 500 });
   }
@@ -139,8 +150,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // 4. Style Blueprint
-  const profile = await getStyleProfile();
+  // 4. Style Blueprint (fetched in parallel above)
   const blueprint = formatBlueprint(profile);
 
   const context = {
@@ -164,8 +174,11 @@ export async function POST(req: Request) {
   let rawOutfits;
   try {
     const text = await generateJSON(GENERATE_SYSTEM, prompt);
-    const parsedOut = JSON.parse(text);
-    rawOutfits = parsedOut.outfits;
+    const validated = LLMOutput.safeParse(JSON.parse(text));
+    if (!validated.success) {
+      throw new Error(`Model returned malformed outfit JSON: ${validated.error.issues[0]?.message ?? 'unknown shape'}`);
+    }
+    rawOutfits = validated.data.outfits;
   } catch (err) {
     const details = err instanceof Error ? err.message : String(err);
     console.error('[generate] LLM error:', details);
@@ -176,7 +189,7 @@ export async function POST(req: Request) {
   const validIds = new Set(finalCandidates.map((i) => i.id));
   const itemById = new Map(finalCandidates.map((i) => [i.id, i]));
 
-  const cleaned = (rawOutfits as { items: string[]; reasoning: string; confidence: number }[])
+  const cleaned = rawOutfits
     .map((o) => {
       // Remove ids the AI hallucinated and deduplicate
       const hallucinated = o.items.filter((id) => !validIds.has(id));
@@ -197,17 +210,25 @@ export async function POST(req: Request) {
         const cat = itemById.get(id)?.category?.name ?? '';
         return cat.toLowerCase().includes('shirt');
       });
-      const final = hasDressShirt
+      let final = hasDressShirt
         ? deduped
         : deduped.filter((id) => itemById.get(id)?.category?.name !== 'Tie');
 
-      // If the AI referenced items not in the candidate pool, note it in reasoning
-      // so the frontend can surface it for debugging without showing ghost item names
-      const reasoning = hallucinated.length > 0
-        ? `${o.reasoning} [Note: ${hallucinated.length} item(s) referenced by AI were not in your wardrobe candidates and have been removed.]`
-        : o.reasoning;
+      // Rule-4 guarantee: the model sometimes forgets footwear. If footwear
+      // candidates passed the gates, append the best-ranked one server-side.
+      const hasFootwear = final.some((id) => itemById.get(id)?.category?.layer_type === 'footwear');
+      if (!hasFootwear) {
+        const fw = finalCandidates.find((i) => i.category?.layer_type === 'footwear');
+        if (fw) final = [...final, fw.id];
+      }
 
-      return { ...o, items: final, reasoning };
+      // Hallucinated ids are cleaned silently — stylist notes stay on-brand.
+      // The count still lands in Vercel logs for debugging.
+      if (hallucinated.length > 0) {
+        console.warn(`[generate] LLM hallucinated ${hallucinated.length} item id(s):`, hallucinated);
+      }
+
+      return { ...o, items: final, reasoning: o.reasoning };
     })
     .map((o) => {
       const hasTop = o.items.some((id) => {
