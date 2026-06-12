@@ -16,7 +16,8 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 export async function proxy(req: NextRequest) {
-  const pin = process.env.APP_PIN;
+  // trim() guards against stray whitespace/newlines from CLI-set env values
+  const pin = process.env.APP_PIN?.trim();
   if (!pin) return NextResponse.next();
 
   const expected = await sha256Hex(pin);

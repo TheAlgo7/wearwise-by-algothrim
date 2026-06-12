@@ -11,7 +11,7 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  const pin = process.env.APP_PIN;
+  const pin = process.env.APP_PIN?.trim();
   if (!pin) return NextResponse.json({ ok: true }); // gate not configured
 
   let body: { pin?: string };
