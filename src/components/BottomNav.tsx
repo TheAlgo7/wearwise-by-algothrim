@@ -28,7 +28,7 @@ export function BottomNav() {
       }}
     >
       <div
-        className="flex items-center gap-1 rounded-full px-2 py-2 bg-ink-200/90 border border-white/[0.07]"
+        className="flex items-center gap-1 rounded-full px-2 py-2 bg-ink-200/70 border border-white/[0.08]"
         style={{
           backdropFilter: 'blur(28px) saturate(190%)',
           WebkitBackdropFilter: 'blur(28px) saturate(190%)',

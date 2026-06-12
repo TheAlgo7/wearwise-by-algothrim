@@ -37,9 +37,9 @@ Color strategy: **Restrained**. Tinted near-black neutrals dominate. Crimson car
 
 | Token | Hex | Role |
 |---|---|---|
-| `crimson-50` | `#FFEDE8` | High-emphasis text on dark (headings) |
+| `crimson-50` | `#FFECEF` | High-emphasis text on dark (headings) |
 | `crimson-100` | `#FFD9DA` | Secondary emphasis text |
-| `crimson-200` | `#FFDAC7` | Warm highlight |
+| `crimson-200` | `#FFC4D0` | Warm highlight |
 | `crimson-300` | `#FF86A0` | Icons on dark backgrounds, captions |
 | `crimson-400` | `#E2335D` | Primary CTA, active states, generate button |
 | `crimson-500` | `#BB165F` | Hover state for crimson-400 |
@@ -64,12 +64,12 @@ Font stack: `SamsungOne`, `SF Pro Display`, `system-ui`, `Roboto`, `sans-serif`.
 
 | Token | Size / Leading | Weight | Usage |
 |---|---|---|---|
-| `text-oneui-hero` | 32px / 38px, -0.01em | 600 | Page hero titles, major headings |
+| `text-oneui-hero` | 32px / 38px, -0.01em | 700 | Page hero titles, major headings |
 | `text-oneui-title` | 26px / 32px, -0.01em | 600 | Section titles |
 | `text-oneui-h` | 20px / 26px | 600 | Card headings, list item titles |
 | `text-oneui-body` | 15px / 21px | 400 | Body text, descriptions |
 | `text-oneui-cap` | 12px / 17px | 500 | Captions, labels, chips, metadata |
-| `text-oneui-tab` | 11px / 14px | 600 | Bottom nav labels |
+| `text-oneui-tab` | 12px / 15px | 600 | Bottom nav labels |
 
 Hierarchy uses scale + weight contrast. Headings use `crimson-50`; captions use `fog-200` to `fog-400` depending on emphasis level.
 
@@ -86,7 +86,7 @@ Three surface levels. Never nest — a raised card inside a raised card is alway
 | Raised card | `Squircle variant="raised"` | `ink-200`, `border-white/[0.07]`, `shadow-card`, `rounded-squircle` |
 | Glass card | `Squircle variant="glass"` | `bg-white/[0.04]`, `border-white/[0.06]`, `rounded-squircle` |
 
-Sheet backgrounds (drawers, modals): `var(--color-ink-100, #121012)`.
+Sheet backgrounds (drawers, modals): One UI 9 glass — `rgba(18,16,18,0.84)` + `backdrop-filter: blur(32px) saturate(160%)`, `border-white/[0.08]` top/side border. Glass is reserved for floating surfaces (sheets, bottom nav); content cards stay opaque.
 
 `shadow-card`: `0 1px 0 rgba(255,255,255,0.04) inset` — inner top highlight, gives perceived lift without a drop shadow.
 
@@ -132,7 +132,7 @@ Structural card primitive with `variant` prop (`flat` | `raised` | `glass`). Alw
 
 ### Bottom Nav (BottomNav)
 
-Fixed to bottom. Pill container: `bg-ink-200 border-white/[0.07] rounded-full`. Active nav item: `text-crimson-50`, `bg-crimson-400/30` pill highlight with `animate-oneui-pop`. Inactive: `text-white/40`. Tab label: `text-oneui-tab`.
+Fixed to bottom. Pill container: `bg-ink-200/70 border-white/[0.08] rounded-full` with `backdrop-blur(28px) saturate(190%)` (One UI 9 glass). Active nav item: `text-crimson-50`, `bg-crimson-400/30` pill highlight with `animate-oneui-pop`. Inactive: `text-white/40`. Tab label: `text-oneui-tab`.
 
 ### Generate Button (GenerateButton)
 
@@ -240,4 +240,4 @@ PWA icons at `public/icons/`. Formats: SVG (primary), PNG fallbacks.
 | `icon-maskable.svg` | Android adaptive icon | Content within central 80% |
 | `apple-touch-icon.svg` | iOS home screen | 180×180 effective size; no rounded corners needed |
 
-*Last updated: May 2026*
+*Last updated: June 2026 — One UI 9 glass refresh*

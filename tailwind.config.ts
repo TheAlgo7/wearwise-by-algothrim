@@ -25,9 +25,10 @@ const config: Config = {
         },
         crimson: {
           DEFAULT: '#E2335D',
-          50:  '#FFEDE8',
+          // 50/200 pulled back onto the crimson hue — the old values drifted peach
+          50:  '#FFECEF',
           100: '#FFD9DA',
-          200: '#FFDAC7',
+          200: '#FFC4D0',
           300: '#FF86A0',
           400: '#E2335D',
           500: '#BB165F',
@@ -45,12 +46,13 @@ const config: Config = {
         sans: ['SamsungOne', '"SF Pro Display"', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'],
       },
       fontSize: {
-        'oneui-hero':  ['32px', { lineHeight: '38px', letterSpacing: '-0.01em', fontWeight: '600' }],
+        // One UI 9 bold refresh: hero weight up one step
+        'oneui-hero':  ['32px', { lineHeight: '38px', letterSpacing: '-0.01em', fontWeight: '700' }],
         'oneui-title': ['26px', { lineHeight: '32px', letterSpacing: '-0.01em', fontWeight: '600' }],
         'oneui-h':     ['20px', { lineHeight: '26px', fontWeight: '600' }],
         'oneui-body':  ['15px', { lineHeight: '21px', fontWeight: '400' }],
         'oneui-cap':   ['12px', { lineHeight: '17px', fontWeight: '500' }],
-        'oneui-tab':   ['11px', { lineHeight: '14px', fontWeight: '600' }],
+        'oneui-tab':   ['12px', { lineHeight: '15px', fontWeight: '600' }],
       },
       borderRadius: {
         'squircle-sm': '14px',

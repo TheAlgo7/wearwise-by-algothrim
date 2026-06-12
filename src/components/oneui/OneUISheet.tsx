@@ -44,17 +44,23 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
       <div
         ref={trapRef}
         className={cn(
-          'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto bg-ink-100 rounded-t-[32px] shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
+          'relative w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto rounded-t-[32px] border border-b-0 border-white/[0.08] shadow-oneui-raised pb-[env(safe-area-inset-bottom)] animate-oneui-pop',
           className
         )}
+        style={{
+          // One UI 9 glass: translucent floating surface, dimmed page bleeds through
+          background: 'rgba(18,16,18,0.84)',
+          backdropFilter: 'blur(32px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(160%)',
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'oneui-sheet-title' : undefined}
         aria-label={!title ? ariaLabel : undefined}
       >
-        {/* grabber */}
-        <div className="pt-2 pb-1 flex justify-center">
-          <div className="h-1 w-10 rounded-full bg-fog-500/50" />
+        {/* grabber — One UI 9 chunkier handle */}
+        <div className="pt-2.5 pb-1 flex justify-center">
+          <div className="h-1.5 w-12 rounded-full bg-white/25" />
         </div>
         {title ? (
           <div className="flex items-center justify-between px-5 pt-1 pb-3">
@@ -62,7 +68,7 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
             <button
               onClick={onClose}
               aria-label="Close"
-              className="press h-9 w-9 rounded-full bg-ink-200 flex items-center justify-center text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="press h-11 w-11 rounded-full bg-white/[0.08] flex items-center justify-center text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <X size={18} />
             </button>

@@ -81,9 +81,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
       {/* Sheet */}
       <div
         ref={trapRef}
-        className="relative w-full max-w-xl flex flex-col rounded-t-[28px] overflow-hidden"
+        className="relative w-full max-w-xl flex flex-col rounded-t-[28px] overflow-hidden border border-b-0 border-white/[0.08]"
         style={{
-          background: 'var(--color-ink-100, #121012)',
+          // One UI 9 glass: translucent floating surface, dimmed page bleeds through
+          background: 'rgba(18,16,18,0.84)',
+          backdropFilter: 'blur(32px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(160%)',
           maxHeight: '92dvh',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: reducedMotion ? 'none' : 'transform 400ms var(--ease-spring)',
@@ -93,9 +96,9 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
         aria-modal="true"
         aria-labelledby="outfit-sheet-title"
       >
-        {/* Drag handle */}
+        {/* Drag handle — One UI 9 chunkier handle */}
         <div className="pt-3 pb-0 flex justify-center shrink-0">
-          <div className="h-1 w-10 rounded-full bg-white/[0.18]" />
+          <div className="h-1.5 w-12 rounded-full bg-white/25" />
         </div>
 
         {/* Header */}
