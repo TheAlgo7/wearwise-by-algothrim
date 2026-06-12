@@ -214,8 +214,8 @@ export default function HomePage() {
       </div>
 
       {/* ── VIEWING AREA ── */}
-      {/* Bottom padding clears the floating pill nav so outfit actions stay tappable */}
-      <div className="px-5 pt-14 pb-[calc(env(safe-area-inset-bottom)+132px)]">
+      {/* Nav clearance lives on .reach-zone below — header needs only its own rhythm */}
+      <div className="px-5 pt-14 pb-4">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             <p suppressHydrationWarning className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase mb-2 truncate">
