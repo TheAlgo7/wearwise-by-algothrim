@@ -68,7 +68,7 @@ export function WeatherWidget({ weather, loading, effectiveTempC, tripCity, vari
               <span className="text-[11px] text-crimson-100/45 line-through">{Math.round(weather.temp_c)}°</span>
             )}
           </div>
-          <p className="mt-0.5 text-[10px] leading-none font-semibold uppercase tracking-wide text-crimson-300 truncate">
+          <p className="mt-0.5 text-[11px] leading-none font-semibold uppercase tracking-wide text-crimson-300 truncate">
             {tripCity ? 'Trip' : weather.city}
           </p>
         </div>

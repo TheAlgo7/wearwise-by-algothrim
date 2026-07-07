@@ -268,7 +268,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     <div className="rounded-[16px] bg-white/[0.05] border border-white/[0.06] px-3 py-2">
       <div className="flex items-center gap-1.5 text-crimson-300">
         {icon}
-        <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wide">{label}</span>
       </div>
       <p className="mt-1 text-[15px] leading-none font-semibold text-crimson-50">{value}</p>
     </div>

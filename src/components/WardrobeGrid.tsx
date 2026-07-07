@@ -122,7 +122,7 @@ export function WardrobeGrid({ items }: Props) {
 
       {filtersOpen && (
         <div className="glass-card p-3 mb-4 animate-oneui-fade">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mb-2">
             Category
           </p>
           <div className="flex flex-wrap gap-2">
@@ -136,7 +136,7 @@ export function WardrobeGrid({ items }: Props) {
             ))}
           </div>
 
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mt-4 mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-crimson-300 px-1 mt-4 mb-2">
             Sort
           </p>
           <div className="flex flex-wrap gap-2">

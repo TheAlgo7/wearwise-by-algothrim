@@ -168,7 +168,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           {/* Reasoning */}
           {outfit.reasoning && (
             <div className="mt-5 rounded-[16px] px-4 py-4 bg-crimson-400/[0.06] border border-crimson-400/[0.12]">
-              <p className="text-[10px] font-semibold tracking-widest uppercase mb-2 text-crimson-300">
+              <p className="text-[11px] font-semibold tracking-widest uppercase mb-2 text-crimson-300">
                 Why this works
               </p>
               <p className="text-[13px] leading-[1.7] text-fog-200">{outfit.reasoning}</p>

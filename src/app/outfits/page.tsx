@@ -55,7 +55,7 @@ export default function OutfitsPage() {
                         {it?.image_url ? (
                           <Image src={it.image_url} alt={it.name} width={64} height={64} sizes="64px" className="object-contain w-full h-full" />
                         ) : (
-                          <span className="text-[10px] text-fog-500 text-center px-1">{it?.name ?? '?'}</span>
+                          <span className="text-[11px] text-fog-500 text-center px-1">{it?.name ?? '?'}</span>
                         )}
                       </div>
                     );
