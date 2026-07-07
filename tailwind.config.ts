@@ -31,7 +31,9 @@ const config: Config = {
           200: '#FFC4D0',
           300: '#FF86A0',
           400: '#E2335D',
-          500: '#BB165F',
+          // 500 re-hued from #BB165F (330° magenta — read as purple-pink on AMOLED)
+          // to the same 346° red hue as crimson-400, just darker.
+          500: '#C41C43',
           600: '#8B0F47',
           700: '#5E0A31',
         },

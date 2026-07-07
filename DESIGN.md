@@ -42,7 +42,7 @@ Color strategy: **Restrained**. Tinted near-black neutrals dominate. Crimson car
 | `crimson-200` | `#FFC4D0` | Warm highlight |
 | `crimson-300` | `#FF86A0` | Icons on dark backgrounds, captions |
 | `crimson-400` | `#E2335D` | Primary CTA, active states, generate button |
-| `crimson-500` | `#BB165F` | Hover state for crimson-400 |
+| `crimson-500` | `#C41C43` | Hover state for crimson-400 (same 346° hue as 400, darker — the old `#BB165F` drifted purple) |
 | `crimson-600` | `#8B0F47` | Pressed state |
 | `crimson-700` | `#5E0A31` | Deep accent, rarely used |
 
