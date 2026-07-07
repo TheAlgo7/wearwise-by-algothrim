@@ -53,6 +53,8 @@ export default function HomePage() {
   const [wornOutfitIdx, setWornOutfitIdx] = useState<number | null>(null);
   const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  // Non-blocking generation notes from the server (heat / destination fallbacks)
+  const [advisory, setAdvisory] = useState<string | null>(null);
   // Screen-reader status message for generation state changes
   const [statusMsg, setStatusMsg] = useState('');
 
@@ -124,6 +126,7 @@ export default function HomePage() {
   const generate = useCallback(async () => {
     setGenerating(true);
     setError(null);
+    setAdvisory(null);
     setOutfits([]);
     setWornOutfitIdx(null);
     setSavedIdxs(new Set());
@@ -145,6 +148,7 @@ export default function HomePage() {
         setStatusMsg(`Error: ${msg}`);
       } else {
         setOutfits(data.outfits as GeneratedOutfit[]);
+        setAdvisory((data.destination_advisory ?? data.heat_advisory ?? null) as string | null);
         setStatusMsg(`${(data.outfits as GeneratedOutfit[]).length} outfit${(data.outfits as GeneratedOutfit[]).length === 1 ? '' : 's'} ready.`);
       }
     } catch (err) {
@@ -292,6 +296,13 @@ export default function HomePage() {
           >
             {error}
           </div>
+        )}
+
+        {/* Advisory — informational, not an error (heat fallback / destination fallback) */}
+        {advisory && !error && (
+          <p role="status" className="text-[12px] text-fog-400 px-1 -mt-2">
+            {advisory}
+          </p>
         )}
 
         {/* Outfit cards */}

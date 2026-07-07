@@ -48,15 +48,27 @@ export async function POST(req: Request) {
 
   // 1. Weather, mode rules, wardrobe, and style profile are independent —
   // fetch them in parallel so generation latency is bounded by the slowest one.
-  const weatherPromise = parsed.trip_city
-    ? getWeatherByCity(parsed.trip_city)
-    : parsed.lat && parsed.lon
+  // BUG-005: a failed destination lookup must never block generation — fall back
+  // to local weather (coords or default city) and surface an advisory instead.
+  const localWeather = () =>
+    parsed.lat && parsed.lon
       ? getWeatherByCoords(parsed.lat, parsed.lon)
       : getWeatherByCity(process.env.NEXT_PUBLIC_DEFAULT_CITY ?? 'New Delhi,IN');
 
+  const weatherPromise = (async () => {
+    if (parsed.trip_city) {
+      try {
+        return { weather: await getWeatherByCity(parsed.trip_city), destinationFailed: false };
+      } catch {
+        return { weather: await localWeather(), destinationFailed: true };
+      }
+    }
+    return { weather: await localWeather(), destinationFailed: false };
+  })();
+
   const [weatherResult, { data: modeRow }, { data: itemRows, error: itemsErr }, profile] =
     await Promise.all([
-      weatherPromise.then((w) => ({ ok: true as const, weather: w })).catch((err: unknown) => ({ ok: false as const, err })),
+      weatherPromise.then((w) => ({ ok: true as const, ...w })).catch((err: unknown) => ({ ok: false as const, err })),
       supa.from('modes').select('*').eq('id', parsed.mode).maybeSingle(),
       supa.from('items').select('*, category:categories(*)').eq('archived', false),
       getStyleProfile(),
@@ -69,7 +81,7 @@ export async function POST(req: Request) {
       { status: 502 }
     );
   }
-  const weather = weatherResult.weather;
+  const { weather, destinationFailed } = weatherResult;
 
   const rawTemp = parsed.override_temp_c ?? weather.temp_c;
   const temp_c = effectiveTempC(rawTemp, parsed.environment);
@@ -163,7 +175,8 @@ export async function POST(req: Request) {
     custom_context: parsed.custom_context,
     planned_for: parsed.planned_for,
     city: weather.city,
-    trip_location: parsed.trip_city,
+    // A destination that failed to resolve is no longer a trip context
+    trip_location: destinationFailed ? undefined : parsed.trip_city,
     // Random seed so the LLM explores different combinations every generation
     variation_seed: Math.random().toString(36).slice(2, 8),
   };
@@ -264,5 +277,6 @@ export async function POST(req: Request) {
     context,
     candidate_count: finalCandidates.length,
     ...(heatAdvisory && { heat_advisory: `It's ${temp_c}°C — your tagged wardrobe is optimised for cooler temps, so these are the most heat-appropriate pieces available.` }),
+    ...(destinationFailed && { destination_advisory: `Couldn't get weather for "${parsed.trip_city}" — generated for ${weather.city} conditions instead.` }),
   });
 }

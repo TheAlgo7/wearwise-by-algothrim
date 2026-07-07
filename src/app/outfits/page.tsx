@@ -5,32 +5,42 @@ import { createClient } from '@/lib/supabase/client';
 import type { Item, Outfit } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function OutfitsPage() {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [items, setItems] = useState<Map<string, Item>>(new Map());
   const [loading, setLoading] = useState(true);
+  // Honest error state — a failed read renders as an error with Retry,
+  // never as a silent "Nothing yet" empty state.
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     const supa = createClient();
-    (async () => {
-      const [{ data: o }, { data: i }] = await Promise.all([
-        supa.from('outfits').select('*').order('created_at', { ascending: false }).limit(50),
-        supa.from('items').select('*, category:categories(*)'),
-      ]);
+    const [{ data: o, error: oErr }, { data: i, error: iErr }] = await Promise.all([
+      supa.from('outfits').select('*').order('created_at', { ascending: false }).limit(50),
+      supa.from('items').select('*, category:categories(*)'),
+    ]);
+    const failed = Boolean(oErr || iErr);
+    setLoadError(failed);
+    if (!failed) {
       setOutfits((o ?? []) as Outfit[]);
       setItems(new Map(((i ?? []) as Item[]).map((x) => [x.id, x])));
-      setLoading(false);
-    })();
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
   return (
     <main className="min-h-dvh pb-4">
       <OneUIHeader
         eyebrow="HISTORY"
         title="Your outfits"
-        subtitle={loading ? '—' : `${outfits.length} recent`}
+        subtitle={loading || (loadError && outfits.length === 0) ? '—' : `${outfits.length} recent`}
       />
       <div className="reach-zone">
         {loading ? (
@@ -38,6 +48,22 @@ export default function OutfitsPage() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-32 rounded-squircle bg-ink-100 animate-pulse" />
             ))}
+          </div>
+        ) : loadError && outfits.length === 0 ? (
+          <div role="alert" className="rounded-[1.65rem] bg-ink-100 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load your outfits</p>
+                <p className="mt-1 text-[13px] leading-5 text-fog-400">Check your connection and try again.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setLoading(true); void load(); }}
+                className="min-h-[44px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200 transition-colors hover:bg-crimson-400/[0.22]"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         ) : outfits.length === 0 ? (
           <div className="text-center text-fog-400 text-oneui-body py-10">

@@ -29,7 +29,7 @@ MODE GUIDANCE:
 - gym: Athletic outfits only. Performance tees, shorts, trainers. Arm sleeves allowed.
 - church: Modest, clean, structured. No gym or lounge vibes.
 - travel: Comfortable, layerable, repeated-wear friendly.
-- impress: FULL signature outfits — top + bottom + footwear + accessories. Pick the most stylish, head-turning combos from ALL available candidates. This is the "best dressed" mode — full complete outfits only, never just accessories alone.
+- impress: FULL signature outfits — top + bottom + footwear + accessories. Pick the most stylish, head-turning combos from ALL available candidates. This is the "best dressed" mode — full complete outfits only, never just accessories alone. Bias hard toward the smartest pieces in the pool (shirts, polos, structured layers, clean footwear); graphic tees, gym trainers, and lounge staples have no place here even if they passed the filter.
 - night: Dark palette. Evening/party energy.
 - describe: Use the custom_context field to understand the exact occasion and dress accordingly. For parties, pick festive/smart-casual combos.
 - quick: Pick the easiest put-together outfit for right now.
