@@ -9,9 +9,19 @@ export interface FilterContext {
 }
 
 const TEMP_TOLERANCE = 2; // °C slack for min_temp_c (don't freeze out warm items)
-// Max-temp filtering is intentionally NOT applied — in hot climates (e.g. Delhi 38–42°C),
-// people wear all their clothing regardless of AI-tagged max_temp_c values.
-// The LLM handles heat-appropriate selection via context; hard max gates cause near-empty shortlists.
+// Max-temp filtering is intentionally NOT applied as a general gate — in hot
+// climates (e.g. Delhi 38–42°C), people wear all their clothing regardless of
+// AI-tagged max_temp_c values. The LLM handles heat-appropriate selection via
+// context; hard max gates cause near-empty shortlists (BUG-008).
+//
+// The ONE exception is the winter guard below: genuinely cold-weather layers
+// (coats, puffers, high necks — mid/outer tagged well below current temp) are
+// hard-excluded in heat so the winter pool can never contaminate summer
+// generation. Thresholds are wide enough that normal summer clothing
+// (max_temp_c ~34-38) never trips it, preserving the BUG-008 behaviour.
+const WINTER_GUARD_MIN_TEMP = 28;  // °C — guard only engages in real heat
+const WINTER_GUARD_EXCESS = 5;     // °C above the item's ceiling before exclusion
+const WINTER_GUARD_LAYERS = new Set(['mid', 'outer']);
 
 /**
  * The Bouncer.
@@ -34,11 +44,21 @@ function passesGates(it: Item, ctx: FilterContext): boolean {
     if (it.vibe.length > 0 && !it.vibe.some((v) => ctx.mode_rules.footwear_vibes_any!.includes(v))) return false;
   }
 
-  // 3. Weather gate — only min_temp_c (don't wear a puffer jacket in summer).
-  //    max_temp_c is NOT enforced as a hard gate — see comment above.
+  // 3. Weather gate — only min_temp_c (don't underdress in cold).
+  //    max_temp_c is NOT enforced as a general hard gate — see comment above.
   //    Bottoms always pass weather gate regardless.
   if (layer !== 'bottom') {
     if (it.min_temp_c !== null && ctx.temp_c < it.min_temp_c - TEMP_TOLERANCE) return false;
+  }
+
+  // 3b. Winter guard — cold-weather mid/outer layers stay out of hot-day pools.
+  if (
+    ctx.temp_c >= WINTER_GUARD_MIN_TEMP &&
+    WINTER_GUARD_LAYERS.has(layer) &&
+    it.max_temp_c !== null &&
+    ctx.temp_c > it.max_temp_c + WINTER_GUARD_EXCESS
+  ) {
+    return false;
   }
 
   // 4. Formality gate — scoped by mode rules

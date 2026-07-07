@@ -80,9 +80,11 @@ const TESTS = [
     body: { mode: 'quick', environment: 'outdoor', planned_for: 'now', override_temp_c: 46 },
   },
   {
-    name: 'Trip · unresolvable city (server behaviour)',
+    // BUG-005 (2026-07-07): a failed destination lookup must NOT block
+    // generation — server falls back to local weather and flags it.
+    name: 'Trip · unresolvable city (falls back to local weather)',
     body: { mode: 'travel', environment: 'outdoor', planned_for: 'now', trip_city: 'Xyzzyville123' },
-    expectStatus: 502,
+    expectDestinationAdvisory: true,
   },
   {
     name: 'Invalid body (bad enum)',
@@ -121,6 +123,9 @@ for (const t of TESTS) {
     if (outfits.length === 0) problems.push('zero outfits returned');
     if (t.expectCity && !json.context?.city?.includes(t.expectCity)) {
       problems.push(`expected city ${t.expectCity}, got ${json.context?.city}`);
+    }
+    if (t.expectDestinationAdvisory && !json.destination_advisory) {
+      problems.push('expected destination_advisory in response');
     }
 
     outfits.forEach((o, idx) => {

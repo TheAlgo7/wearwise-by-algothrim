@@ -187,7 +187,11 @@ export async function POST(req: Request) {
   let rawOutfits;
   try {
     const text = await generateJSON(GENERATE_SYSTEM, prompt);
-    const validated = LLMOutput.safeParse(JSON.parse(text));
+    const parsedJson: unknown = JSON.parse(text);
+    // Some models return the outfits array bare instead of { outfits: [...] }.
+    const validated = LLMOutput.safeParse(
+      Array.isArray(parsedJson) ? { outfits: parsedJson } : parsedJson
+    );
     if (!validated.success) {
       throw new Error(`Model returned malformed outfit JSON: ${validated.error.issues[0]?.message ?? 'unknown shape'}`);
     }
