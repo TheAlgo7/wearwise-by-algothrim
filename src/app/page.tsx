@@ -12,6 +12,17 @@ import { createClient } from '@/lib/supabase/client';
 import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import { modeForDate } from '@/lib/modes';
 import type { Environment, Item, WeatherSnapshot, GeneratedOutfit } from '@/types';
+import { ChevronRight, Plane } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+const AHMEDABAD_PLAN_EVENT = 'Ahmedabad Meetup Packing Plan';
+
+interface SavedTripOutfit {
+  items: string[];
+  reasoning: string;
+  confidence: number;
+}
 
 export default function HomePage() {
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
@@ -49,6 +60,7 @@ export default function HomePage() {
 
   const [items, setItems] = useState<Item[]>([]);
   const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
+  const [savedTripOutfits, setSavedTripOutfits] = useState<SavedTripOutfit[]>([]);
   const [generating, setGenerating] = useState(false);
   const [wornOutfitIdx, setWornOutfitIdx] = useState<number | null>(null);
   const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
@@ -68,6 +80,31 @@ export default function HomePage() {
         .eq('archived', false)
         .abortSignal(controller.signal);
       if (!controller.signal.aborted) setItems((data ?? []) as Item[]);
+    })();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const supa = createClient();
+    (async () => {
+      const { data } = await supa
+        .from('outfits')
+        .select('items, ai_reasoning, confidence, context')
+        .eq('is_saved', true)
+        .order('created_at', { ascending: false })
+        .limit(30)
+        .abortSignal(controller.signal);
+      if (controller.signal.aborted) return;
+
+      const planned = (data ?? [])
+        .filter((outfit) => outfit.context?.event === AHMEDABAD_PLAN_EVENT)
+        .map((outfit) => ({
+          items: outfit.items as string[],
+          reasoning: outfit.ai_reasoning ?? 'Ahmedabad outfit plan.',
+          confidence: outfit.confidence ?? 0.8,
+        }));
+      setSavedTripOutfits(planned);
     })();
     return () => controller.abort();
   }, []);
@@ -284,6 +321,82 @@ export default function HomePage() {
             })}
           </div>
         </div>
+
+        {savedTripOutfits.length > 0 && (
+          <section aria-label="Ahmedabad outfit quick glance">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
+                Ahmedabad
+              </p>
+              <Link
+                href="/outfits"
+                className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-crimson-100/60 hover:text-crimson-200"
+              >
+                All plans
+                <ChevronRight size={13} aria-hidden />
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-4 px-4 pb-1">
+              {savedTripOutfits.slice(0, 4).map((outfit, idx) => {
+                const resolved = outfit.items
+                  .map((id) => itemById.get(id))
+                  .filter((item): item is Item => Boolean(item))
+                  .slice(0, 4);
+                const lead = resolved[0]?.name ?? `Plan ${idx + 1}`;
+
+                return (
+                  <Link
+                    key={`${lead}-${idx}`}
+                    href="/outfits"
+                    className="glass-card block w-[78vw] max-w-[360px] shrink-0 snap-start p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-crimson-400/15 text-crimson-300">
+                          <Plane size={17} aria-hidden />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[15px] font-semibold leading-5 text-crimson-50">{lead}</p>
+                          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-crimson-100/45">
+                            Ahmedabad kit
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="shrink-0 text-crimson-300/70" aria-hidden />
+                    </div>
+
+                    <div className="flex gap-2 overflow-hidden">
+                      {resolved.map((item) => (
+                        <div
+                          key={item.id}
+                          className="h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-white/[0.08] bg-ink-0"
+                        >
+                          {item.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={item.name}
+                              width={56}
+                              height={56}
+                              sizes="56px"
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center px-1 text-center text-[9px] leading-tight text-crimson-100/40">
+                              {item.name}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-crimson-100/65">
+                      {outfit.reasoning}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Generate */}
         <GenerateButton onClick={generate} loading={generating} />
