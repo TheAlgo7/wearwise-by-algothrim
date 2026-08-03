@@ -1,3 +1,4 @@
+import { APP_TIMEZONE } from '@/lib/weather';
 import type { Mode, ModeRules } from '@/types';
 
 /** Default mode rules used as fallback if DB fetch fails. */
@@ -14,8 +15,20 @@ export const DEFAULT_MODES: Mode[] = [
   { id: 'describe', label: 'Describe',  hint: 'Tell me where you\'re going',     rules: { min_formality: 1, max_formality: 5 }, sort_order: 10 },
 ];
 
+/**
+ * Sunday means church mode.
+ *
+ * Pinned to Gaurav's timezone rather than the runtime's: this is currently only
+ * called on the client (where the phone is already on IST), but the same
+ * assumption on the server is what made timeOfDay wrong by 5h30m, so it is
+ * stated explicitly here too.
+ */
 export function modeForDate(d: Date = new Date()): string {
-  return d.getDay() === 0 ? 'church' : 'quick';
+  const weekday = new Intl.DateTimeFormat('en-GB', {
+    timeZone: APP_TIMEZONE,
+    weekday: 'short',
+  }).format(d);
+  return weekday === 'Sun' ? 'church' : 'quick';
 }
 
 export function mergeModeRules(base: ModeRules, extra?: ModeRules): ModeRules {

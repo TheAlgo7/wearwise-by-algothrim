@@ -7,7 +7,7 @@ import { DEFAULT_MODES, extractDescribeFormality } from '@/lib/modes';
 import { filterItems, rankCandidates } from '@/lib/filter-engine';
 import { formatBlueprint, getStyleProfile } from '@/lib/style-profile';
 import { GENERATE_SYSTEM, buildGeneratePrompt } from '@/lib/prompts';
-import { SEASONS, seasonForTemp } from '@/lib/season';
+import { SEASONS, resolveSeason } from '@/lib/season';
 import type { Item, Mode } from '@/types';
 
 export const runtime = 'nodejs';
@@ -116,7 +116,12 @@ export async function POST(req: Request) {
 
   // A manual season override is a statement of intent that beats the local
   // thermometer: he sets Winter because of where he is going, not where he is.
-  const season = parsed.season ?? seasonForTemp(temp_c, weather.humidity);
+  // When the client sends nothing, derive it the same way the UI does —
+  // calendar first, temperature only when it contradicts. Calling seasonForTemp
+  // directly here bypassed that and reported Summer in the middle of monsoon.
+  const season =
+    parsed.season ??
+    resolveSeason(null, { temp_c: rawTemp, humidity: weather.humidity }).season;
 
   const shortlist = filterItems(all, {
     temp_c,
@@ -221,14 +226,27 @@ export async function POST(req: Request) {
       // Remove ids the AI hallucinated and deduplicate
       const hallucinated = o.items.filter((id) => !validIds.has(id));
       const valid = [...new Set(o.items)].filter((id) => validIds.has(id));
-      // Deduplicate clothing layers (base/mid/outer/bottom) but allow multiple accessories
-      const DUPE_LAYERS = new Set(['base', 'mid', 'outer', 'bottom']);
+      // You wear one pair of shoes, one watch, one hat, one pair of glasses.
+      // Only base/mid/outer/bottom were deduped before, so the model could
+      // return two pairs of trainers or two watches and both survived.
+      const SINGLE_PER_LAYER = new Set([
+        'base', 'mid', 'outer', 'bottom', 'footwear', 'timepiece', 'headwear', 'eyewear',
+      ]);
+      // Accessories and jewellery are deduped one level finer, by category:
+      // a belt with a tie is fine, two belts is not.
       const seenLayers = new Set<string>();
+      const seenCategories = new Set<string>();
       const deduped = valid.filter((id) => {
-        const layer = itemById.get(id)?.category?.layer_type ?? id;
-        if (!DUPE_LAYERS.has(layer)) return true; // accessories always allowed
-        if (seenLayers.has(layer)) return false;
-        seenLayers.add(layer);
+        const item = itemById.get(id);
+        const layer = item?.category?.layer_type ?? id;
+        if (SINGLE_PER_LAYER.has(layer)) {
+          if (seenLayers.has(layer)) return false;
+          seenLayers.add(layer);
+          return true;
+        }
+        const category = item?.category?.name ?? id;
+        if (seenCategories.has(category)) return false;
+        seenCategories.add(category);
         return true;
       });
 
@@ -242,10 +260,28 @@ export async function POST(req: Request) {
         : deduped.filter((id) => itemById.get(id)?.category?.name !== 'Tie');
 
       // Rule-4 guarantee: the model sometimes forgets footwear. If footwear
-      // candidates passed the gates, append the best-ranked one server-side.
+      // candidates passed the gates, append one server-side.
       const hasFootwear = final.some((id) => itemById.get(id)?.category?.layer_type === 'footwear');
       if (!hasFootwear) {
-        const fw = finalCandidates.find((i) => i.category?.layer_type === 'footwear');
+        // Match the shoe to the outfit rather than taking whatever sat first in
+        // the candidate list. Ranking is near-random by design, so "first" was
+        // handing out gym trainers with button-down shirts.
+        const worn = final.map((id) => itemById.get(id)).filter((i): i is Item => Boolean(i));
+        const formalities = worn.map((i) => i.formality).filter((f): f is number => f != null);
+        const target = formalities.length
+          ? formalities.reduce((a, b) => a + b, 0) / formalities.length
+          : 3;
+        const vibes = new Set(worn.flatMap((i) => i.vibe));
+
+        const fw = finalCandidates
+          .filter((i) => i.category?.layer_type === 'footwear')
+          .map((shoe) => {
+            const gap = Math.abs((shoe.formality ?? 3) - target);
+            const shares = shoe.vibe.some((v) => vibes.has(v)) ? 1 : 0;
+            return { shoe, cost: gap - shares };
+          })
+          .sort((a, b) => a.cost - b.cost)[0]?.shoe;
+
         if (fw) final = [...final, fw.id];
       }
 

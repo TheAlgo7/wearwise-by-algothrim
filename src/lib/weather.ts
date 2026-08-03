@@ -1,3 +1,4 @@
+import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import type { WeatherSnapshot } from '@/types';
 
 const BASE = 'https://api.openweathermap.org/data/2.5';
@@ -51,8 +52,27 @@ export async function getWeatherByCity(city: string): Promise<WeatherSnapshot> {
   return toSnapshot(await fetchJson<OWResponse>(url));
 }
 
+/**
+ * Gaurav's timezone, stated explicitly.
+ *
+ * timeOfDay runs inside the /api/generate route, and Vercel's Node runtime is
+ * UTC. Reading date.getHours() there was silently 5h30m out all year: at 16:10
+ * in Delhi the stylist was being told it was morning. It only looked correct in
+ * local development, where the machine is already on IST.
+ */
+export const APP_TIMEZONE = 'Asia/Kolkata';
+
+/** Hour of day (0-23) in Gaurav's timezone, regardless of where this runs. */
+export function localHour(date: Date = new Date(), timeZone: string = APP_TIMEZONE): number {
+  const h = Number(
+    new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' }).format(date)
+  );
+  // Some ICU builds render midnight as 24; normalise so the buckets below hold.
+  return h % 24;
+}
+
 export function timeOfDay(date: Date = new Date()): 'morning' | 'afternoon' | 'evening' | 'night' {
-  const h = date.getHours();
+  const h = localHour(date);
   if (h < 6)  return 'night';
   if (h < 12) return 'morning';
   if (h < 17) return 'afternoon';
@@ -60,8 +80,8 @@ export function timeOfDay(date: Date = new Date()): 'morning' | 'afternoon' | 'e
   return 'night';
 }
 
-/** Get effective temperature after applying Indoor-AC override (22 °C). */
+/** Get effective temperature after applying the Indoor-AC override. */
 export function effectiveTempC(raw: number, environment: 'outdoor' | 'indoor-ac'): number {
-  if (environment === 'indoor-ac') return 22;
+  if (environment === 'indoor-ac') return INDOOR_AC_TEMP_C;
   return raw;
 }

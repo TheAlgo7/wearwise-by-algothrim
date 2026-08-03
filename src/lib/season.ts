@@ -13,16 +13,18 @@ export interface SeasonMeta {
   label: string;
   /** Short line shown under the switch when this season is active. */
   hint: string;
-  /** Typical outdoor range, used to explain the auto choice and to tag items. */
+  /** Typical outdoor range, used to decide whether the calendar still applies. */
   min_c: number;
   max_c: number;
+  /** The temperature this season actually feels like on an average day. */
+  typical_c: number;
 }
 
 export const SEASON_META: Record<Season, SeasonMeta> = {
-  summer:  { id: 'summer',  label: 'Summer',  hint: 'Heat first. Light, loose, breathable.', min_c: 28, max_c: 46 },
-  monsoon: { id: 'monsoon', label: 'Monsoon', hint: 'Wet and humid. Quick-dry over heavy.',  min_c: 24, max_c: 36 },
-  autumn:  { id: 'autumn',  label: 'Autumn',  hint: 'The easy weeks. Anything works.',       min_c: 16, max_c: 30 },
-  winter:  { id: 'winter',  label: 'Winter',  hint: 'Layer up. Mid and outer come out.',     min_c: -2, max_c: 20 },
+  summer:  { id: 'summer',  label: 'Summer',  hint: 'Heat first. Light, loose, breathable.', min_c: 28, max_c: 46, typical_c: 38 },
+  monsoon: { id: 'monsoon', label: 'Monsoon', hint: 'Wet and humid. Quick-dry over heavy.',  min_c: 24, max_c: 36, typical_c: 31 },
+  autumn:  { id: 'autumn',  label: 'Autumn',  hint: 'The easy weeks. Anything works.',       min_c: 16, max_c: 30, typical_c: 24 },
+  winter:  { id: 'winter',  label: 'Winter',  hint: 'Layer up. Mid and outer come out.',     min_c: -2, max_c: 20, typical_c: 12 },
 };
 
 /** Calendar season for North India. Used when there is no temperature reading. */
@@ -80,12 +82,24 @@ export function resolveSeason(
   return { season: seasonForTemp(weather.temp_c, weather.humidity), source: 'weather' };
 }
 
+/** Slack around a season's typical temperature before an item is ruled out. */
+const SEASON_FIT_TOLERANCE_C = 3;
+
 /**
  * Which seasons a garment belongs to, derived from its temperature range.
  * No schema change needed: min_temp_c / max_temp_c already encode this, and
  * every item was tagged with them at add time.
  *
- * Items with no range at all (footwear, watches, accessories) are all-season
+ * This asks "would you wear this on a typical day of that season?" rather than
+ * "do these two ranges overlap at all?". Overlap was the first implementation
+ * and it was useless: garment ranges are wide (a tee is 20-38°C) and season
+ * ranges are wide, so nearly everything overlapped everything. Measured against
+ * the real wardrobe, the Monsoon and Autumn filters excluded exactly zero of
+ * 105 items. Comparing against one representative temperature discriminates
+ * properly: a 14-26°C long-sleeve is out in summer, a 24-42°C pair of shorts is
+ * out in winter.
+ *
+ * Items with no range at all (footwear, watches, accessories) stay all-season
  * on purpose — a watch does not have a season.
  */
 export function seasonsForItem(item: Pick<Item, 'min_temp_c' | 'max_temp_c'>): Season[] {
@@ -93,12 +107,12 @@ export function seasonsForItem(item: Pick<Item, 'min_temp_c' | 'max_temp_c'>): S
   const hi = item.max_temp_c;
   if (lo === null && hi === null) return [...SEASONS];
 
+  const itemLo = lo ?? -50;
+  const itemHi = hi ?? 60;
+
   return SEASONS.filter((s) => {
-    const meta = SEASON_META[s];
-    // Overlap test between the item's comfort range and the season's range.
-    const itemLo = lo ?? -50;
-    const itemHi = hi ?? 60;
-    return itemLo <= meta.max_c && itemHi >= meta.min_c;
+    const t = SEASON_META[s].typical_c;
+    return t >= itemLo - SEASON_FIT_TOLERANCE_C && t <= itemHi + SEASON_FIT_TOLERANCE_C;
   });
 }
 

@@ -14,8 +14,25 @@ interface ChatMessage { role: 'system' | 'user'; content: string; }
 
 const SITE = 'https://wearwise-by-algothrim.vercel.app';
 
-// Per-provider cap so one hanging rung can't eat the route's time budget.
-const RUNG_TIMEOUT_MS = 12_000;
+/**
+ * Time budget.
+ *
+ * The per-rung cap used to be 12s, which sounded generous but was measured
+ * against a toy prompt. The real prompt carries the style blueprint plus ~26
+ * tagged candidates, and every free-tier rung needs longer than that: in
+ * testing, OpenRouter and Gemini aborted on timeout every single time while
+ * answering the same request fine when given room. The chain was therefore
+ * Groq-or-nothing, and a Groq rate limit meant a 502 for the user.
+ *
+ * Six rungs at the old cap also added up to 72s against the route's own 60s
+ * maxDuration, so the chain could outlive the request that owned it. Rungs now
+ * share one deadline and each gets whatever is left, so the walk always ends
+ * with time to spare.
+ */
+const RUNG_TIMEOUT_MS = 20_000;
+const TOTAL_BUDGET_MS = 48_000;
+/** Starting a rung with less than this left is a guaranteed timeout. */
+const MIN_RUNG_BUDGET_MS = 6_000;
 
 /** Some models wrap JSON in markdown fences — strip them before parsing. */
 function stripFences(text: string): string {
@@ -36,6 +53,7 @@ async function openAICompatible(
   apiKey: string,
   model: string,
   messages: ChatMessage[],
+  timeoutMs: number,
   referer?: string,
 ): Promise<string> {
   const headers: Record<string, string> = {
@@ -56,7 +74,7 @@ async function openAICompatible(
       response_format: { type: 'json_object' },
       temperature: 0.9,
     }),
-    signal: AbortSignal.timeout(RUNG_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!res.ok) {
@@ -70,7 +88,13 @@ async function openAICompatible(
   return stripFences(content);
 }
 
-async function gemini(apiKey: string, model: string, system: string, user: string): Promise<string> {
+async function gemini(
+  apiKey: string,
+  model: string,
+  system: string,
+  user: string,
+  timeoutMs: number,
+): Promise<string> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
@@ -81,7 +105,7 @@ async function gemini(apiKey: string, model: string, system: string, user: strin
         contents: [{ role: 'user', parts: [{ text: user }] }],
         generationConfig: { responseMimeType: 'application/json', temperature: 0.9 },
       }),
-      signal: AbortSignal.timeout(RUNG_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     },
   );
   if (!res.ok) throw new Error(await res.text());
@@ -97,13 +121,30 @@ type Rung =
   | { provider: 'groq' | 'openrouter'; model: string; retryOn429?: boolean }
   | { provider: 'gemini'; model: string };
 
+/**
+ * Rungs are checked in order. Keep the free OpenRouter slugs current: the
+ * previous two (`openai/gpt-oss-120b:free`, `meta-llama/llama-3.3-70b-instruct:free`)
+ * silently stopped being free and returned 404 on every call, so the chain was
+ * really only Groq and Gemini for months. Verified against the live catalogue
+ * with a JSON-mode request on 2026-08-03.
+ */
 const CHAIN: Rung[] = [
+  // Groq first: when it is not rate limited it answers this prompt in ~3s.
   { provider: 'groq', model: 'llama-3.3-70b-versatile', retryOn429: true },
-  { provider: 'groq', model: 'openai/gpt-oss-120b' },
-  { provider: 'openrouter', model: 'openai/gpt-oss-120b:free' },
-  { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+  // Gemini second, on a completely separate quota, and quick. This used to sit
+  // last behind two OpenRouter rungs; each of those spends its full timeout
+  // queueing on the free tier, so a Groq rate limit burned ~40s and then ran
+  // out of budget before ever reaching Gemini. Moving Gemini up turns the
+  // common failure from a 502 into a few extra seconds.
   { provider: 'gemini', model: 'gemini-flash-lite-latest' },
   { provider: 'gemini', model: 'gemini-2.5-flash' },
+  // Shares the rate-limited Groq org quota and is flaky on JSON for a prompt
+  // this size ("Request too large", "Failed to generate JSON"), so it sits below
+  // Gemini rather than beside the primary.
+  { provider: 'groq', model: 'openai/gpt-oss-120b' },
+  // Genuinely last resort: free OpenRouter capacity is queued and slow.
+  { provider: 'openrouter', model: 'openai/gpt-oss-20b:free' },
+  { provider: 'openrouter', model: 'nvidia/nemotron-3-super-120b-a12b:free' },
 ];
 
 // Don't stall the user past this even if the provider asks for a longer wait.
@@ -116,6 +157,7 @@ export async function generateJSON(system: string, user: string): Promise<string
     { role: 'user', content: user },
   ];
   const errors: string[] = [];
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
 
   for (const rung of CHAIN) {
     const key =
@@ -124,14 +166,22 @@ export async function generateJSON(system: string, user: string): Promise<string
       process.env.GEMINI_API_KEY;
     if (!key) continue;
 
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_RUNG_BUDGET_MS) {
+      errors.push(`${rung.provider}(${rung.model}): skipped, out of time budget`);
+      break;
+    }
+    const rungTimeout = Math.min(RUNG_TIMEOUT_MS, remaining);
+
     const attempt = () =>
       rung.provider === 'gemini'
-        ? gemini(key, rung.model, system, user)
+        ? gemini(key, rung.model, system, user, rungTimeout)
         : openAICompatible(
             rung.provider === 'groq' ? 'https://api.groq.com/openai/v1' : 'https://openrouter.ai/api/v1',
             key,
             rung.model,
             messages,
+            rungTimeout,
             rung.provider === 'openrouter' ? SITE : undefined,
           );
 
@@ -141,10 +191,13 @@ export async function generateJSON(system: string, user: string): Promise<string
       const msg = e instanceof Error ? e.message : String(e);
       const status = (e as { status?: number }).status;
 
-      // Short TPM waits on the primary are cheaper than slower fallbacks.
+      // Short TPM waits on the primary are cheaper than slower fallbacks, but
+      // only when sleeping still leaves room for the retry and a fallback.
       if ('retryOn429' in rung && rung.retryOn429 && status === 429) {
         const wait = suggestedWaitMs(msg);
-        if (wait !== null && wait <= MAX_429_WAIT_MS) {
+        const affordable =
+          wait !== null && deadline - Date.now() - wait > MIN_RUNG_BUDGET_MS * 2;
+        if (wait !== null && wait <= MAX_429_WAIT_MS && affordable) {
           await sleep(wait);
           try {
             return await attempt();
@@ -154,6 +207,15 @@ export async function generateJSON(system: string, user: string): Promise<string
             continue;
           }
         }
+      }
+
+      // A 404 means the model slug is gone, not that the service is busy. That
+      // is a permanently dead rung and it stays invisible until every rung
+      // fails, so say so loudly in the logs the first time it happens.
+      if (status === 404) {
+        console.warn(
+          `[llm] rung ${rung.provider}/${rung.model} returned 404 — the model slug is probably retired. Update CHAIN in lib/llm.ts.`
+        );
       }
 
       errors.push(`${rung.provider}(${rung.model}): ${msg.slice(0, 120)}`);

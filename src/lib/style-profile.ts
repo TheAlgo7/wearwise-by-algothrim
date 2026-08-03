@@ -70,6 +70,36 @@ Body note: long torso needs mid-rise (not low-rise) to avoid exaggerating height
   updated_at: new Date().toISOString(),
 };
 
+/**
+ * The non-negotiable styling rules.
+ *
+ * Held separately from `notes` so they always reach the prompt. They used to
+ * live only inside the fallback notes string, and formatBlueprint looked for a
+ * "SILHOUETTE RULE" marker to find them. A saved DB row replaced those notes
+ * with free prose that has no such marker, so the lookup silently fell back to
+ * "first 400 characters" and shipped a truncated biography instead of a single
+ * rule. Every generation ran without them.
+ */
+export const HARD_RULES = `Bottoms: Japanese bootcut only — slim through the thigh, subtle flare from the knee, mid-rise, long puddle hem breaking over the shoe. NEVER skinny, slim or straight cut.
+Gurkha/extended-tab waistband → dressier colours → shirt always tucked. Normal tab → casual colours → tee worn untucked.
+Tops: boxy, drop-shoulder or oversized, to add upper-body volume against the wide hem.
+Sleeves: roll button-down sleeves to just below the elbow — forearms on show.
+Footwear: chunky enough to carry the puddle hem. Chelsea boots when elevated, heavy sneakers when casual.
+Accessories: silver only, never gold. Watch on the left wrist. Never a tie with a polo or knitwear.
+Long torso needs mid-rise, never low-rise.`;
+
+function mergeAvoided(
+  base: StyleProfile['avoided_combinations'],
+  extra?: StyleProfile['avoided_combinations']
+): StyleProfile['avoided_combinations'] {
+  const out = [...base];
+  for (const c of extra ?? []) {
+    const key = c.items.join('|').toLowerCase();
+    if (!out.some((x) => x.items.join('|').toLowerCase() === key)) out.push(c);
+  }
+  return out;
+}
+
 export async function getStyleProfile(): Promise<StyleProfile> {
   try {
     const supa = createAdminClient();
@@ -88,7 +118,10 @@ export async function getStyleProfile(): Promise<StyleProfile> {
       preferred_fits:      db.preferred_fits?.length      ? db.preferred_fits      : FALLBACK.preferred_fits,
       preferred_colors:    db.preferred_colors?.length    ? db.preferred_colors    : FALLBACK.preferred_colors,
       avoided_colors:      db.avoided_colors?.length      ? db.avoided_colors      : FALLBACK.avoided_colors,
-      avoided_combinations:db.avoided_combinations?.length? db.avoided_combinations: FALLBACK.avoided_combinations,
+      // Union, not replace. A saved DB row used to shadow the hardcoded rules
+      // entirely, which quietly dropped "never a tie with a polo" and
+      // "silver only, no gold" from every prompt.
+      avoided_combinations: mergeAvoided(FALLBACK.avoided_combinations, db.avoided_combinations),
       signature_combos:    db.signature_combos?.length    ? db.signature_combos    : FALLBACK.signature_combos,
       body_type:           db.body_type                   ?? FALLBACK.body_type,
       notes:               db.notes                       ?? FALLBACK.notes,
@@ -119,13 +152,16 @@ export function formatBlueprint(p: StyleProfile): string {
       .map((c) => `[${c.name}] ${c.items.join(' · ')}`)
       .join(' | ')}`);
   }
-  // Append only the hard-rule section from notes (first 400 chars max)
-  if (p.notes) {
-    const hardRuleStart = p.notes.indexOf('SILHOUETTE RULE');
-    const excerpt = hardRuleStart !== -1
-      ? p.notes.slice(hardRuleStart, hardRuleStart + 400)
-      : p.notes.slice(0, 400);
-    parts.push(`Key rules: ${excerpt.replace(/\n+/g, ' ').trim()}`);
+  // The hard rules are unconditional — never derived from whatever prose
+  // happens to be saved in `notes`.
+  parts.push(`Hard styling rules: ${HARD_RULES.replace(/\n+/g, ' ').trim()}`);
+
+  // Personal notes are supplementary colour, trimmed only to bound prompt size.
+  // Cut on a sentence boundary so the model never receives a half-word.
+  if (p.notes?.trim()) {
+    const flat = p.notes.replace(/\s+/g, ' ').trim();
+    const capped = flat.length <= 900 ? flat : flat.slice(0, flat.lastIndexOf('.', 900) + 1 || 900);
+    parts.push(`Owner notes: ${capped}`);
   }
   return parts.join('\n');
 }
