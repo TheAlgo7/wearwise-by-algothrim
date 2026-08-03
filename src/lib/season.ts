@@ -42,12 +42,22 @@ export function seasonForTemp(tempC: number, humidity?: number): Season {
   return 'winter';
 }
 
+/** Slack either side of a season's range before the calendar is overruled. */
+const CALENDAR_TRUST_SLACK_C = 4;
+
 /**
  * What season the app should behave as.
  *
- * A manual override always wins — if he says winter in September because he is
- * flying to Manali, the app believes him. Otherwise live weather decides, and
- * the calendar is the fallback when weather is unavailable.
+ * Precedence: manual override, then the calendar, then temperature.
+ *
+ * The calendar leads on purpose. North Indian seasons are calendar events, not
+ * thermometer readings: a 33°C day in August is monsoon, not summer, and no
+ * humidity reading changes that. Letting live weather decide outright made
+ * every dry afternoon in the rainy season report "Summer".
+ *
+ * Temperature only takes over when it genuinely contradicts the calendar, which
+ * in practice means he is somewhere the Delhi calendar does not describe: 14°C
+ * in August means Manali, and the app should say winter.
  */
 export function resolveSeason(
   override: Season | null,
@@ -55,10 +65,19 @@ export function resolveSeason(
   now: Date = new Date()
 ): { season: Season; source: 'manual' | 'weather' | 'calendar' } {
   if (override) return { season: override, source: 'manual' };
-  if (weather && Number.isFinite(weather.temp_c)) {
-    return { season: seasonForTemp(weather.temp_c, weather.humidity), source: 'weather' };
+
+  const calendar = seasonForDate(now);
+  if (!weather || !Number.isFinite(weather.temp_c)) {
+    return { season: calendar, source: 'calendar' };
   }
-  return { season: seasonForDate(now), source: 'calendar' };
+
+  const { min_c, max_c } = SEASON_META[calendar];
+  const consistent =
+    weather.temp_c >= min_c - CALENDAR_TRUST_SLACK_C &&
+    weather.temp_c <= max_c + CALENDAR_TRUST_SLACK_C;
+
+  if (consistent) return { season: calendar, source: 'calendar' };
+  return { season: seasonForTemp(weather.temp_c, weather.humidity), source: 'weather' };
 }
 
 /**
@@ -90,6 +109,7 @@ export function itemSuitsSeason(item: Pick<Item, 'min_temp_c' | 'max_temp_c'>, s
 /** Human label for where the current season came from. */
 export function seasonSourceLabel(source: 'manual' | 'weather' | 'calendar'): string {
   if (source === 'manual') return 'Set by you';
-  if (source === 'weather') return 'From today’s weather';
-  return 'From the calendar';
+  // Only fires when the temperature contradicts the calendar, i.e. he has travelled.
+  if (source === 'weather') return 'Set by the temperature';
+  return 'Normal for this time of year';
 }

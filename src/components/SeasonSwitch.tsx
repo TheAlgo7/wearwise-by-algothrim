@@ -39,7 +39,7 @@ export function SeasonSwitch({ season, source, override, onToggle, onReset, temp
         ) : (
           <p className="text-[11px] font-medium text-fog-400">
             {seasonSourceLabel(source)}
-            {source === 'weather' && typeof tempC === 'number' ? ` · ${Math.round(tempC)}°` : ''}
+            {typeof tempC === 'number' ? ` · ${Math.round(tempC)}°` : ''}
           </p>
         )}
       </div>
