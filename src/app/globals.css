@@ -55,38 +55,14 @@
     --theme-color: #0d0005;
   }
 
-  /* ── Partner palette (Ishita) — warm red on warm near-black ──
-     She likes red, same as Gaurav. Hers is a warmer, true red (hue ~4°) against
-     his pink-leaning crimson (hue ~346°), so the two read as the same family at
-     a glance but are never mistaken for each other side by side. Her neutrals
-     are warm-tinted rather than his cool red-black, which carries most of the
-     difference. To make hers literally identical to his, delete this block. */
-  :root[data-role='partner'] {
-    --ink-50:  11 9 8;
-    --ink-100: 21 15 13;
-    --ink-200: 28 22 20;
-    --ink-300: 31 24 22;
-    --ink-400: 41 32 29;
-    --ink-500: 52 41 37;
-    --ink-600: 64 51 46;
+  /* ── Partner palette (Ishita) ──
+     Intentionally empty: she likes the same crimson Gaurav does, so she gets
+     the palette above unchanged. Amber and a warmer red were both tried and
+     rejected. Her side of the app is distinguished by structure instead —
+     her own nav, home screen, greetings and the Style him flow.
 
-    --fog-100: 247 239 236;
-    --fog-200: 220 203 197;
-    --fog-300: 172 151 145;
-    --fog-400: 125 107 102;
-    --fog-500: 76 64 60;
-
-    --accent-50:  255 238 236;
-    --accent-100: 255 217 212;
-    --accent-200: 255 189 181;
-    --accent-300: 255 143 132;
-    --accent-400: 226 69 58;
-    --accent-500: 194 51 42;
-    --accent-600: 142 33 26;
-    --accent-700: 94 20 16;
-
-    --theme-color: #0b0908;
-  }
+     `data-role="partner"` is still set on <html>, so re-theming her is a
+     matter of filling this block back in with token overrides. */
 
   html, body {
     background: theme('colors.ink.0');
