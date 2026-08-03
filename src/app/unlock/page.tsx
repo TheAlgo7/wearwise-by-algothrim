@@ -1,59 +1,144 @@
 'use client';
 
-import { OneUIButton } from '@/components/oneui';
-import { Lock } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { Delete } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+const PIN_LENGTH = 4;
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
 
 export default function UnlockPage() {
   const router = useRouter();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [welcome, setWelcome] = useState<string | null>(null);
+  const submitting = useRef(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pin || busy) return;
-    setBusy(true);
-    setError(false);
-    const res = await fetch('/api/unlock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    }).catch(() => null);
-    if (res?.ok) {
-      router.replace('/');
-      router.refresh();
-    } else {
+  const submit = useCallback(
+    async (value: string) => {
+      if (submitting.current) return;
+      submitting.current = true;
+      setBusy(true);
+      setError(false);
+
+      const res = await fetch('/api/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: value }),
+      }).catch(() => null);
+
+      if (res?.ok) {
+        const { role } = (await res.json().catch(() => ({ role: 'owner' }))) as { role?: string };
+        // Paint the right palette before navigating so there is no crimson flash
+        // on Ishita's first frame. The server layout re-asserts this on load.
+        if (role === 'partner') {
+          document.documentElement.setAttribute('data-role', 'partner');
+          setWelcome('Hi Ishita');
+        } else {
+          document.documentElement.removeAttribute('data-role');
+          setWelcome('Welcome back');
+        }
+        setTimeout(() => {
+          router.replace('/');
+          router.refresh();
+        }, 620);
+        return;
+      }
+
       setError(true);
       setPin('');
       setBusy(false);
-    }
-  };
+      submitting.current = false;
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(140);
+    },
+    [router]
+  );
+
+  const push = useCallback(
+    (digit: string) => {
+      if (busy) return;
+      setError(false);
+      setPin((prev) => {
+        if (prev.length >= PIN_LENGTH) return prev;
+        const next = prev + digit;
+        if (next.length === PIN_LENGTH) void submit(next);
+        return next;
+      });
+    },
+    [busy, submit]
+  );
+
+  // Hardware keyboard support, for when the app is open on a laptop.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) push(e.key);
+      else if (e.key === 'Backspace') setPin((p) => p.slice(0, -1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [push]);
+
+  if (welcome) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-2">
+        <p className="animate-heart-in text-[26px] font-semibold text-crimson-50">{welcome}</p>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center gap-6 px-8">
-      <div className="h-16 w-16 rounded-full bg-crimson-400/15 flex items-center justify-center">
-        <Lock size={26} className="text-crimson-300" />
+    <main className="flex min-h-dvh flex-col items-center justify-center px-8 pb-10">
+      <p className="text-oneui-cap font-semibold uppercase tracking-[0.3em] text-crimson-300">WearWise</p>
+
+      <p className="mt-3 text-[15px] text-fog-300" aria-live="polite">
+        {error ? 'That is not it. Try again.' : 'Enter your PIN'}
+      </p>
+
+      {/* PIN dots */}
+      <div className="mt-7 flex items-center gap-4" role="status" aria-label={`${pin.length} of ${PIN_LENGTH} digits entered`}>
+        {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              'h-3 w-3 rounded-full transition-all duration-200',
+              i < pin.length ? 'scale-110 bg-crimson-400' : 'bg-white/[0.14]',
+              error && 'bg-error-border'
+            )}
+          />
+        ))}
       </div>
-      <h1 className="text-oneui-title font-semibold text-fog-100">WearWise</h1>
-      <form onSubmit={submit} className="w-full max-w-[280px] flex flex-col gap-3">
-        <input
-          type="password"
-          inputMode="numeric"
-          autoComplete="off"
-          autoFocus
-          value={pin}
-          onChange={(e) => { setPin(e.target.value); setError(false); }}
-          aria-label="PIN"
-          aria-invalid={error}
-          className="h-12 rounded-full bg-ink-100 text-center text-[18px] tracking-[0.4em] text-fog-100 outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
-        />
-        {error && <p role="alert" className="text-center text-[13px] text-fog-400">That&apos;s not it.</p>}
-        <OneUIButton type="submit" disabled={!pin || busy} fullWidth>
-          Unlock
-        </OneUIButton>
-      </form>
+
+      {/* Keypad */}
+      <div className="mt-12 grid w-full max-w-[300px] grid-cols-3 gap-x-6 gap-y-4">
+        {KEYS.map((k, i) =>
+          k === '' ? (
+            <span key={i} />
+          ) : k === 'del' ? (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPin((p) => p.slice(0, -1))}
+              disabled={busy}
+              aria-label="Delete last digit"
+              className="press mx-auto flex h-16 w-16 items-center justify-center rounded-full text-fog-300 transition-colors active:bg-white/[0.06] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              <Delete size={22} aria-hidden />
+            </button>
+          ) : (
+            <button
+              key={i}
+              type="button"
+              onClick={() => push(k)}
+              disabled={busy}
+              className="press mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.05] text-[24px] font-medium text-fog-100 transition-colors active:bg-crimson-400/20 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              {k}
+            </button>
+          )
+        )}
+      </div>
     </main>
   );
 }

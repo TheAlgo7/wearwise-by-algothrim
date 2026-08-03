@@ -7,6 +7,7 @@ import { DEFAULT_MODES, extractDescribeFormality } from '@/lib/modes';
 import { filterItems, rankCandidates } from '@/lib/filter-engine';
 import { formatBlueprint, getStyleProfile } from '@/lib/style-profile';
 import { GENERATE_SYSTEM, buildGeneratePrompt } from '@/lib/prompts';
+import { SEASONS, seasonForTemp } from '@/lib/season';
 import type { Item, Mode } from '@/types';
 
 export const runtime = 'nodejs';
@@ -23,6 +24,9 @@ const Body = z.object({
   lon: z.number().optional(),
   custom_context: z.string().optional(),
   planned_for: z.enum(['now', 'tonight', 'tomorrow']).default('now'),
+  // Client-resolved season. Sent on every generate so a manual override
+  // ("I am in Manali this week") reaches the engine, not just the UI.
+  season: z.enum(SEASONS).optional(),
 });
 
 // Shape of what the LLM must return — anything else is a provider bug, not a 500.
@@ -110,12 +114,17 @@ export async function POST(req: Request) {
   }
   const all = (itemRows ?? []) as Item[];
 
+  // A manual season override is a statement of intent that beats the local
+  // thermometer: he sets Winter because of where he is going, not where he is.
+  const season = parsed.season ?? seasonForTemp(temp_c, weather.humidity);
+
   const shortlist = filterItems(all, {
     temp_c,
     time_of_day: tod,
     environment: parsed.environment,
     event: parsed.event,
     mode_rules: mode.rules,
+    season,
   });
   const ranked = rankCandidates(shortlist, mode.rules, temp_c);
 
@@ -168,6 +177,7 @@ export async function POST(req: Request) {
   const context = {
     temp_c,
     condition: weather.condition,
+    season,
     time_of_day: parsed.planned_for === 'tonight' ? 'evening' : parsed.planned_for === 'tomorrow' ? 'morning' : tod,
     environment: parsed.environment,
     event: parsed.event,

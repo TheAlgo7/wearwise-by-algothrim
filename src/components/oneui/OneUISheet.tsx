@@ -49,7 +49,7 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
         )}
         style={{
           // One UI 9 glass: translucent floating surface, dimmed page bleeds through
-          background: 'rgba(18,16,18,0.84)',
+          background: 'rgb(var(--ink-100) / 0.84)',
           backdropFilter: 'blur(32px) saturate(160%)',
           WebkitBackdropFilter: 'blur(32px) saturate(160%)',
         }}

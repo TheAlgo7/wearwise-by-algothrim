@@ -1,3 +1,4 @@
+import type { Season } from '@/lib/season';
 import type { Item, ModeRules } from '@/types';
 
 export interface FilterContext {
@@ -6,6 +7,8 @@ export interface FilterContext {
   environment: 'outdoor' | 'indoor-ac';
   event?: string;
   mode_rules: ModeRules;
+  /** Resolved season. A manual Winter override unlocks the cold-weather pool. */
+  season?: Season;
 }
 
 const TEMP_TOLERANCE = 2; // °C slack for min_temp_c (don't freeze out warm items)
@@ -52,7 +55,10 @@ function passesGates(it: Item, ctx: FilterContext): boolean {
   }
 
   // 3b. Winter guard — cold-weather mid/outer layers stay out of hot-day pools.
+  //     Skipped when the season is explicitly Winter: that is a deliberate
+  //     signal (packing for a cold destination) and the coats must stay in.
   if (
+    ctx.season !== 'winter' &&
     ctx.temp_c >= WINTER_GUARD_MIN_TEMP &&
     WINTER_GUARD_LAYERS.has(layer) &&
     it.max_temp_c !== null &&

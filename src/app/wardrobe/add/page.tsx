@@ -1,4 +1,4 @@
-import { AddItemForm } from '@/components/AddItemForm';
+import { AddModeSwitch } from '@/components/AddModeSwitch';
 import { OneUIHeader } from '@/components/oneui';
 
 export const metadata = { title: 'Add item' };
@@ -12,7 +12,7 @@ export default function AddItemPage() {
         subtitle="Photograph it. WearWise cleans the background and auto-tags it."
       />
       <div className="reach-zone">
-        <AddItemForm />
+        <AddModeSwitch />
       </div>
     </main>
   );

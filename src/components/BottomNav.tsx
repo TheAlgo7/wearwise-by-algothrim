@@ -1,19 +1,35 @@
 'use client';
 
 import { cn } from '@/lib/cn';
-import { Home, Shirt, Sparkles, User } from 'lucide-react';
+import { useRole } from '@/components/RoleProvider';
+import { Heart, Home, Layers, Shirt, Sparkles, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const NAV = [
+const OWNER_NAV = [
   { href: '/',         label: 'Today',    Icon: Home,     match: (p: string) => p === '/' },
   { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,    match: (p: string) => p.startsWith('/wardrobe') },
-  { href: '/modes',    label: 'Modes',    Icon: Sparkles, match: (p: string) => p.startsWith('/modes') || p.startsWith('/outfits') },
+  { href: '/looks',    label: 'Looks',    Icon: Layers,   match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
+  { href: '/modes',    label: 'Modes',    Icon: Sparkles, match: (p: string) => p.startsWith('/modes') },
   { href: '/profile',  label: 'Profile',  Icon: User,     match: (p: string) => p.startsWith('/profile') },
+];
+
+// Ishita's nav: no add, no profile, no mode engine. Browse, build, and the
+// looks she has sent him.
+const PARTNER_NAV = [
+  { href: '/',         label: 'Home',     Icon: Home,  match: (p: string) => p === '/' },
+  { href: '/wardrobe', label: 'His stuff',Icon: Shirt, match: (p: string) => p.startsWith('/wardrobe') },
+  { href: '/style',    label: 'Style him',Icon: Heart, match: (p: string) => p.startsWith('/style') },
+  { href: '/looks',    label: 'Looks',    Icon: Layers,match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const role = useRole();
+  const NAV = role === 'partner' ? PARTNER_NAV : OWNER_NAV;
+
+  // The lock screen is chrome-free.
+  if (pathname.startsWith('/unlock')) return null;
 
   return (
     <nav
@@ -49,7 +65,7 @@ export function BottomNav() {
                 active ? 'text-crimson-50' : 'text-white/40 hover:text-white/70',
               )}
               style={active ? {
-                background: 'rgba(226,51,93,0.22)',
+                background: 'rgb(var(--accent-400) / 0.22)',
               } : undefined}
             >
               <Icon size={20} strokeWidth={active ? 2.1 : 1.7} aria-hidden className="flex-shrink-0" />

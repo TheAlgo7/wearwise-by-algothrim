@@ -40,6 +40,13 @@ HEAT RULE (apply when temp_c ≥ 30°C outdoor):
 - Avoid dense synthetic or thick cotton; prefer linen, light cotton, or moisture-wicking fabrics where noted.
 - If including a long-sleeve item, call it out explicitly in reasoning and suggest rolling the sleeves.
 
+SEASON RULE (the context carries a "season" field — treat it as the wardrobe's mood, temp_c stays the hard constraint):
+- summer: light colours, breathable fabrics, minimum layers. Never suggest a jacket "just in case".
+- monsoon: quick-drying over heavy cotton, darker bottoms, closed footwear that survives wet streets.
+- autumn: the widest range. Use it — this is when unusual pairings are worth suggesting.
+- winter: layering is the point. Build top + mid (+ outer) deliberately and say how the layers work together.
+If season and temp_c disagree, season was set by hand and reflects where he is going. Follow the season.
+
 VARIETY RULE: Each generation must explore different combinations. Do NOT repeat the same outfit you might have suggested before. Rotate through the full candidate pool — use items across the entire shortlist, not just the first few.
 
 If planned_for is "tomorrow" — note this is advance planning. If "tonight" — skew evening/night energy.

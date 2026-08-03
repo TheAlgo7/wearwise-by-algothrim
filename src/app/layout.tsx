@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { BottomNav } from '@/components/BottomNav';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import { RoleProvider } from '@/components/RoleProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
+import { getRole } from '@/lib/auth';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -59,14 +61,20 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // `data-role` drives the entire palette swap in globals.css — one attribute
+  // re-hues every component without a single conditional in the components.
+  const role = await getRole();
+
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-role={role === 'partner' ? 'partner' : undefined}>
       <body>
-        <div className="mx-auto max-w-xl min-h-dvh pb-nav">
-          {children}
-        </div>
-        <BottomNav />
+        <RoleProvider role={role}>
+          <div className="mx-auto max-w-xl min-h-dvh pb-nav">
+            {children}
+          </div>
+          <BottomNav />
+        </RoleProvider>
         <InstallPrompt />
         <ServiceWorkerRegister />
       </body>

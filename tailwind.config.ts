@@ -6,42 +6,51 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Every scale resolves through CSS variables (see globals.css) so the
+        // whole palette re-hues per role: crimson for Gaurav, amber for Ishita.
+        // Values are space-separated RGB channels to keep /alpha modifiers working.
         ink: {
-          0:   '#000000',
-          50:  '#0A0A0C',
-          100: '#121012',
-          200: '#1A1819',
-          300: '#1C1A1D',
-          400: '#252225',
-          500: '#2F2C30',
-          600: '#3A363B',
+          0:   'rgb(var(--ink-0) / <alpha-value>)',
+          50:  'rgb(var(--ink-50) / <alpha-value>)',
+          100: 'rgb(var(--ink-100) / <alpha-value>)',
+          200: 'rgb(var(--ink-200) / <alpha-value>)',
+          300: 'rgb(var(--ink-300) / <alpha-value>)',
+          400: 'rgb(var(--ink-400) / <alpha-value>)',
+          500: 'rgb(var(--ink-500) / <alpha-value>)',
+          600: 'rgb(var(--ink-600) / <alpha-value>)',
         },
         fog: {
-          100: '#F5EEF0',
-          200: '#D9C8CC',
-          300: '#A89098',
-          400: '#7A6870',
-          500: '#4A3A40',
+          100: 'rgb(var(--fog-100) / <alpha-value>)',
+          200: 'rgb(var(--fog-200) / <alpha-value>)',
+          300: 'rgb(var(--fog-300) / <alpha-value>)',
+          400: 'rgb(var(--fog-400) / <alpha-value>)',
+          500: 'rgb(var(--fog-500) / <alpha-value>)',
         },
+        // `crimson` stays the token name across the codebase — it means
+        // "the accent voice", and the active role decides which hue that is.
         crimson: {
-          DEFAULT: '#E2335D',
-          // 50/200 pulled back onto the crimson hue — the old values drifted peach
-          50:  '#FFECEF',
-          100: '#FFD9DA',
-          200: '#FFC4D0',
-          300: '#FF86A0',
-          400: '#E2335D',
-          // 500-700 re-hued from 330-333° magenta (read as purple-pink on
-          // AMOLED) onto the same 346° red hue as crimson-400, just darker.
-          500: '#C41C43',
-          600: '#8A0F2C',
-          700: '#5C0A1D',
+          DEFAULT: 'rgb(var(--accent-400) / <alpha-value>)',
+          50:  'rgb(var(--accent-50) / <alpha-value>)',
+          100: 'rgb(var(--accent-100) / <alpha-value>)',
+          200: 'rgb(var(--accent-200) / <alpha-value>)',
+          300: 'rgb(var(--accent-300) / <alpha-value>)',
+          400: 'rgb(var(--accent-400) / <alpha-value>)',
+          500: 'rgb(var(--accent-500) / <alpha-value>)',
+          600: 'rgb(var(--accent-600) / <alpha-value>)',
+          700: 'rgb(var(--accent-700) / <alpha-value>)',
         },
-        // Error state — visually distinct from the crimson CTA
+        // Error state — visually distinct from the accent CTA
         error: {
-          DEFAULT:   '#7A1A1A',
-          border:    '#9B2020',
-          text:      '#FFCDD2',
+          DEFAULT:   'rgb(var(--error) / <alpha-value>)',
+          border:    'rgb(var(--error-border) / <alpha-value>)',
+          text:      'rgb(var(--error-text) / <alpha-value>)',
+        },
+        // Season accents — used only for the season switch and season badges.
+        season: {
+          summer:  'rgb(var(--season-summer) / <alpha-value>)',
+          monsoon: 'rgb(var(--season-monsoon) / <alpha-value>)',
+          autumn:  'rgb(var(--season-autumn) / <alpha-value>)',
+          winter:  'rgb(var(--season-winter) / <alpha-value>)',
         },
       },
       fontFamily: {
@@ -70,12 +79,14 @@ const config: Config = {
       },
       boxShadow: {
         'card':         '0 1px 0 rgba(255,255,255,0.04) inset',
-        'crimson-glow': '0 0 20px rgba(226,51,93,0.4)',
+        'crimson-glow': '0 0 20px rgb(var(--accent-400) / 0.4)',
         'oneui-raised': '0 -4px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
       },
       animation: {
         'oneui-pop':  'oneui-pop 180ms cubic-bezier(0.22, 1, 0.36, 1)',
         'oneui-fade': 'oneui-fade 220ms ease-out',
+        'shelf-in':   'shelf-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'heart-in':   'heart-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both',
       },
       keyframes: {
         'oneui-pop': {
@@ -85,6 +96,15 @@ const config: Config = {
         'oneui-fade': {
           '0%':   { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'shelf-in': {
+          '0%':   { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'heart-in': {
+          '0%':   { opacity: '0', transform: 'scale(0.6)' },
+          '60%':  { opacity: '1', transform: 'scale(1.08)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
       },
     },

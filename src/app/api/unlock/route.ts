@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
+import { AUTH_COOKIE, configuredPins, roleToken } from '@/lib/roles';
 
 export const runtime = 'nodejs';
 
-const COOKIE = 'ww_auth';
-const ONE_YEAR_S = 60 * 60 * 24 * 365;
-
-async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
+const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 400; // 400d — Chrome's ceiling, refreshed on every visit
 
 export async function POST(req: Request) {
-  const pin = process.env.APP_PIN?.trim();
-  if (!pin) return NextResponse.json({ ok: true }); // gate not configured
+  const pins = configuredPins();
+  if (pins.length === 0) return NextResponse.json({ ok: true, role: 'owner' }); // gate not configured
 
   let body: { pin?: string };
   try {
@@ -21,18 +16,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
 
-  if (body.pin !== pin) {
-    // Slow down brute force a touch; single-user app, keep it simple.
+  const entered = body.pin?.trim();
+  const match = pins.find((p) => p.pin === entered);
+
+  if (!match) {
+    // Slow down brute force a touch; two-user app, keep it simple.
     await new Promise((r) => setTimeout(r, 800));
     return NextResponse.json({ error: 'Wrong PIN' }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(COOKIE, await sha256Hex(pin), {
+  const res = NextResponse.json({ ok: true, role: match.role });
+  res.cookies.set(AUTH_COOKIE, await roleToken(match.role, match.pin), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: ONE_YEAR_S,
+    maxAge: COOKIE_MAX_AGE_S,
     path: '/',
   });
   return res;

@@ -1,6 +1,7 @@
 'use client';
 
 import { OneUIButton, OneUIHeader, Squircle } from '@/components/oneui';
+import { useIsOwner } from '@/components/RoleProvider';
 import { cn } from '@/lib/cn';
 import { isFootwear } from '@/lib/item-presentation';
 import { createClient } from '@/lib/supabase/client';
@@ -18,6 +19,7 @@ interface PageProps {
 export default function ItemDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const isOwner = useIsOwner();
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [manageOpen, setManageOpen] = useState(false);
@@ -140,6 +142,8 @@ export default function ItemDetailPage({ params }: PageProps) {
           </Squircle>
         )}
 
+        {/* Managing a piece is the owner's alone. Ishita sees the item, not the controls. */}
+        {isOwner && (
         <div className="pt-1">
           <button
             onClick={() => { setManageOpen((v) => !v); setConfirmDelete(false); }}
@@ -185,6 +189,7 @@ export default function ItemDetailPage({ params }: PageProps) {
             </Squircle>
           )}
         </div>
+        )}
       </div>
     </main>
   );
