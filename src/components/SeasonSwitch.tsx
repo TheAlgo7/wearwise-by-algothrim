@@ -60,18 +60,25 @@ export function SeasonSwitch({ season, source, override, onToggle, onReset, temp
               aria-checked={active}
               onClick={() => onToggle(s)}
               className={cn(
-                'press flex min-h-[42px] items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold transition-colors',
+                'press flex min-h-[42px] items-center justify-center rounded-full text-[13px] font-semibold transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
                 active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
               )}
             >
+              {/* The dot collapses out of flow when active, not just to zero
+                  opacity, so the label sits dead centre in the filled pill.
+                  Same collapse the bottom nav uses for its labels. */}
               <span
                 aria-hidden
                 className={cn(
-                  'h-1.5 w-1.5 shrink-0 rounded-full transition-opacity',
+                  'h-1.5 shrink-0 rounded-full',
                   DOT[s],
-                  active ? 'opacity-0' : 'opacity-90'
+                  active ? 'w-0 opacity-0' : 'mr-1.5 w-1.5 opacity-90'
                 )}
+                style={{
+                  transition:
+                    'width 200ms var(--ease-spring), margin-right 200ms var(--ease-spring), opacity 140ms ease',
+                }}
               />
               {SEASON_META[s].label}
             </button>
