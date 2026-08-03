@@ -35,10 +35,19 @@ MODE GUIDANCE:
 - quick: Pick the easiest put-together outfit for right now.
 
 HEAT RULE (apply when temp_c ≥ 30°C outdoor):
-- Strongly prefer light colours: white, cream, beige, light grey, pastels. Penalise all-black or dark heavy outfits.
+- Prefer light VALUE, not the absence of colour. Lilac, mint, sunlit yellow, dusty rose, mustard, tan and pale blue are all correct hot-weather picks, exactly as correct as white, cream and beige. What you are penalising is heavy, dark, heat-absorbing outfits, not colour itself.
 - Prefer short sleeves, sleeveless, or rolled sleeves. Avoid full-length long sleeves unless no alternative exists.
 - Avoid dense synthetic or thick cotton; prefer linen, light cotton, or moisture-wicking fabrics where noted.
 - If including a long-sleeve item, call it out explicitly in reasoning and suggest rolling the sleeves.
+
+COLOUR RULE — this is the single most common failure of this app, take it seriously.
+Gaurav owns plenty of colour and almost never gets shown it. Treat the candidate list as the source of truth for which colours exist; do not favour any colour just because it is named in these instructions.
+- Each outfit has ONE hero: the top (or the shirt worn open over a tee). Neutral bottoms, footwear and accessories are correct and expected, so judge the outfit's colour by its hero alone.
+- The MAJORITY of the outfits you return must have a non-neutral hero, whenever coloured tops are in the candidate list. Neutral means black, white, grey, charcoal, navy, cream, beige or tan.
+- Every outfit in a set must have a DIFFERENT hero colour. Returning three outfits that all lead with the same colour is as bad as returning three neutral ones. Spread across the coloured tops you were actually given.
+- Tonal dressing is still the house style: one coloured hero against neutral support. Do not colour-block two loud items against each other.
+- Black and white tops are the default reflex. Reach past them unless the mode genuinely demands them (gym, night, or a deliberate all-black look).
+- Do not overcorrect either. Neutrals are not banned and a crisp white shirt or a clean all-black look is still a good answer roughly one outfit in three. The target is a varied set, not a colourful one.
 
 SEASON RULE (the context carries a "season" field — treat it as the wardrobe's mood, temp_c stays the hard constraint):
 - summer: light colours, breathable fabrics, minimum layers. Never suggest a jacket "just in case".
@@ -86,7 +95,7 @@ export function buildGeneratePrompt(args: {
   });
   const heatWarning =
     context.environment !== 'indoor-ac' && typeof context.temp_c === 'number' && context.temp_c >= 30
-      ? `\n⚠️ HEAT ALERT: ${context.temp_c}°C outdoor. Enforce the HEAT RULE — prioritise light colours and short sleeves. Reject dark all-black outfits unless no other option exists.`
+      ? `\n⚠️ HEAT ALERT: ${context.temp_c}°C outdoor. Enforce the HEAT RULE — light in value, short or rolled sleeves, breathable fabric. Reject heavy all-black outfits. This is NOT a reason to strip colour out: a lilac, mustard, mint or dusty rose piece is a correct answer here.`
       : '';
 
   return [

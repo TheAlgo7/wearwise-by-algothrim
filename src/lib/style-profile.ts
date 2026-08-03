@@ -26,7 +26,13 @@ const FALLBACK: StyleProfile = {
   weight_kg: INTERNAL.weight_kg,
   body_type: INTERNAL.body_type,
   preferred_fits: ['bootcut', 'oversized', 'relaxed'],
-  preferred_colors: ['black', 'navy', 'white', 'cream', 'charcoal', 'olive', 'tan', 'burgundy'],
+  // Kept deliberately wide: this list reaches the prompt verbatim as "Palette",
+  // and a short neutral-only list is what made every generation come back
+  // black-and-white despite 24 coloured pieces hanging in the wardrobe.
+  preferred_colors: [
+    'black', 'navy', 'white', 'cream', 'charcoal', 'beige', 'tan', 'coffee', 'sand',
+    'burgundy', 'maroon', 'olive', 'teal', 'mustard', 'dusty rose', 'lilac', 'indigo',
+  ],
   avoided_colors: [],
   avoided_combinations: [
     { items: ['skinny jeans', 'any top'], reason: 'exaggerates thin frame — bootcut only' },
