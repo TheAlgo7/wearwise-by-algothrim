@@ -368,8 +368,12 @@ export default function StylePage() {
         <div
           className="fixed inset-x-0 z-40 animate-oneui-fade border-t border-white/[0.08]"
           style={{
-            bottom: 'calc(env(safe-area-inset-bottom) + 76px)',
-            background: 'rgb(var(--ink-100) / 0.92)',
+            // Clears the floating nav rather than touching it, and opaque
+            // enough that the shelf behind does not read through. Safari
+            // composites backdrop-filter more transparently than Chrome, so
+            // 0.92 left the headwear labels legible under the tray on her phone.
+            bottom: 'calc(env(safe-area-inset-bottom) + 86px)',
+            background: 'rgb(var(--ink-100) / 0.97)',
             backdropFilter: 'blur(28px) saturate(170%)',
             WebkitBackdropFilter: 'blur(28px) saturate(170%)',
           }}

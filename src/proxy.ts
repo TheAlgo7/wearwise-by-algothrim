@@ -12,11 +12,19 @@ import { AUTH_COOKIE, configuredPins, roleForToken } from '@/lib/roles';
 
 const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 400; // 400d — Chrome's ceiling for cookie lifetime
 
-/** Owner-only write endpoints. Ishita browses and suggests; she never edits his wardrobe. */
-const OWNER_ONLY_API = ['/api/items', '/api/upload', '/api/tag-item', '/api/clean-image', '/api/style-profile'];
+/**
+ * Owner-only endpoints. Ishita browses and suggests; she never edits his
+ * wardrobe, and Care is not hers to read at all.
+ *
+ * `/api/care` is blocked here *and* checks the owner cookie itself, and the
+ * `care_*` tables deny the browser key outright. Three independent layers,
+ * because the data behind them is shaving, intimate grooming and skin
+ * reactions rather than t-shirts.
+ */
+const OWNER_ONLY_API = ['/api/items', '/api/upload', '/api/tag-item', '/api/clean-image', '/api/style-profile', '/api/care'];
 
 /** Pages Ishita has no reason to see. Her nav never links here, this is the backstop. */
-const OWNER_ONLY_PAGES = ['/wardrobe/add', '/profile'];
+const OWNER_ONLY_PAGES = ['/wardrobe/add', '/profile', '/care'];
 
 export async function proxy(req: NextRequest) {
   if (configuredPins().length === 0) return NextResponse.next();

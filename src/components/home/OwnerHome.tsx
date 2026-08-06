@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { PickInbox } from '@/components/PickInbox';
 import { SaveLookSheet } from '@/components/SaveLookSheet';
+import { CareCard } from '@/components/home/CareCard';
+import { useCare } from '@/hooks/useCare';
 import { TodayContextSheet } from '@/components/home/TodayContextSheet';
 import { TodayFit, TodayFitSkeleton } from '@/components/home/TodayFit';
 import { useSeason } from '@/hooks/useSeason';
@@ -16,6 +18,7 @@ import {
   contextSignature,
   contextSummary,
   readTodayFit,
+  writeTodayContext,
   writeTodayFit,
   type TodayContext,
 } from '@/lib/today-context';
@@ -64,6 +67,16 @@ export function OwnerHome() {
   const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
   const [optionIdx, setOptionIdx] = useState(0);
   const [generating, setGenerating] = useState(false);
+  /**
+   * The fit on screen answers an older question and is being replaced.
+   *
+   * The app generates on open, so without this there is a blank skeleton
+   * between opening it and the model answering. Yesterday's outfit is a far
+   * better thing to look at for six seconds than a grey rectangle, and it is
+   * honest as long as it says so.
+   */
+  const [stale, setStale] = useState(false);
+  const genAbort = useRef<AbortController | null>(null);
   const [wornIdxs, setWornIdxs] = useState<Set<number>>(new Set());
   const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
   const [saveTarget, setSaveTarget] = useState<GeneratedOutfit | null>(null);
@@ -72,6 +85,11 @@ export function OwnerHome() {
   const [statusMsg, setStatusMsg] = useState('');
 
   const signature = useMemo(() => contextSignature(context, season), [context, season]);
+
+  // Care reads the same assumptions rather than asking him again in its own sheet.
+  useEffect(() => {
+    writeTodayContext(context);
+  }, [context]);
 
   // ── One-time read of ?mode= (PWA shortcuts and old deep links) ──
   useEffect(() => {
@@ -236,6 +254,10 @@ export function OwnerHome() {
 
   // ── Generation ──
   const generate = useCallback(async () => {
+    genAbort.current?.abort();
+    const controller = new AbortController();
+    genAbort.current = controller;
+
     setGenerating(true);
     setError(null);
     setAdvisory(null);
@@ -255,6 +277,7 @@ export function OwnerHome() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -267,6 +290,7 @@ export function OwnerHome() {
       const next = data.outfits as GeneratedOutfit[];
       const nextAdvisory = (data.destination_advisory ?? data.heat_advisory ?? null) as string | null;
       setOutfits(next);
+      setStale(false);
       setOptionIdx(0);
       setWornIdxs(new Set());
       setSavedIdxs(new Set());
@@ -285,13 +309,38 @@ export function OwnerHome() {
         saved: [],
       });
     } catch (err) {
+      // An abort is him choosing to keep what is on screen, not a failure.
+      if (controller.signal.aborted) return;
       const msg = err instanceof Error ? err.message : 'Network error';
       setError(msg);
       setStatusMsg(`Error: ${msg}`);
     } finally {
-      setGenerating(false);
+      if (!controller.signal.aborted) setGenerating(false);
     }
   }, [context, customContext, tripCityError, coords, season]);
+
+  /**
+   * Stop waiting: the fit already on screen becomes today's answer.
+   *
+   * Cached under the current signature too, so opening the app again in five
+   * minutes does not restart the same slow call he just dismissed.
+   */
+  const keepPrevious = useCallback(() => {
+    genAbort.current?.abort();
+    setGenerating(false);
+    setStale(false);
+    setStatusMsg('Keeping the previous fit.');
+    if (outfits.length > 0) {
+      writeTodayFit({
+        signature,
+        outfits,
+        advisory: null,
+        index: optionIdx,
+        worn: [...wornIdxs],
+        saved: [...savedIdxs],
+      });
+    }
+  }, [outfits, signature, optionIdx, wornIdxs, savedIdxs]);
 
   /**
    * The fit is on screen before he asks for it.
@@ -309,14 +358,25 @@ export function OwnerHome() {
     ranFor.current = signature;
 
     const cached = readTodayFit();
-    if (cached && cached.signature === signature && cached.outfits.length > 0) {
+    if (cached && cached.outfits.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOutfits(cached.outfits);
-      setAdvisory(cached.advisory);
       setOptionIdx(Math.min(cached.index, cached.outfits.length - 1));
-      setWornIdxs(new Set(cached.worn));
-      setSavedIdxs(new Set(cached.saved));
-      return;
+
+      if (cached.signature === signature) {
+        setAdvisory(cached.advisory);
+        setWornIdxs(new Set(cached.worn));
+        setSavedIdxs(new Set(cached.saved));
+        setStale(false);
+        return;
+      }
+
+      // Right answer to yesterday's question. Show it while the real one loads
+      // rather than opening onto an empty hero.
+      setAdvisory(null);
+      setWornIdxs(new Set());
+      setSavedIdxs(new Set());
+      setStale(true);
     }
     void generate();
     // `generate` is intentionally out of the dependency list: it changes identity
@@ -428,6 +488,20 @@ export function OwnerHome() {
     [setOverride, context.tripCity]
   );
 
+  // Care runs off the same context the outfit does. Only asked for once the
+  // weather has settled, so the plan is not built against a missing humidity.
+  const care = useCare(
+    {
+      mode: context.mode,
+      environment: context.environment,
+      plannedFor: context.plannedFor,
+      tempC: weather?.temp_c ?? null,
+      humidity: weather?.humidity ?? null,
+      condition: weather?.condition ?? null,
+    },
+    weatherFor !== null
+  );
+
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
@@ -484,6 +558,8 @@ export function OwnerHome() {
 
       {/* ── Content ── */}
       <div className="reach-zone">
+        <CareCard plan={care.state?.plan ?? null} loading={care.loading} />
+
         {error && (
           <div
             role="alert"
@@ -521,9 +597,11 @@ export function OwnerHome() {
             worn={wornIdxs.has(optionIdx)}
             saved={savedIdxs.has(optionIdx)}
             busy={generating}
+            stale={stale}
             onWear={() => void markWorn()}
             onAnother={another}
             onSave={() => setSaveTarget(current)}
+            onKeepPrevious={keepPrevious}
           />
         ) : !error ? (
           <TodayFitSkeleton />

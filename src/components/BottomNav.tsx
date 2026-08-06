@@ -2,25 +2,27 @@
 
 import { cn } from '@/lib/cn';
 import { useRole } from '@/components/RoleProvider';
-import { Heart, Home, Layers, Shirt } from 'lucide-react';
+import { Heart, Home, Layers, Shirt, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 /**
- * Three destinations for him, four for her.
+ * Four destinations each, for different reasons.
  *
- * His used to have five. Modes was never a place — it is an input to one
- * generation, so it lives in the Today context sheet now. Profile is opened
- * a few times a year, so it is a button in the Today header instead of a
- * permanent quarter of the navigation.
+ * His used to have five, of which Modes was never a place (it is an input to
+ * one generation, so it lives in the Today context sheet) and Profile is opened
+ * a few times a year (so it is a button in the Today header). That left three.
+ * Care earns the fourth slot because it is not a setting: it is a second daily
+ * decision system with its own state, sitting alongside the wardrobe.
  *
  * Hers keeps four because Style him is a genuinely separate, frequent job
- * rather than a view of the same data.
+ * rather than a view of the same data. Care is not hers to see at all.
  */
 const OWNER_NAV = [
-  { href: '/',         label: 'Today',    Icon: Home,   match: (p: string) => p === '/' },
-  { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,  match: (p: string) => p.startsWith('/wardrobe') },
-  { href: '/looks',    label: 'Looks',    Icon: Layers, match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
+  { href: '/',         label: 'Today',    Icon: Home,     match: (p: string) => p === '/' },
+  { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,    match: (p: string) => p.startsWith('/wardrobe') },
+  { href: '/care',     label: 'Care',     Icon: Sparkles, match: (p: string) => p.startsWith('/care') },
+  { href: '/looks',    label: 'Looks',    Icon: Layers,   match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
 ];
 
 const PARTNER_NAV = [

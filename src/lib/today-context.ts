@@ -112,3 +112,32 @@ export function writeTodayFit(cache: TodayFitCache): void {
     /* storage full or blocked; the fit just regenerates next open */
   }
 }
+
+/* ── The context itself, shared across pages ───────────────────────────────
+   Care asks the same questions the outfit engine does: is he going out, is it
+   an event, is it tonight. Making him answer them twice, in two different
+   sheets, would be the exact thing this redesign removed. Today owns the
+   context and writes it here; Care reads it. */
+
+const CTX_KEY = 'wearwise.today.context';
+
+export function writeTodayContext(ctx: TodayContext): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(CTX_KEY, JSON.stringify(ctx));
+  } catch {
+    /* falls back to defaults below */
+  }
+}
+
+export function readTodayContext(): TodayContext | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(CTX_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TodayContext;
+    return typeof parsed?.mode === 'string' ? parsed : null;
+  } catch {
+    return null;
+  }
+}

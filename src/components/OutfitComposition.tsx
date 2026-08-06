@@ -104,7 +104,7 @@ export function OutfitComposition({ items, priority, className }: Props) {
         // unbounded 5:6 canvas pushed "Wear this" under the nav bar, which is
         // the one thing this screen exists to put in front of him.
         'mx-auto grid w-full gap-2 rounded-squircle-lg bg-ink-0 p-2',
-        hasExtras ? 'aspect-[5/6] max-h-[43dvh]' : 'aspect-square max-h-[43dvh]',
+        hasExtras ? 'aspect-[5/6] max-h-[38dvh]' : 'aspect-square max-h-[38dvh]',
         className
       )}
       style={{

@@ -5,7 +5,7 @@ import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
 import type { GeneratedOutfit, Item } from '@/types';
 import { BookmarkCheck, BookmarkPlus, Check, Loader2, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const LAYER_ORDER: Record<string, number> = {
   base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4,
@@ -23,10 +23,17 @@ interface Props {
   saved: boolean;
   /** True while a fresh batch is being fetched behind the current one. */
   busy: boolean;
+  /** This fit answers an older question and is being replaced. */
+  stale?: boolean;
   onWear: () => void;
   onAnother: () => void;
   onSave: () => void;
+  /** Stop waiting and treat the fit already on screen as today's answer. */
+  onKeepPrevious?: () => void;
 }
+
+/** How long to wait before offering an escape from a slow model call. */
+const PATIENCE_MS = 8000;
 
 /**
  * The answer, and only the answer.
@@ -37,10 +44,21 @@ interface Props {
  * carousel before he has had coffee.
  */
 export function TodayFit({
-  outfit, items, itemById, index, total, worn, saved, busy,
-  onWear, onAnother, onSave,
+  outfit, items, itemById, index, total, worn, saved, busy, stale,
+  onWear, onAnother, onSave, onKeepPrevious,
 }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Only offered once the wait stops being reasonable. Showing it immediately
+  // would suggest the update is expected to fail.
+  const [patienceSpent, setPatienceSpent] = useState(false);
+  useEffect(() => {
+    if (!stale) return;
+    const t = setTimeout(() => setPatienceSpent(true), PATIENCE_MS);
+    // Reset on the way out, so a second slow update starts the clock again
+    // rather than offering the escape hatch instantly.
+    return () => { clearTimeout(t); setPatienceSpent(false); };
+  }, [stale]);
 
   const resolved = useMemo(
     () =>
@@ -62,11 +80,16 @@ export function TodayFit({
         <div className="flex items-center justify-between gap-3 px-1">
           <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Today&apos;s fit</h2>
           <div className="flex items-center gap-1">
-            {total > 1 && (
+            {stale ? (
+              <span className="mr-1 flex items-center gap-1.5 text-[12px] font-medium text-fog-400">
+                <Loader2 size={12} className="animate-spin" aria-hidden />
+                Updating for today
+              </span>
+            ) : total > 1 ? (
               <span className="mr-1 text-[12px] font-medium text-fog-400">
                 {index + 1} of {total}
               </span>
-            )}
+            ) : null}
             <button
               type="button"
               onClick={onSave}
@@ -87,17 +110,46 @@ export function TodayFit({
           type="button"
           onClick={() => setDetailOpen(true)}
           aria-label={`See all ${resolved.length} pieces in this outfit`}
-          className="press block w-full rounded-squircle-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+          className={cn(
+            'press block w-full rounded-squircle-lg text-left transition-opacity duration-300',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+            stale && 'opacity-40'
+          )}
         >
           <OutfitComposition items={resolved} priority />
         </button>
 
         {/* Clamped so the two actions stay above the nav on a phone. The full
             reasoning is one tap away in the detail sheet. */}
-        <p className="line-clamp-3 px-1 text-[14px] leading-[1.55] text-fog-200 text-pretty">
+        <p
+          className={cn(
+            'line-clamp-3 px-1 text-[14px] leading-[1.55] text-fog-200 text-pretty transition-opacity duration-300',
+            stale && 'opacity-40'
+          )}
+        >
           {outfit.reasoning}
         </p>
 
+        {/* An outfit that answers yesterday's question is not something to
+            tap "Wear this" on, so the actions wait. If the model is taking
+            long enough to notice, he can take this one anyway. */}
+        {stale ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-white/[0.05] text-[15px] font-semibold text-fog-300">
+              <Loader2 size={18} className="animate-spin" aria-hidden />
+              Updating for today
+            </div>
+            {patienceSpent && onKeepPrevious && (
+              <button
+                type="button"
+                onClick={onKeepPrevious}
+                className="press animate-oneui-fade flex h-12 w-full items-center justify-center rounded-full text-[15px] font-semibold text-fog-200 transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              >
+                Keep previous fit
+              </button>
+            )}
+          </div>
+        ) : (
         <div className="flex flex-col gap-2">
           <button
             type="button"
@@ -138,6 +190,7 @@ export function TodayFit({
             )}
           </button>
         </div>
+        )}
       </section>
 
       <OutfitDetailSheet

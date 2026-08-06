@@ -255,6 +255,45 @@ Nav container uses `max-w-xl` centered. Pages themselves flow edge-to-edge withi
 
 ---
 
+## Care
+
+Skin, hair and body. A second daily decision system, not a settings page, which is why it holds a navigation slot rather than living behind Profile.
+
+### It does not call a model
+
+Outfit generation earns an LLM call: the answer is open-ended and changes with 105 items, the weather and the occasion. "Cleanse, then moisturise" does not. `src/lib/care/engine.ts` is a pure function of `(profile, products, logs, context, now)` — no fetch, no randomness. AI belongs in this feature only where the question is genuinely open, like reading a new product's ingredients off a photo.
+
+### Privacy is enforced at the database, not the UI
+
+Every other table carries an `anon_read` policy with `using (true)`, so the publishable key in the client bundle can read it. That is a fair trade for t-shirts. It is not one for shaving, intimate grooming, skin reactions or scalp photographs — **Ishita's browser holds that same key**, and a fetch from her devtools console walks past every proxy rule and every piece of UI gating.
+
+So the `care_*` tables have RLS enabled and **no policies at all**. Verified from her logged-in session with the key harvested out of the JS bundle:
+
+| Table | Result |
+|---|---|
+| `items`, `outfits` | 200, full rows |
+| `care_profile`, `care_products`, `care_logs`, `care_photos` | 401, `permission denied` |
+
+Access is only ever the service-role client inside `/api/care`, behind an owner check, plus `proxy.ts` blocking `/care` and `/api/care` for the partner role. Three independent layers. **Do not add an anon policy to make a client-side read work.**
+
+Sharing is opt-in and narrow: `share_with_partner` exposes the hairstyle goal and next cut date, never a routine, a log or a photo.
+
+### Layout
+
+Two segments, **Routine** and **Products**. GPT's sketch had Skin, Hair and Body as separate tabs; that is a filing cabinet, not a routine. Nobody does all their skin steps and then all their hair steps — they shampoo in the shower and moisturise after. The routine interleaves domains in the order they happen; domain is only a grouping where it genuinely is one, which is the product shelf.
+
+Steps are compact rows with a 48px check circle on the right, not full-width buttons. Seven stacked crimson buttons on a wash day undid the restraint pass in one screen.
+
+No rings, no streaks, no score. This is meant to remove thinking, not gamify washing your face.
+
+### Today card
+
+One card between the context pill and the outfit: `Care now · Morning · 5 steps · 7.5 min` plus the step names. Chips appear only for exceptions (`Post-shave`, `Skin recovery`, `Event tomorrow`), never for facts the step list already shows. Once the routine is done it collapses to a single line — the reward for finishing is less screen.
+
+The outfit stays the visual hero. `OutfitComposition` is capped at `38dvh` so `Wear this` survives the extra card.
+
+---
+
 ## Two experiences, one foundation
 
 The roles are not one interface with two permission levels. They are two jobs.
