@@ -104,8 +104,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex items-start justify-between shrink-0">
           <div>
-            <p className="text-[11px] font-semibold text-crimson-300 tracking-widest uppercase">Today's pick</p>
-            <h2 id="outfit-sheet-title" className="text-[24px] font-semibold text-crimson-50 leading-[1.15] tracking-tight mt-1">
+            <h2 id="outfit-sheet-title" className="text-[24px] font-semibold text-fog-100 leading-[1.15] tracking-tight mt-1">
               {resolved.length} piece outfit
             </h2>
           </div>
@@ -143,7 +142,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <span className="text-crimson-100/30 text-[11px] text-center px-4 leading-relaxed">
+                    <span className="text-fog-500 text-[11px] text-center px-4 leading-relaxed">
                       {it.name}
                     </span>
                   )}
@@ -151,12 +150,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
                 {/* Item info */}
                 <div className="mt-2.5 px-0.5">
-                  <p className="text-[14px] font-semibold text-crimson-50 leading-tight">{it.name}</p>
+                  <p className="text-[14px] font-semibold text-fog-100 leading-tight">{it.name}</p>
                   <p className="text-[11px] text-fog-300 mt-0.5 capitalize">
                     {[it.category?.name, it.fit].filter(Boolean).join(' · ')}
                   </p>
                   {it.material.length > 0 && (
-                    <p className="text-[11px] mt-0.5 capitalize text-crimson-300/70">
+                    <p className="text-[11px] mt-0.5 capitalize text-fog-400">
                       {it.material.join(', ')}
                     </p>
                   )}
@@ -168,7 +167,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           {/* Reasoning */}
           {outfit.reasoning && (
             <div className="mt-5 rounded-[16px] px-4 py-4 bg-crimson-400/[0.06] border border-crimson-400/[0.12]">
-              <p className="text-[11px] font-semibold tracking-widest uppercase mb-2 text-crimson-300">
+              <p className="mb-2 text-[13px] font-semibold text-crimson-300">
                 Why this works
               </p>
               <p className="text-[13px] leading-[1.7] text-fog-200">{outfit.reasoning}</p>

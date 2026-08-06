@@ -43,13 +43,11 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
       <div className="mb-2 flex items-center justify-between gap-3 px-1">
         <div className="flex items-center gap-2">
           <Heart size={13} className="fill-current text-crimson-300" aria-hidden />
-          <p className="text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-            From Ishita
-          </p>
+          <h2 className="section-title">From Ishita</h2>
         </div>
         <Link
           href="/looks"
-          className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-crimson-100/60 transition-colors hover:text-crimson-200"
+          className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-fog-400 transition-colors hover:text-crimson-200"
         >
           All looks
           <ChevronRight size={13} aria-hidden />
@@ -76,7 +74,7 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="flex items-center gap-2 truncate text-[15px] font-semibold leading-5 text-crimson-50">
+                  <h3 className="flex items-center gap-2 truncate text-[15px] font-semibold leading-5 text-fog-100">
                     {look.name ?? 'A look for you'}
                     {unseen && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-crimson-400" aria-label="New" />}
                   </h3>
@@ -103,7 +101,7 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <Shirt size={18} className="text-crimson-100/30" aria-hidden />
+                        <Shirt size={18} className="text-fog-500" aria-hidden />
                       </div>
                     )}
                   </div>
@@ -111,7 +109,7 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
               </div>
 
               {look.note && (
-                <p className="mt-3 line-clamp-3 text-[13px] leading-[1.55] text-crimson-100/80 text-pretty">
+                <p className="mt-3 line-clamp-3 text-[13px] leading-[1.55] text-fog-200 text-pretty">
                   “{look.note}”
                 </p>
               )}
@@ -121,9 +119,11 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
                 onClick={() => wear(look)}
                 disabled={busyId === look.id || worn}
                 className={cn(
+                  // Tonal: "Wear this" on the fit above is the one solid crimson
+                  // button on this screen, and two competing ones read as a fork.
                   'press mt-4 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 disabled:opacity-70',
-                  worn ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400 text-white'
+                  worn ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400/[0.16] text-crimson-200 hover:bg-crimson-400/[0.24]'
                 )}
               >
                 {busyId === look.id ? (

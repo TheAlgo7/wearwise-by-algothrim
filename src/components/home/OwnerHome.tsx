@@ -2,76 +2,100 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { WeatherWidget } from '@/components/WeatherWidget';
-import { EnvironmentToggle } from '@/components/EnvironmentToggle';
-import { TripModePicker } from '@/components/TripModePicker';
-import { ModeSelector } from '@/components/ModeSelector';
-import { GenerateButton } from '@/components/GenerateButton';
-import { OutfitCard } from '@/components/OutfitCard';
 import { PickInbox } from '@/components/PickInbox';
 import { SaveLookSheet } from '@/components/SaveLookSheet';
-import { SeasonSwitch } from '@/components/SeasonSwitch';
+import { TodayContextSheet } from '@/components/home/TodayContextSheet';
+import { TodayFit, TodayFitSkeleton } from '@/components/home/TodayFit';
 import { useSeason } from '@/hooks/useSeason';
 import { createClient } from '@/lib/supabase/client';
 import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import { modeForDate } from '@/lib/modes';
 import { pickGreeting } from '@/lib/greetings';
-import { SEASON_META } from '@/lib/season';
+import { SEASON_META, type Season } from '@/lib/season';
+import {
+  contextSignature,
+  contextSummary,
+  readTodayFit,
+  writeTodayFit,
+  type TodayContext,
+} from '@/lib/today-context';
 import { cacheWeather } from '@/lib/weather-cache';
-import type { Environment, Item, Outfit, WeatherSnapshot, GeneratedOutfit } from '@/types';
-import { ChevronRight, Shirt } from 'lucide-react';
+import type { Item, Outfit, WeatherSnapshot, GeneratedOutfit } from '@/types';
+import { ChevronRight, Shirt, SlidersHorizontal, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+/**
+ * Gaurav's home.
+ *
+ * It used to open on six controls and a Generate button: trip, season,
+ * environment, occasion, timing, and only then an answer. That is a
+ * configuration screen, and he opens this app at 7am with one question.
+ *
+ * Now it opens on the answer. Everything the engine assumed is compressed into
+ * one line under the greeting, and the controls that produced those assumptions
+ * live in a sheet behind it. The alternatives still exist behind "Another
+ * option" — they are just not something he has to shop for before he can leave.
+ */
 export function OwnerHome() {
-  const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [environment, setEnvironment] = useState<Environment>('outdoor');
-  const [tripCity, setTripCity] = useState<string | null>(null);
-  const [tripCityError, setTripCityError] = useState<string | null>(null);
-  const [mode, setMode] = useState<string>(() => modeForDate());
+  // ── Context: one object, one line, one sheet ──
+  const [context, setContext] = useState<TodayContext>(() => ({
+    mode: modeForDate(),
+    environment: 'outdoor',
+    plannedFor: 'now',
+    tripCity: null,
+  }));
   const modeIsAuto = useRef(true);
   const [customContext, setCustomContext] = useState('');
-  const [plannedFor, setPlannedFor] = useState<'now' | 'tonight' | 'tomorrow'>('now');
+  const [contextOpen, setContextOpen] = useState(false);
 
-  const { season, source, override, toggle, setOverride } = useSeason(weather);
+  const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [tripCityError, setTripCityError] = useState<string | null>(null);
+  /** Which place the current snapshot describes, or null while in flight. */
+  const [weatherFor, setWeatherFor] = useState<string | null>(null);
 
+  const { season, source, override, setOverride, hydrated } = useSeason(weather);
+
+  const [items, setItems] = useState<Item[]>([]);
+  const [itemsReady, setItemsReady] = useState(false);
+  const [savedLooks, setSavedLooks] = useState<Outfit[]>([]);
+
+  const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
+  const [optionIdx, setOptionIdx] = useState(0);
+  const [generating, setGenerating] = useState(false);
+  const [wornIdxs, setWornIdxs] = useState<Set<number>>(new Set());
+  const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
+  const [saveTarget, setSaveTarget] = useState<GeneratedOutfit | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [advisory, setAdvisory] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState('');
+
+  const signature = useMemo(() => contextSignature(context, season), [context, season]);
+
+  // ── One-time read of ?mode= (PWA shortcuts and old deep links) ──
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlMode = new URLSearchParams(window.location.search).get('mode');
-    if (urlMode) {
-      // One-time read of the ?mode= param on mount — inherently effect-driven.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMode(urlMode);
-      modeIsAuto.current = false;
-      window.history.replaceState(null, '', window.location.pathname);
-    }
+    if (!urlMode) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setContext((c) => ({ ...c, mode: urlMode }));
+    modeIsAuto.current = false;
+    window.history.replaceState(null, '', window.location.pathname);
   }, []);
 
-  // Reset auto-set mode when the day changes (e.g. PWA left open overnight on Sunday)
+  // Left open overnight on a Saturday, it should not still be dressing him for Saturday.
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible' && modeIsAuto.current) {
-        setMode(modeForDate());
+        setContext((c) => (c.mode === modeForDate() ? c : { ...c, mode: modeForDate() }));
       }
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
-  const [items, setItems] = useState<Item[]>([]);
-  const [savedLooks, setSavedLooks] = useState<Outfit[]>([]);
-  const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [wornOutfitIdx, setWornOutfitIdx] = useState<number | null>(null);
-  const [savedIdxs, setSavedIdxs] = useState<Set<number>>(new Set());
-  const [saveTarget, setSaveTarget] = useState<GeneratedOutfit | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // Non-blocking generation notes from the server (heat / destination fallbacks)
-  const [advisory, setAdvisory] = useState<string | null>(null);
-  // Screen-reader status message for generation state changes
-  const [statusMsg, setStatusMsg] = useState('');
-
+  // ── Wardrobe ──
   useEffect(() => {
     const controller = new AbortController();
     const supa = createClient();
@@ -81,7 +105,9 @@ export function OwnerHome() {
         .select('*, category:categories(*)')
         .eq('archived', false)
         .abortSignal(controller.signal);
-      if (!controller.signal.aborted) setItems((data ?? []) as Item[]);
+      if (controller.signal.aborted) return;
+      setItems((data ?? []) as Item[]);
+      setItemsReady(true);
     })();
     return () => controller.abort();
   }, []);
@@ -107,37 +133,53 @@ export function OwnerHome() {
     return () => controller.abort();
   }, [loadLooks]);
 
+  // ── Weather ──
+  const tripCity = context.tripCity;
   useEffect(() => {
     const controller = new AbortController();
+    const settleAs = tripCity ?? 'here';
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setWeatherFor(null);
 
     const fetchWeather = async (params: string) => {
-      const r = await fetch(`/api/weather?${params}`, { signal: controller.signal });
-      if (r.ok) {
-        const snapshot = (await r.json()) as WeatherSnapshot;
-        setWeather(snapshot);
-        cacheWeather(snapshot);
-      } else setWeather(null);
-    };
-
-    if (tripCity) {
-      // Clear any stale "city not found" error before refetching for the new city.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTripCityError(null);
-      (async () => {
-        const r = await fetch(`/api/weather?city=${encodeURIComponent(tripCity)}`, { signal: controller.signal });
+      try {
+        const r = await fetch(`/api/weather?${params}`, { signal: controller.signal });
         if (r.ok) {
           const snapshot = (await r.json()) as WeatherSnapshot;
           setWeather(snapshot);
           cacheWeather(snapshot);
         } else {
-          setTripCityError(`"${tripCity}" not found — using your current location.`);
-          if (!navigator.geolocation) { void fetchWeather(''); return; }
-          navigator.geolocation.getCurrentPosition(
-            (pos) => { void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`); },
-            () => { void fetchWeather(''); },
-            { maximumAge: 600_000, timeout: 6000 }
-          );
+          setWeather(null);
         }
+      } catch {
+        if (controller.signal.aborted) return;
+        setWeather(null);
+      }
+      if (!controller.signal.aborted) setWeatherFor(settleAs);
+    };
+
+    if (tripCity) {
+      setTripCityError(null);
+      (async () => {
+        const r = await fetch(`/api/weather?city=${encodeURIComponent(tripCity)}`, {
+          signal: controller.signal,
+        }).catch(() => null);
+        if (controller.signal.aborted) return;
+        if (r?.ok) {
+          const snapshot = (await r.json()) as WeatherSnapshot;
+          setWeather(snapshot);
+          cacheWeather(snapshot);
+          setWeatherFor(settleAs);
+          return;
+        }
+        setTripCityError(`Could not find "${tripCity}". Using where you are.`);
+        if (!navigator.geolocation) { void fetchWeather(''); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`),
+          () => void fetchWeather(''),
+          { maximumAge: 600_000, timeout: 6000 }
+        );
       })();
       return () => controller.abort();
     }
@@ -149,33 +191,30 @@ export function OwnerHome() {
         setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         void fetchWeather(`lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
       },
-      () => { void fetchWeather(''); },
+      () => void fetchWeather(''),
       { maximumAge: 600_000, timeout: 6000 }
     );
     return () => controller.abort();
   }, [tripCity]);
 
   const effectiveTempC = useMemo(
-    () => (environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : weather?.temp_c),
-    [environment, weather?.temp_c]
+    () => (context.environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : weather?.temp_c),
+    [context.environment, weather?.temp_c]
   );
 
-  // Memoize byId map — only rebuild when items list changes (not on every parent re-render)
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
-  const picks = useMemo(
-    () => savedLooks.filter((o) => o.created_by === 'partner'),
-    [savedLooks]
-  );
+  const picks = useMemo(() => savedLooks.filter((o) => o.created_by === 'partner'), [savedLooks]);
   const unseenPicks = useMemo(() => picks.filter((p) => !p.seen_at).length, [picks]);
 
-  /** Saved looks worth surfacing today: this season or all-season. */
   const seasonLooks = useMemo(
-    () => savedLooks.filter((o) => o.created_by !== 'partner' && (o.season === season || o.season === null)).slice(0, 6),
+    () =>
+      savedLooks
+        .filter((o) => o.created_by !== 'partner' && (o.season === season || o.season === null))
+        .slice(0, 6),
     [savedLooks, season]
   );
 
-  // Greeting is picked once per mount, after hydration, so server and client agree.
   const [greeting, setGreeting] = useState('');
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -190,24 +229,28 @@ export function OwnerHome() {
         itemCount: items.length,
       })
     );
-    // Deliberately excludes `season`/`weather` churn: re-rolling the greeting
-    // mid-session as weather refreshes would make it feel unstable.
+    // Deliberately excludes season/weather churn: re-rolling the greeting as
+    // weather refreshes mid-session would make it feel unstable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unseenPicks, items.length === 0]);
 
+  // ── Generation ──
   const generate = useCallback(async () => {
     setGenerating(true);
     setError(null);
     setAdvisory(null);
-    setOutfits([]);
-    setWornOutfitIdx(null);
-    setSavedIdxs(new Set());
-    setStatusMsg('Generating your outfit…');
+    setStatusMsg('Putting today’s fit together.');
     try {
-      const body: Record<string, unknown> = { mode, environment, planned_for: plannedFor, season };
-      if (mode === 'describe' && customContext.trim()) body.custom_context = customContext.trim();
-      if (tripCity && !tripCityError) body.trip_city = tripCity;
-      if ((!tripCity || tripCityError) && coords) { body.lat = coords.lat; body.lon = coords.lon; }
+      const body: Record<string, unknown> = {
+        mode: context.mode,
+        environment: context.environment,
+        planned_for: context.plannedFor,
+        season,
+      };
+      if (context.mode === 'describe' && customContext.trim()) body.custom_context = customContext.trim();
+      if (context.tripCity && !tripCityError) body.trip_city = context.tripCity;
+      if ((!context.tripCity || tripCityError) && coords) { body.lat = coords.lat; body.lon = coords.lon; }
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -215,14 +258,32 @@ export function OwnerHome() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = (data.error ?? 'Generation failed') + (data.details ? ` — ${data.details}` : '');
+        const msg = (data.error ?? 'Generation failed') + (data.details ? `. ${data.details}` : '');
         setError(msg);
         setStatusMsg(`Error: ${msg}`);
-      } else {
-        setOutfits(data.outfits as GeneratedOutfit[]);
-        setAdvisory((data.destination_advisory ?? data.heat_advisory ?? null) as string | null);
-        setStatusMsg(`${(data.outfits as GeneratedOutfit[]).length} outfit${(data.outfits as GeneratedOutfit[]).length === 1 ? '' : 's'} ready.`);
+        return;
       }
+
+      const next = data.outfits as GeneratedOutfit[];
+      const nextAdvisory = (data.destination_advisory ?? data.heat_advisory ?? null) as string | null;
+      setOutfits(next);
+      setOptionIdx(0);
+      setWornIdxs(new Set());
+      setSavedIdxs(new Set());
+      setAdvisory(nextAdvisory);
+      setStatusMsg(
+        next.length > 1
+          ? `Today's fit is ready, with ${next.length - 1} other option${next.length === 2 ? '' : 's'}.`
+          : "Today's fit is ready."
+      );
+      writeTodayFit({
+        signature: contextSignature(context, season),
+        outfits: next,
+        advisory: nextAdvisory,
+        index: 0,
+        worn: [],
+        saved: [],
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Network error';
       setError(msg);
@@ -230,7 +291,61 @@ export function OwnerHome() {
     } finally {
       setGenerating(false);
     }
-  }, [mode, environment, tripCity, tripCityError, coords, customContext, plannedFor, season]);
+  }, [context, customContext, tripCityError, coords, season]);
+
+  /**
+   * The fit is on screen before he asks for it.
+   *
+   * Only once everything the answer depends on has actually settled — wardrobe
+   * loaded, season override read, and a weather snapshot for the right place —
+   * so a slow geolocation callback cannot cause two model calls in a row.
+   */
+  const ready = itemsReady && hydrated && weatherFor === (context.tripCity ?? 'here');
+  const ranFor = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ready || items.length === 0) return;
+    if (ranFor.current === signature) return;
+    ranFor.current = signature;
+
+    const cached = readTodayFit();
+    if (cached && cached.signature === signature && cached.outfits.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOutfits(cached.outfits);
+      setAdvisory(cached.advisory);
+      setOptionIdx(Math.min(cached.index, cached.outfits.length - 1));
+      setWornIdxs(new Set(cached.worn));
+      setSavedIdxs(new Set(cached.saved));
+      return;
+    }
+    void generate();
+    // `generate` is intentionally out of the dependency list: it changes identity
+    // whenever coords arrive, and the signature guard above is what decides
+    // whether this question has already been answered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, signature, items.length]);
+
+  /** Persist whatever changed about the current batch without refetching it. */
+  const patchCache = useCallback(
+    (patch: Partial<{ index: number; worn: number[]; saved: number[] }>) => {
+      const current = readTodayFit();
+      if (!current || current.signature !== signature) return;
+      writeTodayFit({ ...current, ...patch });
+    },
+    [signature]
+  );
+
+  const another = useCallback(() => {
+    if (optionIdx + 1 < outfits.length) {
+      const next = optionIdx + 1;
+      setOptionIdx(next);
+      patchCache({ index: next });
+      setStatusMsg(`Option ${next + 1} of ${outfits.length}.`);
+      return;
+    }
+    // Out of alternatives in this batch, so go and get a fresh one.
+    void generate();
+  }, [optionIdx, outfits.length, patchCache, generate]);
 
   const wearOutfit = useCallback(
     async (payload: { items: string[]; reasoning?: string; confidence?: number; is_saved?: boolean }) => {
@@ -242,8 +357,8 @@ export function OwnerHome() {
           context: {
             temp_c: effectiveTempC ?? weather?.temp_c,
             condition: weather?.condition,
-            environment,
-            mode,
+            environment: context.environment,
+            mode: context.mode,
             season,
             city: weather?.city,
           },
@@ -251,23 +366,31 @@ export function OwnerHome() {
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
     },
-    [effectiveTempC, weather, environment, mode, season]
+    [effectiveTempC, weather, context.environment, context.mode, season]
   );
 
-  const markWorn = useCallback(async (idx: number) => {
-    const o = outfits[idx];
+  const markWorn = useCallback(async () => {
+    const o = outfits[optionIdx];
     if (!o) return;
-    setWornOutfitIdx(idx);
+    const next = new Set(wornIdxs).add(optionIdx);
+    setWornIdxs(next);
     try {
-      await wearOutfit({ items: o.items, reasoning: o.reasoning, confidence: o.confidence, is_saved: savedIdxs.has(idx) });
+      await wearOutfit({
+        items: o.items,
+        reasoning: o.reasoning,
+        confidence: o.confidence,
+        is_saved: savedIdxs.has(optionIdx),
+      });
+      patchCache({ worn: [...next] });
       setStatusMsg('Outfit logged. Wear history updated.');
     } catch (err) {
-      // Don't pretend it was logged — clear the worn state and surface the failure.
-      setWornOutfitIdx(null);
-      const msg = err instanceof Error ? err.message : 'Network error';
-      setStatusMsg(`Couldn't log outfit: ${msg}`);
+      // Don't pretend it was logged.
+      const rolled = new Set(wornIdxs);
+      rolled.delete(optionIdx);
+      setWornIdxs(rolled);
+      setStatusMsg(`Couldn't log outfit: ${err instanceof Error ? err.message : 'Network error'}`);
     }
-  }, [outfits, savedIdxs, wearOutfit]);
+  }, [outfits, optionIdx, wornIdxs, savedIdxs, wearOutfit, patchCache]);
 
   const wearPick = useCallback(
     async (look: Outfit) => {
@@ -294,166 +417,139 @@ export function OwnerHome() {
     }).catch(() => { /* cosmetic only; the dot will return next load */ });
   }, []);
 
+  const applyContext = useCallback(
+    (next: { context: TodayContext; customContext: string; seasonOverride: Season | null }) => {
+      modeIsAuto.current = false;
+      setContext(next.context);
+      setCustomContext(next.customContext);
+      setOverride(next.seasonOverride);
+      if (next.context.tripCity !== context.tripCity) setTripCityError(null);
+    },
+    [setOverride, context.tripCity]
+  );
+
   const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'short',
+    weekday: 'long', day: 'numeric', month: 'long',
   });
+
+  const summary = contextSummary(context, {
+    city: weather?.city,
+    tempC: context.environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : weather?.temp_c,
+  });
+
+  const current = outfits[optionIdx];
 
   return (
     <main className="min-h-dvh">
-      {/* Screen-reader live region — announces generation state changes */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {statusMsg}
       </div>
 
-      {/* ── VIEWING AREA ── */}
-      <div className="px-5 pt-14 pb-4">
-        <div className="flex items-end justify-between gap-4">
+      {/* ── Header ── */}
+      <div className="px-5 pt-11 pb-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p suppressHydrationWarning className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase mb-2 truncate">
-              {today}{weather?.city ? ` · ${weather.city}` : ''}
+            <p suppressHydrationWarning className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
+              {today}
             </p>
-            <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-crimson-50 text-balance">
+            <h1
+              suppressHydrationWarning
+              className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance"
+            >
               {greeting || 'Hello.'}
             </h1>
           </div>
-          <WeatherWidget
-            weather={weather}
-            effectiveTempC={environment === 'indoor-ac' ? INDOOR_AC_TEMP_C : undefined}
-            tripCity={tripCity}
-            variant="compact"
-            className="shrink-0 w-[126px]"
-          />
+          <Link
+            href="/profile"
+            aria-label="Your style profile"
+            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05] text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+          >
+            <User size={19} aria-hidden />
+          </Link>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setContextOpen(true)}
+          aria-haspopup="dialog"
+          className="context-pill mt-4"
+        >
+          <span className="truncate">{summary}</span>
+          <SlidersHorizontal size={15} className="shrink-0 text-fog-400" aria-hidden />
+        </button>
+        {tripCityError && (
+          <p className="mt-2 px-1 text-[12px] text-fog-400">{tripCityError}</p>
+        )}
       </div>
 
-      {/* ── INTERACTION AREA ── */}
+      {/* ── Content ── */}
       <div className="reach-zone">
-
-        <PickInbox picks={picks} itemById={itemById} onWear={wearPick} onSeen={markPickSeen} />
-
-        {/* Controls card */}
-        <div className="glass-card p-4 flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3 px-1">
-            <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
-              Dress for
-            </p>
-            <TripModePicker tripCity={tripCity} onChange={(v) => { setTripCity(v); setTripCityError(null); }} />
-          </div>
-          {tripCityError && (
-            <p className="text-[12px] text-fog-400 px-1 -mt-2">{tripCityError}</p>
-          )}
-
-          <SeasonSwitch
-            season={season}
-            source={source}
-            override={override}
-            onToggle={toggle}
-            onReset={() => setOverride(null)}
-            tempC={weather?.temp_c}
-          />
-
-          <EnvironmentToggle value={environment} onChange={setEnvironment} />
-          <ModeSelector
-            value={mode}
-            onChange={(v) => { modeIsAuto.current = false; setMode(v); }}
-            customContext={customContext}
-            onCustomContextChange={setCustomContext}
-          />
-
-          {/* When? chips */}
-          <div className="flex gap-2" role="group" aria-label="When">
-            {(['now', 'tonight', 'tomorrow'] as const).map((t) => {
-              const labels = { now: 'Right now', tonight: 'Tonight', tomorrow: 'Tomorrow' };
-              const active = plannedFor === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setPlannedFor(t)}
-                  aria-pressed={active}
-                  className={cn(
-                    'press rounded-full px-4 py-3 text-[12px] font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                    active
-                      ? 'bg-crimson-400/20 text-crimson-300 border-crimson-400/35'
-                      : 'bg-white/[0.06] text-fog-300 border-white/[0.08]'
-                  )}
-                >
-                  {labels[t]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Generate */}
-        <GenerateButton onClick={generate} loading={generating} />
-
-        {/* Error — distinct muted-red, never the CTA crimson */}
         {error && (
           <div
             role="alert"
-            className="rounded-[1.5rem] px-4 py-3 text-oneui-body text-error-text bg-error/40 border border-error-border"
+            className="rounded-[1.5rem] border border-error-border bg-error/40 px-4 py-3 text-oneui-body text-error-text"
           >
-            {error}
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => void generate()}
+              className="press mt-2 min-h-[44px] rounded-full bg-white/[0.1] px-5 text-[13px] font-semibold text-error-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              Try again
+            </button>
           </div>
         )}
 
-        {/* Advisory — informational, not an error (heat fallback / destination fallback) */}
+        {items.length === 0 && itemsReady ? (
+          <div className="rounded-squircle-lg border border-white/[0.07] bg-white/[0.04] px-5 py-7 text-center">
+            <p className="text-oneui-body text-fog-100">Your wardrobe is empty.</p>
+            <p className="mt-1 text-[13px] text-fog-400">Add a few pieces, then come back here.</p>
+            <Link
+              href="/wardrobe/add"
+              className="press mt-4 inline-flex min-h-[48px] items-center rounded-full bg-crimson-400 px-6 text-[15px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              Add your first piece
+            </Link>
+          </div>
+        ) : current ? (
+          <TodayFit
+            outfit={current}
+            items={items}
+            itemById={itemById}
+            index={optionIdx}
+            total={outfits.length}
+            worn={wornIdxs.has(optionIdx)}
+            saved={savedIdxs.has(optionIdx)}
+            busy={generating}
+            onWear={() => void markWorn()}
+            onAnother={another}
+            onSave={() => setSaveTarget(current)}
+          />
+        ) : !error ? (
+          <TodayFitSkeleton />
+        ) : null}
+
         {advisory && !error && (
-          <p role="status" className="text-[12px] text-fog-400 px-1 -mt-2">
+          <p role="status" className="px-1 text-[12px] leading-5 text-fog-400">
             {advisory}
           </p>
         )}
 
-        {/* Outfit cards */}
-        {outfits.length > 0 && (
-          <section className="mt-1" aria-label={`Generated outfits — ${outfits.length} look${outfits.length !== 1 ? 's' : ''}`}>
-            <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
-                Fresh for you
-              </p>
-              <p className="text-[11px] font-semibold text-crimson-100/45">
-                {outfits.length} looks
-              </p>
-            </div>
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-4 px-4 pb-2">
-              {outfits.map((o, idx) => (
-                <OutfitCard
-                  key={idx}
-                  outfit={o}
-                  items={items}
-                  itemById={itemById}
-                  saved={savedIdxs.has(idx)}
-                  worn={wornOutfitIdx === idx}
-                  onSave={() => setSaveTarget(o)}
-                  onWear={() => markWorn(idx)}
-                  className="w-[calc(100vw-2rem)] max-w-[544px] shrink-0 snap-center"
-                />
-              ))}
-            </div>
-            <div className="mt-1 flex justify-center gap-1.5" aria-hidden>
-              {outfits.map((_, idx) => (
-                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-crimson-100/25" />
-              ))}
-            </div>
-          </section>
-        )}
+        <PickInbox picks={picks} itemById={itemById} onWear={wearPick} onSeen={markPickSeen} />
 
-        {/* Saved looks for this season */}
         {seasonLooks.length > 0 && (
-          <section aria-label={`Saved looks for ${SEASON_META[season].label}`}>
-            <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-oneui-cap text-crimson-300 font-semibold tracking-widest uppercase">
-                Ready to wear · {SEASON_META[season].label}
-              </p>
+          <section aria-label={`Saved looks for ${SEASON_META[season].label}`} className="mt-1">
+            <div className="shelf-head">
+              <h2 className="section-title">Ready to wear</h2>
               <Link
                 href="/looks"
-                className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-crimson-100/60 transition-colors hover:text-crimson-200"
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100"
               >
                 All
                 <ChevronRight size={13} aria-hidden />
               </Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto snap-x no-scrollbar -mx-4 px-4 pb-1">
+            <div className="shelf-rail">
               {seasonLooks.map((look) => {
                 const resolved = look.items
                   .map((id) => itemById.get(id))
@@ -463,22 +559,32 @@ export function OwnerHome() {
                   <Link
                     key={look.id}
                     href="/looks"
-                    className="glass-card block w-[172px] shrink-0 snap-start p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                    className={cn(
+                      'app-card block w-[164px] shrink-0 p-3',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400'
+                    )}
                   >
                     <div className="grid grid-cols-2 gap-1.5">
                       {resolved.map((it) => (
-                        <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] border border-white/[0.07] bg-ink-0">
+                        <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] bg-ink-0">
                           {it.image_url ? (
-                            <Image src={it.image_url} alt={it.name} width={76} height={76} sizes="76px" className="h-full w-full object-contain" />
+                            <Image
+                              src={it.image_url}
+                              alt={it.name}
+                              width={72}
+                              height={72}
+                              sizes="72px"
+                              className="h-full w-full object-contain"
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
-                              <Shirt size={16} className="text-crimson-100/25" aria-hidden />
+                              <Shirt size={16} className="text-fog-500" aria-hidden />
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2.5 truncate text-[13px] font-semibold text-crimson-50">
+                    <p className="mt-2.5 truncate text-[13px] font-semibold text-fog-100">
                       {look.name ?? 'Saved look'}
                     </p>
                     <p className="text-[11px] font-medium text-fog-400">
@@ -490,29 +596,40 @@ export function OwnerHome() {
             </div>
           </section>
         )}
-
-        {/* Empty wardrobe nudge */}
-        {items.length === 0 && !generating && (
-          <div className="rounded-[2rem] px-5 py-6 text-center bg-white/[0.04] border border-white/[0.07]">
-            <p className="text-crimson-100/70 text-oneui-body">
-              Your wardrobe is empty.
-            </p>
-            <p className="text-crimson-300 text-oneui-cap mt-1">
-              Add a few pieces, then come back here.
-            </p>
-          </div>
-        )}
       </div>
+
+      <TodayContextSheet
+        open={contextOpen}
+        onClose={() => setContextOpen(false)}
+        context={context}
+        customContext={customContext}
+        season={season}
+        seasonSource={source}
+        seasonOverride={override}
+        onApply={applyContext}
+      />
 
       <SaveLookSheet
         open={saveTarget !== null}
         onClose={() => setSaveTarget(null)}
-        onSaved={() => { setStatusMsg('Look saved.'); void loadLooks(); }}
+        onSaved={() => {
+          const next = new Set(savedIdxs).add(optionIdx);
+          setSavedIdxs(next);
+          patchCache({ saved: [...next] });
+          setStatusMsg('Look saved.');
+          void loadLooks();
+        }}
         items={saveTarget?.items ?? []}
         defaultSeason={season}
         reasoning={saveTarget?.reasoning}
         confidence={saveTarget?.confidence}
-        context={{ mode, environment, season, city: weather?.city, temp_c: effectiveTempC }}
+        context={{
+          mode: context.mode,
+          environment: context.environment,
+          season,
+          city: weather?.city,
+          temp_c: effectiveTempC,
+        }}
       />
     </main>
   );

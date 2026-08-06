@@ -130,8 +130,8 @@ export function StyleBlueprint() {
             <Sparkles size={20} className="text-crimson-300" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-oneui-h text-crimson-50">Style DNA</p>
-            <p className="mt-1 text-oneui-cap text-crimson-100/60 text-pretty">
+            <p className="text-oneui-h text-fog-100">Style DNA</p>
+            <p className="mt-1 text-oneui-cap text-fog-400 text-pretty">
               {[
                 profile.height_cm ? `${profile.height_cm} cm` : null,
                 profile.preferred_fits.length ? `${profile.preferred_fits.slice(0, 3).join(', ')} fits` : null,
@@ -266,11 +266,11 @@ export function StyleBlueprint() {
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-[16px] bg-white/[0.05] border border-white/[0.06] px-3 py-2">
-      <div className="flex items-center gap-1.5 text-crimson-300">
+      <div className="flex items-center gap-1.5 text-fog-400">
         {icon}
-        <span className="text-[11px] font-semibold uppercase tracking-wide">{label}</span>
+        <span className="text-[12px] font-semibold">{label}</span>
       </div>
-      <p className="mt-1 text-[15px] leading-none font-semibold text-crimson-50">{value}</p>
+      <p className="mt-1 text-[15px] leading-none font-semibold text-fog-100">{value}</p>
     </div>
   );
 }

@@ -4,7 +4,26 @@
 
 Dark. Forced — not a preference. The physical scene is a dim bedroom at 7am, a phone in one hand. The surface is deep near-black with warm undertones; not cold grey, not pure black. The crimson accent cuts through cleanly in low ambient light without glaring.
 
-Color strategy: **Restrained**. Tinted near-black neutrals dominate. Crimson carries all active, primary, and AI-generated states — never scattered decoratively.
+Color strategy: **Restrained**. Tinted near-black neutrals dominate. Crimson carries all active, primary, and AI-generated states, never scattered decoratively.
+
+### Where crimson is allowed
+
+This was the rule from the start and the app had drifted a long way off it: headers, subtitles, section labels, chevrons, icons and captions were all crimson, so nothing crimson meant anything. The August 2026 pass put it back.
+
+| Use | Token |
+|---|---|
+| Primary text, headings, item names | `fog-100` |
+| Secondary and supporting text | `fog-200` → `fog-300` |
+| Metadata, counts, hints | `fog-400` |
+| Empty-state and placeholder icons | `fog-500` |
+| **Selected / active state** | `bg-crimson-400`, white text |
+| **Primary action** | `bg-crimson-400` |
+| **AI reasoning surface** | `crimson-400/[0.06]` fill, `crimson-300` label |
+| **Ishita signal** (her picks, her heart) | `crimson-300` |
+| **Unread / new notification dot** | `crimson-400` |
+| Focus ring | `ring-crimson-400` |
+
+Anything not in that table is fog. Borders stay near-invisible (`white/[0.05]`–`white/[0.08]`), content cards stay opaque, and glass is reserved for the bottom nav and modal sheets.
 
 ---
 
@@ -71,7 +90,13 @@ Font stack: `SamsungOne`, `SF Pro Display`, `system-ui`, `Roboto`, `sans-serif`.
 | `text-oneui-cap` | 12px / 17px | 500 | Captions, labels, chips, metadata |
 | `text-oneui-tab` | 12px / 15px | 600 | Bottom nav labels |
 
-Hierarchy uses scale + weight contrast. Headings use `crimson-50`; captions use `fog-200` to `fog-400` depending on emphasis level.
+Hierarchy uses scale + weight contrast. Headings use `fog-100`; captions use `fog-200` to `fog-400` depending on emphasis level.
+
+### No eyebrows
+
+Every page used to open with an uppercase, letter-spaced, crimson label above its title: `WARDROBE`, `LOOKS`, `PRESETS`, `BLUEPRINT`. It cost a line, spent the accent on decoration, and restated the tab the user had just pressed. Pages lead with the title and one supporting sentence.
+
+The same applies inside pages: section headings are `.section-title` (15px, semibold, `fog-100`, sentence case) with `.section-meta` (12px, `fog-400`) for the count or action beside them.
 
 ---
 
@@ -122,29 +147,46 @@ Focus ring: `focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:r
 
 ### Chips (OneUIChip)
 
-Filter chips: h-9, `px-4`, `text-[13px]`. Mode chips: h-11, `px-5`, `text-[14px]`.
+Filter chips: h-11 (44px), `px-4`, `text-[13px]`. Mode chips: h-12 (48px), `px-5`, `text-[14px]`.
 
-Active: `bg-crimson-400`, white text, no border. Inactive: `bg-white/[0.08]`, `text-fog-200`, `border-white/[0.08]`.
+Active: `bg-crimson-400`, white text, no border. Inactive: `bg-white/[0.06]`, `text-fog-200`, `border-white/[0.08]`.
 
 ### Squircle
 
-Structural card primitive with `variant` prop (`flat` | `raised` | `glass`). Always use the variant prop — never override background via className.
+Structural card primitive with `variant` prop (`flat` | `raised` | `glass`). Always use the variant prop, never override background via className.
+
+### Context pill (`.context-pill`)
+
+The single line that replaces a card full of controls. Min-height 44px, `rounded-full`, `bg-white/[0.05]`, `border-white/[0.08]`, `text-fog-200`, with a trailing affordance icon in `fog-400`. Two live instances:
+
+- **Today** — `Delhi · 29° · Casual · Outdoor · Now`, opens `TodayContextSheet`.
+- **Wardrobe and Ishita's home** — `Delhi · Monsoon wardrobe · 74 pieces`, opens `SeasonPill`'s sheet.
+
+Place, then temperature, then choices: the facts the user did not pick come first, because those are the ones worth correcting.
+
+### FAB (`.fab`)
+
+56px crimson circle pinned to the lower-right reach zone, 16px in from the right and clear of the nav. Wardrobe's "add a piece" only. Carries a crimson drop shadow (`accent-600 / 0.5`), the one place in the app with a coloured shadow.
 
 ### Bottom Nav (BottomNav)
 
-Fixed to bottom. Pill container: `bg-ink-200/70 border-white/[0.08] rounded-full` with `backdrop-blur(28px) saturate(190%)` (One UI 9 glass). Active nav item: `text-crimson-50`, `bg-crimson-400/30` pill highlight with `animate-oneui-pop`. Inactive: `text-white/40`. Tab label: `text-oneui-tab`.
+Fixed to bottom, floating pill. Container: `bg-ink-200/70 border-white/[0.08] rounded-full` with `backdrop-blur(28px) saturate(190%)` (One UI 9 glass).
 
-### Generate Button (GenerateButton)
+Three destinations for the owner (Today, Wardrobe, Looks), four for the partner (Home, Wardrobe, Style him, Picks). Items are 48px tall with the icon stacked over an 11px label; **every label is always visible**. The old bar showed the label only on the active tab and animated its width, so the whole pill shifted under the thumb between taps.
 
-Full-width pill. `bg-crimson-400`, h-14, `text-[16px] font-semibold`. Loading state: `Loader2` spinner + "Styling you…". This is the primary action across the entire app.
+Active item: `bg-crimson-400`, white text. Inactive: `text-fog-300`.
 
-### Mode Cards
+### Today's fit (TodayFit + OutfitComposition)
 
-Featured mode icon circle: `h-11 w-11 rounded-full bg-crimson-400/15`. Secondary mode icon circle: `bg-crimson-400/10`. Icon color: `text-crimson-300`, size 19–20.
+The home screen hero, roughly two thirds of the visible screen.
+
+- `OutfitComposition` lays items out as a flat-lay on one `ink-0` canvas: top large in band one with layers beside it, bottom and shoes in band two, accessories along band three. **No per-item borders or cards** — those are what made the old version read as a product list rather than an outfit.
+- Below it: the reasoning sentence in `fog-200`, then `Wear this` (h-14, crimson) and `Another option` (h-12, ghost). Save is a bookmark icon in the section header, not a third button.
+- The alternatives are real but hidden. `Another option` walks the batch, then generates a fresh one when it runs out.
 
 ### OneUIHeader
 
-Page header component. Structure: eyebrow cap → hero title → subtitle. Uses `.oneui-hero` (crimson-50) + `.oneui-hero-sub` (crimson-300, uppercase, tracking-widest).
+Page header. Structure: title → optional subtitle → optional right-hand action. `.oneui-hero` is `fog-100`. No eyebrow prop exists.
 
 ---
 
@@ -167,7 +209,7 @@ Never ease-in. No bounce, no elastic. Exponential out only.
 
 ### Reduced motion
 
-Reactive via `MediaQueryList` event listener — not a one-time read. When `prefers-reduced-motion: reduce`, skip translate and scale animations.
+**There is deliberately no `prefers-reduced-motion` override.** Gaurav runs reduce-motion ON at the OS level, and the blanket `animation-duration: 0.01ms !important` rule that used to sit in `globals.css` made the entire app static on the only phone it runs on. Every animation here is short, opacity-and-translate only, and never loops, so it stays on. Do not add that media query back.
 
 ### Press feedback
 
@@ -206,27 +248,34 @@ Nav container uses `max-w-xl` centered. Pages themselves flow edge-to-edge withi
 - Outfit generation status: `role="status" aria-live="polite"` region (screen-reader only).
 - Error banners: `role="alert"`.
 - Mode selectors: `role="radiogroup"` + `role="radio"` + `aria-checked`.
-- Time-of-day chips: `role="group"` + `aria-pressed`.
-- Bottom nav: `aria-label="Primary"` on `<nav>`.
-- Touch targets: minimum 44px on all interactive elements.
+- Looks view switcher: `role="tablist"` + `role="tab"` + `aria-selected`.
+- Bottom nav: `aria-label="Primary navigation"` on `<nav>`.
+- Touch targets: **48px** for navigation, segmented controls and primary actions (Android's guidance); 44px floor for secondary controls such as filter chips and inline text actions.
 - Images: `alt` text always provided; `sizes` hints for responsive loading.
+
+---
+
+## Two experiences, one foundation
+
+The roles are not one interface with two permission levels. They are two jobs.
+
+| | Gaurav (owner) | Ishita (partner) |
+|---|---|---|
+| Job | Decide what to wear, fast | Choose for him, deliberately |
+| Home leads with | One generated outfit | One big **Style him** action |
+| Primary action | `Wear this` | `Send this look to Gaurav` |
+| Navigation | Today · Wardrobe · Looks | Home · Wardrobe · Style him · Picks |
+| Shared | Wardrobe shelves, Looks, one identity | Wardrobe shelves, Looks, one identity |
+
+Her builder is outfit-aware: `base`, `mid`, `outer`, `bottom` and `footwear` are one-piece slots, so a second pick in the same layer replaces the first. Accessories, eyewear, headwear, watches and jewellery stack. The send button stays disabled until top, bottom and shoes are all present, with the tray reading `Top ✓ Bottom ✓ Shoes missing`. An essential the wardrobe cannot fill under the current filter is dropped from the requirement rather than becoming a dead end.
 
 ---
 
 ## Greeting Logic
 
-Home page heading changes by hour:
+`src/lib/greetings.ts` builds a candidate pool from everything the app knows at open (hour bucket, weekday, season, temperature, condition, unseen picks, wardrobe size), weights contextual lines twice, and excludes the last six greetings shown. It is not a fixed if-ladder on the hour.
 
-| Hours | Greeting |
-|---|---|
-| 4–6 AM | "Can't sleep?" |
-| 6–9 AM | "Early start." |
-| 9 AM–12 PM | "Morning, Gaurav." |
-| 12–2 PM | "Midday already." |
-| 2–5 PM | "Afternoon, Gaurav." |
-| 5–8 PM | "Evening plans?" |
-| 8–11 PM | "Night out?" |
-| 11 PM–4 AM | "Night owl mode." |
+Voice, owner: composed and dry, never cheerful. Voice, partner: warm; she is a guest in his wardrobe and should feel wanted.
 
 ---
 
@@ -240,4 +289,4 @@ PWA icons at `public/icons/`. Formats: SVG (primary), PNG fallbacks.
 | `icon-maskable.svg` | Android adaptive icon | Content within central 80% |
 | `apple-touch-icon.svg` | iOS home screen | 180×180 effective size; no rounded corners needed |
 
-*Last updated: June 2026 — One UI 9 glass refresh*
+*Last updated: August 2026, the "Focus" pass: decision-first home, three-tab owner navigation, crimson restraint, outfit-aware builder.*

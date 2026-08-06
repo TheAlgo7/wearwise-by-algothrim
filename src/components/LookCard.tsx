@@ -48,7 +48,7 @@ export function LookCard({ look, itemById, canManage, worn, wearing, onWear, onD
     <article className={cn('glass-card p-4', className)}>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-[16px] font-semibold leading-6 text-crimson-50">
+          <h3 className="truncate text-[16px] font-semibold leading-6 text-fog-100">
             {look.name ?? 'Untitled look'}
           </h3>
           <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-fog-400">
@@ -92,7 +92,7 @@ export function LookCard({ look, itemById, canManage, worn, wearing, onWear, onD
                 className="h-full w-full object-contain"
               />
             ) : (
-              <Shirt size={22} className="text-crimson-100/30" strokeWidth={1.4} aria-hidden />
+              <Shirt size={22} className="text-fog-500" strokeWidth={1.4} aria-hidden />
             )}
           </div>
         ))}
@@ -104,13 +104,13 @@ export function LookCard({ look, itemById, canManage, worn, wearing, onWear, onD
       </div>
 
       {look.note && (
-        <p className="mt-3 text-[13px] leading-[1.55] text-crimson-100/80 text-pretty">
+        <p className="mt-3 text-[13px] leading-[1.55] text-fog-200 text-pretty">
           {fromPartner ? '“' : ''}{look.note}{fromPartner ? '”' : ''}
         </p>
       )}
 
       {look.ai_reasoning && !look.note && (
-        <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-crimson-100/60 text-pretty">
+        <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-fog-400 text-pretty">
           {look.ai_reasoning}
         </p>
       )}
@@ -121,9 +121,13 @@ export function LookCard({ look, itemById, canManage, worn, wearing, onWear, onD
           onClick={onWear}
           disabled={wearing || worn}
           className={cn(
+            // Tonal, not solid. A list of saved looks is a list of equal
+            // options; five solid crimson buttons stacked down the page is the
+            // accent shouting at itself. The one solid crimson button in the
+            // app is "Wear this" on Today, where there is a single answer.
             'press mt-4 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 disabled:opacity-70',
-            worn ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400 text-white'
+            worn ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400/[0.16] text-crimson-200 hover:bg-crimson-400/[0.24]'
           )}
         >
           {wearing ? (

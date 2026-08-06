@@ -89,7 +89,7 @@ export function SaveLookSheet({
     <OneUISheet open={open} onClose={onClose} title={title}>
       <div className="flex flex-col gap-5 pb-2">
         <div className="flex flex-col gap-2">
-          <label htmlFor="look-name" className="px-1 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
+          <label htmlFor="look-name" className="px-1 text-[13px] font-semibold text-fog-300">
             Name
           </label>
           <input
@@ -111,7 +111,7 @@ export function SaveLookSheet({
 
         {withNote && (
           <div className="flex flex-col gap-2">
-            <label htmlFor="look-note" className="px-1 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
+            <label htmlFor="look-note" className="px-1 text-[13px] font-semibold text-fog-300">
               Say something
             </label>
             <textarea
@@ -127,7 +127,7 @@ export function SaveLookSheet({
         )}
 
         <div className="flex flex-col gap-2">
-          <p className="px-1 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">Season</p>
+          <p className="px-1 text-[13px] font-semibold text-fog-300">Season</p>
           <div className="flex flex-wrap gap-2">
             <OneUIChip active={season === null} onClick={() => setSeason(null)}>
               Any

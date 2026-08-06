@@ -4,7 +4,7 @@ import { OneUIButton, OneUIChip, Squircle } from '@/components/oneui';
 import { FITS, OCCASIONS, SLEEVES, VIBES } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 import type { Category, Item } from '@/types';
-import { Camera, Loader2, Sparkles, Upload, Check, Image as ImageIcon } from 'lucide-react';
+import { Camera, ChevronDown, Loader2, Sparkles, Upload, Check, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -55,6 +55,8 @@ export function AddItemForm() {
   const [tags, setTags] = useState<Partial<TagResult>>({});
   const [category, setCategory] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  /** Whether the full attribute form is expanded on the confirm step. */
+  const [detailed, setDetailed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -224,7 +226,7 @@ export function AddItemForm() {
             </OneUIButton>
           </div>
         </Squircle>
-        {error && <div className="text-oneui-cap text-crimson-300 text-center">{error}</div>}
+        {error && <div className="text-center text-[13px] text-error-text">{error}</div>}
       </div>
     );
   }
@@ -267,37 +269,142 @@ export function AddItemForm() {
     );
   }
 
-  // confirm step
+  // ── Confirm ──
+  // The AI has already answered every question on this screen. Showing all
+  // fourteen answers as editable fields turned a two-tap confirmation into a
+  // form, so the default is now the one question that matters — does this look
+  // right — and everything else waits behind "Review details". The exceptions
+  // are fields the model actually left blank: those are asked for up front,
+  // because a nameless or uncategorised piece is a piece the engine cannot use.
+  const categoryName = categories.find((c) => c.id === category)?.name ?? null;
+  const blanks: Array<'name' | 'category'> = [];
+  if (!(tags.name ?? '').trim()) blanks.push('name');
+  if (!category) blanks.push('category');
+
+  const summary = [categoryName, tags.primary_color, tags.fit ? `${tags.fit} fit` : null]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="flex flex-col gap-3">
       {preview && (
         <Squircle variant="flat" className="aspect-square flex items-center justify-center overflow-hidden">
-          <Image src={preview} alt="cleaned" width={500} height={500} className="object-contain w-full h-full" unoptimized />
+          <Image src={preview} alt={tags.name ?? 'Cleaned photo of the item'} width={500} height={500} className="object-contain w-full h-full" unoptimized />
         </Squircle>
       )}
 
-      <Field label="Name" htmlFor="item-name">
-        <input
-          id="item-name"
-          value={tags.name ?? ''}
-          onChange={(e) => setTags({ ...tags, name: e.target.value })}
-          className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
-        />
-      </Field>
+      <div className="px-1">
+        <h2 className="text-oneui-h text-fog-100">Looks right?</h2>
+        {blanks.length === 0 ? (
+          <>
+            <p className="mt-2 text-[17px] font-semibold leading-6 text-fog-100">{tags.name}</p>
+            {summary && <p className="mt-0.5 text-[13px] text-fog-400">{summary}</p>}
+          </>
+        ) : (
+          <p className="mt-1 text-[13px] leading-5 text-fog-400">
+            {blanks.length === 2
+              ? 'The photo came back without a name or a category. Fill those in and it is ready.'
+              : blanks[0] === 'name'
+              ? 'It could not name this one. Give it a name and it is ready.'
+              : 'It could not place this on a shelf. Pick a category and it is ready.'}
+          </p>
+        )}
+      </div>
 
-      <Field label="Category" htmlFor="item-category">
-        <select
-          id="item-category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+      {blanks.includes('name') && (
+        <Field label="Name" htmlFor="item-name">
+          <input
+            id="item-name"
+            value={tags.name ?? ''}
+            onChange={(e) => setTags({ ...tags, name: e.target.value })}
+            autoFocus
+            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+          />
+        </Field>
+      )}
+
+      {blanks.includes('category') && (
+        <Field label="Category" htmlFor="item-category">
+          <select
+            id="item-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+          >
+            <option value="">Pick a shelf</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </Field>
+      )}
+
+      {error && <p className="px-1 text-[13px] text-error-text">{error}</p>}
+
+      <OneUIButton size="lg" fullWidth leftIcon={<Upload size={18} />} onClick={save}>
+        Add to wardrobe
+      </OneUIButton>
+
+      <button
+        type="button"
+        onClick={() => setDetailed((v) => !v)}
+        aria-expanded={detailed}
+        className="press mx-auto flex min-h-[48px] items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+      >
+        {detailed ? 'Hide details' : 'Review details'}
+        <ChevronDown
+          size={16}
+          aria-hidden
+          className="transition-transform duration-200"
+          style={{ transform: detailed ? 'rotate(180deg)' : undefined }}
+        />
+      </button>
+
+      {!detailed ? (
+        <OneUIButton
+          intent="ghost"
+          size="sm"
+          fullWidth
+          leftIcon={<Sparkles size={14} />}
+          onClick={() => {
+            setStep('photo');
+            setRawB64(null);
+            setCleanedB64(null);
+            setTags({});
+            setCategory('');
+            setDetailed(false);
+          }}
         >
-          <option value="">— pick —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </Field>
+          Start over with a different photo
+        </OneUIButton>
+      ) : (
+      <div className="animate-oneui-fade flex flex-col gap-3">
+      {!blanks.includes('name') && (
+        <Field label="Name" htmlFor="item-name-full">
+          <input
+            id="item-name-full"
+            value={tags.name ?? ''}
+            onChange={(e) => setTags({ ...tags, name: e.target.value })}
+            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+          />
+        </Field>
+      )}
+
+      {!blanks.includes('category') && (
+        <Field label="Category" htmlFor="item-category-full">
+          <select
+            id="item-category-full"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+          >
+            <option value="">Pick a shelf</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </Field>
+      )}
 
       <Field label="Fit">
         <div className="chip-row !mx-0 !px-0">
@@ -403,17 +510,6 @@ export function AddItemForm() {
         </div>
       </Field>
 
-      {error && <p className="text-oneui-cap text-crimson-300">{error}</p>}
-
-      <OneUIButton
-        size="lg"
-        fullWidth
-        leftIcon={<Upload size={18} />}
-        onClick={save}
-      >
-        Save to wardrobe
-      </OneUIButton>
-
       <OneUIButton
         intent="ghost"
         size="sm"
@@ -425,10 +521,13 @@ export function AddItemForm() {
           setCleanedB64(null);
           setTags({});
           setCategory('');
+          setDetailed(false);
         }}
       >
         Start over with a different photo
       </OneUIButton>
+      </div>
+      )}
     </div>
   );
 }
@@ -436,7 +535,7 @@ export function AddItemForm() {
 function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={htmlFor} className="oneui-hero-sub text-fog-400">{label}</label>
+      <label htmlFor={htmlFor} className="px-1 text-[13px] font-semibold text-fog-300">{label}</label>
       {children}
     </div>
   );

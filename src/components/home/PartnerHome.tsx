@@ -1,6 +1,7 @@
 'use client';
 
-import { SeasonSwitch } from '@/components/SeasonSwitch';
+import { SeasonPill } from '@/components/SeasonPill';
+import { cn } from '@/lib/cn';
 import { useSeason } from '@/hooks/useSeason';
 import { createClient } from '@/lib/supabase/client';
 import { pickGreeting } from '@/lib/greetings';
@@ -67,64 +68,84 @@ export function PartnerHome() {
   }, []);
 
   const seasonItems = useMemo(() => items.filter((it) => itemSuitsSeason(it, season)), [items, season]);
-  const preview = useMemo(() => seasonItems.filter((i) => i.image_url).slice(0, 8), [seasonItems]);
+
+  /**
+   * A spread across his shelves, not the first eight rows.
+   *
+   * Taking the head of the list showed her four pairs of shorts in a row, which
+   * tells her nothing about what he owns. One piece per layer first, then fill.
+   */
+  const preview = useMemo(() => {
+    const withImages = seasonItems.filter((i) => i.image_url);
+    const seen = new Set<string>();
+    const spread: Item[] = [];
+    for (const it of withImages) {
+      const layer = it.category?.layer_type ?? 'other';
+      if (seen.has(layer)) continue;
+      seen.add(layer);
+      spread.push(it);
+      if (spread.length === 8) return spread;
+    }
+    for (const it of withImages) {
+      if (spread.length === 8) break;
+      if (!spread.includes(it)) spread.push(it);
+    }
+    return spread;
+  }, [seasonItems]);
 
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
 
   return (
     <main className="min-h-dvh">
       <div className="px-5 pt-14 pb-4">
-        <p suppressHydrationWarning className="mb-2 truncate text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-          {today}{weather?.city ? ` · ${weather.city}` : ''}
+        <p suppressHydrationWarning className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
+          {today}
         </p>
-        <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.2] tracking-tight text-crimson-50 text-balance">
+        <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance">
           {greeting || 'Hi Ishita'}
         </h1>
-        <p className="mt-2 text-oneui-body text-crimson-100/70 text-pretty">
-          {loading
-            ? 'Opening his wardrobe.'
-            : `${items.length} pieces are his. Pick what he wears.`}
-        </p>
+
+        <SeasonPill
+          season={season}
+          source={source}
+          override={override}
+          onSelect={toggle}
+          onReset={() => setOverride(null)}
+          lead={weather?.city ?? null}
+          trail={loading ? null : `${seasonItems.length} pieces`}
+          tempC={weather?.temp_c}
+          className="mt-4"
+        />
       </div>
 
       <div className="reach-zone">
         {/* Primary action. Hers is styling, not generating. */}
         <Link
           href="/style"
-          className="press glass-card flex items-center gap-4 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+          className="press app-card flex items-center gap-4 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-crimson-400/15 text-crimson-300">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-crimson-400 text-white">
             <Sparkles size={22} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-semibold leading-6 text-crimson-50">Style him</span>
+            <span className="block text-[17px] font-semibold leading-6 text-fog-100">Style him</span>
             <span className="block text-[13px] leading-5 text-fog-400">
-              Build a look from his wardrobe and send it over
+              Build a look and send it over
             </span>
           </span>
-          <ChevronRight size={18} className="shrink-0 text-crimson-300" aria-hidden />
+          <ChevronRight size={18} className="shrink-0 text-fog-400" aria-hidden />
         </Link>
-
-        <SeasonSwitch
-          season={season}
-          source={source}
-          override={override}
-          onToggle={toggle}
-          onReset={() => setOverride(null)}
-          tempC={weather?.temp_c}
-          className="mt-1"
-        />
 
         {/* A glance at his wardrobe */}
         {preview.length > 0 && (
           <section aria-label="A look at his wardrobe">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
+            <div className="shelf-head">
+              <h2 className="section-title">
                 His {SEASON_META[season].label.toLowerCase()} pieces
-              </p>
+              </h2>
               <Link
                 href="/wardrobe"
-                className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-crimson-100/60 transition-colors hover:text-crimson-200"
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100"
               >
                 See all
                 <ChevronRight size={13} aria-hidden />
@@ -137,7 +158,7 @@ export function PartnerHome() {
                   href={`/wardrobe/${it.id}`}
                   className="press w-[96px] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 rounded-squircle"
                 >
-                  <div className="aspect-[3/4] overflow-hidden rounded-squircle border border-white/[0.07] bg-ink-0">
+                  <div className="aspect-[3/4] overflow-hidden rounded-squircle bg-ink-0">
                     <Image
                       src={it.image_url!}
                       alt={it.name}
@@ -156,15 +177,15 @@ export function PartnerHome() {
 
         {/* What she has sent */}
         <section aria-label="Looks you sent him">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <p className="flex items-center gap-2 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-              <Heart size={12} className="fill-current" aria-hidden />
+          <div className="shelf-head">
+            <h2 className="section-title flex items-center gap-2">
+              <Heart size={13} className="fill-current text-crimson-300" aria-hidden />
               Your picks
-            </p>
+            </h2>
             {hers.length > 0 && (
               <Link
                 href="/looks"
-                className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[11px] font-semibold text-crimson-100/60 transition-colors hover:text-crimson-200"
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100"
               >
                 All
                 <ChevronRight size={13} aria-hidden />
@@ -176,8 +197,8 @@ export function PartnerHome() {
             <div className="h-24 animate-pulse rounded-squircle bg-white/[0.05]" />
           ) : hers.length === 0 ? (
             <div className="rounded-squircle border border-white/[0.07] bg-white/[0.04] px-5 py-6 text-center">
-              <p className="text-oneui-body text-crimson-100/75">You have not picked anything yet.</p>
-              <p className="mt-1 text-oneui-cap text-crimson-300">
+              <p className="text-oneui-body text-fog-100">You have not picked anything yet.</p>
+              <p className="mt-1 text-[13px] text-fog-400">
                 Tap Style him and choose his next outfit.
               </p>
             </div>
@@ -193,25 +214,28 @@ export function PartnerHome() {
                     <Link
                       key={look.id}
                       href="/looks"
-                      className="glass-card block w-[172px] shrink-0 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                      className="app-card block w-[164px] shrink-0 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                     >
                       <div className="grid grid-cols-2 gap-1.5">
                         {resolved.map((it) => (
-                          <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] border border-white/[0.07] bg-ink-0">
+                          <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] bg-ink-0">
                             {it.image_url ? (
-                              <Image src={it.image_url} alt={it.name} width={76} height={76} sizes="76px" className="h-full w-full object-contain" />
+                              <Image src={it.image_url} alt={it.name} width={72} height={72} sizes="72px" className="h-full w-full object-contain" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center">
-                                <Shirt size={16} className="text-crimson-100/25" aria-hidden />
+                                <Shirt size={16} className="text-fog-500" aria-hidden />
                               </div>
                             )}
                           </div>
                         ))}
                       </div>
-                      <p className="mt-2.5 truncate text-[13px] font-semibold text-crimson-50">
+                      <p className="mt-2.5 truncate text-[13px] font-semibold text-fog-100">
                         {look.name ?? 'Your pick'}
                       </p>
-                      <p className="text-[11px] font-medium text-fog-400">
+                      <p className={cn(
+                        'text-[11px] font-medium',
+                        look.worn_at ? 'text-crimson-300' : 'text-fog-400'
+                      )}>
                         {look.worn_at ? 'He wore it' : 'Waiting on him'}
                       </p>
                     </Link>

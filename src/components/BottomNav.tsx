@@ -2,25 +2,32 @@
 
 import { cn } from '@/lib/cn';
 import { useRole } from '@/components/RoleProvider';
-import { Heart, Home, Layers, Shirt, Sparkles, User } from 'lucide-react';
+import { Heart, Home, Layers, Shirt } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+/**
+ * Three destinations for him, four for her.
+ *
+ * His used to have five. Modes was never a place — it is an input to one
+ * generation, so it lives in the Today context sheet now. Profile is opened
+ * a few times a year, so it is a button in the Today header instead of a
+ * permanent quarter of the navigation.
+ *
+ * Hers keeps four because Style him is a genuinely separate, frequent job
+ * rather than a view of the same data.
+ */
 const OWNER_NAV = [
-  { href: '/',         label: 'Today',    Icon: Home,     match: (p: string) => p === '/' },
-  { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,    match: (p: string) => p.startsWith('/wardrobe') },
-  { href: '/looks',    label: 'Looks',    Icon: Layers,   match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
-  { href: '/modes',    label: 'Modes',    Icon: Sparkles, match: (p: string) => p.startsWith('/modes') },
-  { href: '/profile',  label: 'Profile',  Icon: User,     match: (p: string) => p.startsWith('/profile') },
+  { href: '/',         label: 'Today',    Icon: Home,   match: (p: string) => p === '/' },
+  { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,  match: (p: string) => p.startsWith('/wardrobe') },
+  { href: '/looks',    label: 'Looks',    Icon: Layers, match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
 ];
 
-// Ishita's nav: no add, no profile, no mode engine. Browse, build, and the
-// looks she has sent him.
 const PARTNER_NAV = [
-  { href: '/',         label: 'Home',     Icon: Home,  match: (p: string) => p === '/' },
-  { href: '/wardrobe', label: 'His stuff',Icon: Shirt, match: (p: string) => p.startsWith('/wardrobe') },
-  { href: '/style',    label: 'Style him',Icon: Heart, match: (p: string) => p.startsWith('/style') },
-  { href: '/looks',    label: 'Looks',    Icon: Layers,match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
+  { href: '/',         label: 'Home',      Icon: Home,   match: (p: string) => p === '/' },
+  { href: '/wardrobe', label: 'Wardrobe',  Icon: Shirt,  match: (p: string) => p.startsWith('/wardrobe') },
+  { href: '/style',    label: 'Style him', Icon: Heart,  match: (p: string) => p.startsWith('/style') },
+  { href: '/looks',    label: 'Picks',     Icon: Layers, match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
 ];
 
 export function BottomNav() {
@@ -44,7 +51,9 @@ export function BottomNav() {
       }}
     >
       <div
-        className="flex items-center gap-1 rounded-full px-2 py-2 bg-ink-200/70 border border-white/[0.08]"
+        // Opaque enough to sit over the crimson primary action without the
+        // button's colour and label bleeding through the blur.
+        className="flex items-center gap-1 rounded-full p-1.5 bg-ink-200/[0.92] border border-white/[0.08]"
         style={{
           backdropFilter: 'blur(28px) saturate(190%)',
           WebkitBackdropFilter: 'blur(28px) saturate(190%)',
@@ -57,27 +66,19 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              aria-label={label}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'relative flex items-center justify-center h-11 rounded-full px-3.5 min-w-[48px]',
+                // 48px tall, and every label stays visible. The old bar showed the
+                // label only on the active tab and animated its width, so the whole
+                // pill shifted under your thumb between taps. Stacking icon over
+                // label keeps four of them on a phone without that trick.
+                'relative flex h-12 min-w-[64px] flex-col items-center justify-center gap-1 rounded-full px-2',
                 'transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                active ? 'text-crimson-50' : 'text-white/40 hover:text-white/70',
+                active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100',
               )}
-              style={active ? {
-                background: 'rgb(var(--accent-400) / 0.22)',
-              } : undefined}
             >
-              <Icon size={20} strokeWidth={active ? 2.1 : 1.7} aria-hidden className="flex-shrink-0" />
-              <span
-                className="overflow-hidden whitespace-nowrap text-[13px] font-semibold leading-none"
-                style={{
-                  maxWidth: active ? '64px' : '0px',
-                  marginLeft: active ? '7px' : '0px',
-                  opacity: active ? 1 : 0,
-                  transition: 'max-width 220ms cubic-bezier(0.22,1,0.36,1) 45ms, margin-left 220ms cubic-bezier(0.22,1,0.36,1) 45ms, opacity 150ms ease 60ms',
-                }}
-              >
+              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} aria-hidden className="shrink-0" />
+              <span className="whitespace-nowrap text-[11px] font-semibold leading-none">
                 {label}
               </span>
             </Link>

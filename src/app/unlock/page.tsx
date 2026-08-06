@@ -83,14 +83,14 @@ export default function UnlockPage() {
   if (welcome) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-2">
-        <p className="animate-heart-in text-[26px] font-semibold text-crimson-50">{welcome}</p>
+        <p className="animate-heart-in text-[26px] font-semibold text-fog-100">{welcome}</p>
       </main>
     );
   }
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-8 pb-10">
-      <p className="text-oneui-cap font-semibold uppercase tracking-[0.3em] text-crimson-300">WearWise</p>
+      <p className="text-[15px] font-semibold uppercase tracking-[0.32em] text-fog-100">WearWise</p>
 
       <p className="mt-3 text-[15px] text-fog-300" aria-live="polite">
         {error ? 'That is not it. Try again.' : 'Enter your PIN'}

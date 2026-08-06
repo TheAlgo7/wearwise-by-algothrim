@@ -385,7 +385,7 @@ export function BatchAddForm() {
       ))}
 
       {needsAttention > 0 && !working && (
-        <p className="px-1 text-[13px] text-crimson-300">
+        <p className="px-1 text-[13px] text-fog-300">
           {needsAttention} {needsAttention === 1 ? 'piece needs' : 'pieces need'} a name and category before saving.
         </p>
       )}

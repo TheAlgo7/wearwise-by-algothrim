@@ -17,9 +17,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 /**
  * Build a look, piece by piece.
  *
- * Ishita's main screen. She walks the same shelves he does, taps pieces to add
- * them, and sends the result with a note. The tray at the bottom is always
- * visible so she can see the outfit taking shape without scrolling back.
+ * Ishita's main screen. She walks the same shelves he does and taps pieces to
+ * add them.
+ *
+ * The builder understands what an outfit is now. It used to hold one flat array
+ * of ids and add to it forever, so nothing stopped her sending him two pairs of
+ * jeans and three pairs of shoes — the app would happily save it and he would
+ * open a look he cannot wear. Each core layer is a slot that holds one piece:
+ * tapping a second pair of jeans swaps out the first rather than stacking on
+ * it. Accessories still stack, because wearing a watch and sunglasses at the
+ * same time is not a mistake.
  */
 
 const PICK_ORDER: LayerType[] = ['base', 'mid', 'outer', 'bottom', 'footwear', 'headwear', 'eyewear', 'timepiece', 'jewelry', 'accessory'];
@@ -36,6 +43,35 @@ const PICK_LABELS: Record<LayerType, string> = {
   timepiece: 'Watches',
   jewelry: 'Jewellery',
 };
+
+/** One piece each. A second pick in the same layer replaces the first. */
+const SINGLE_LAYERS: readonly LayerType[] = ['base', 'mid', 'outer', 'bottom', 'footwear'];
+
+type SlotId = 'top' | 'layer' | 'bottom' | 'shoes' | 'extras';
+
+const SLOT_OF: Record<LayerType, SlotId> = {
+  base: 'top',
+  mid: 'layer',
+  outer: 'layer',
+  bottom: 'bottom',
+  footwear: 'shoes',
+  headwear: 'extras',
+  eyewear: 'extras',
+  timepiece: 'extras',
+  jewelry: 'extras',
+  accessory: 'extras',
+};
+
+const SLOT_LABELS: Record<SlotId, string> = {
+  top: 'Top',
+  layer: 'Layer',
+  bottom: 'Bottom',
+  shoes: 'Shoes',
+  extras: 'Extras',
+};
+
+/** Without these it is not an outfit, it is a shopping list. */
+const ESSENTIAL_SLOTS: SlotId[] = ['top', 'bottom', 'shoes'];
 
 export default function StylePage() {
   const router = useRouter();
@@ -70,11 +106,23 @@ export default function StylePage() {
     return () => controller.abort();
   }, [load]);
 
-  const toggle = useCallback((id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, []);
-
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+
+  /** Add, remove, or swap — depending on which layer the piece belongs to. */
+  const toggle = useCallback(
+    (item: Item) => {
+      const layer = item.category?.layer_type;
+      setSelected((prev) => {
+        if (prev.includes(item.id)) return prev.filter((x) => x !== item.id);
+        if (layer && SINGLE_LAYERS.includes(layer)) {
+          const withoutSameLayer = prev.filter((id) => itemById.get(id)?.category?.layer_type !== layer);
+          return [...withoutSameLayer, item.id];
+        }
+        return [...prev, item.id];
+      });
+    },
+    [itemById]
+  );
 
   const pool = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -103,6 +151,29 @@ export default function StylePage() {
     }));
   }, [pool]);
 
+  /** Which slots the chosen pieces currently occupy. */
+  const filledSlots = useMemo(() => {
+    const filled = new Set<SlotId>();
+    for (const id of selected) {
+      const layer = itemById.get(id)?.category?.layer_type;
+      if (layer) filled.add(SLOT_OF[layer]);
+    }
+    return filled;
+  }, [selected, itemById]);
+
+  /**
+   * An essential he owns nothing for is not a requirement, it is a dead end —
+   * so only ask for slots the wardrobe can actually fill under this filter.
+   */
+  const requiredSlots = useMemo(() => {
+    const reachable = new Set<SlotId>();
+    for (const shelf of shelves) reachable.add(SLOT_OF[shelf.layer]);
+    return ESSENTIAL_SLOTS.filter((s) => reachable.has(s));
+  }, [shelves]);
+
+  const missing = requiredSlots.filter((s) => !filledSlots.has(s));
+  const complete = selected.length > 0 && missing.length === 0;
+
   // Gaurav can reach this page too; it doubles as his manual outfit builder.
   const audience = isOwner ? 'owner' : 'partner';
 
@@ -112,7 +183,7 @@ export default function StylePage() {
         <div className="flex h-16 w-16 animate-heart-in items-center justify-center rounded-full bg-crimson-400/15">
           <Heart size={28} className="fill-current text-crimson-300" aria-hidden />
         </div>
-        <h1 className="text-oneui-h text-crimson-50">
+        <h1 className="text-oneui-h text-fog-100">
           {audience === 'partner' ? 'Sent to Gaurav' : 'Look saved'}
         </h1>
         <p className="text-oneui-body text-fog-300 text-pretty">
@@ -131,7 +202,7 @@ export default function StylePage() {
           <button
             type="button"
             onClick={() => router.push('/looks')}
-            className="press min-h-[48px] rounded-full px-6 text-[15px] font-semibold text-crimson-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            className="press min-h-[48px] rounded-full px-6 text-[15px] font-semibold text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
           >
             See all looks
           </button>
@@ -143,26 +214,27 @@ export default function StylePage() {
   return (
     <main className="min-h-dvh">
       <OneUIHeader
-        eyebrow={audience === 'partner' ? 'STYLE HIM' : 'BUILD A LOOK'}
         title={audience === 'partner' ? 'Pick his outfit' : 'Build it yourself'}
         subtitle={
           loading
-            ? '—'
+            ? 'Opening the wardrobe.'
             : selected.length === 0
-            ? 'Tap pieces to add them.'
-            : `${selected.length} ${selected.length === 1 ? 'piece' : 'pieces'} chosen`
+            ? 'Tap a piece from each shelf.'
+            : missing.length > 0
+            ? `Still needs ${missing.map((s) => SLOT_LABELS[s].toLowerCase()).join(' and ')}.`
+            : 'That works. Send it over.'
         }
       />
 
-      <div className={cn('reach-zone', selected.length > 0 && 'pb-[calc(env(safe-area-inset-bottom)+220px)]')}>
-        <div className="glass-card flex h-12 items-center gap-3 px-4">
-          <Search size={17} className="shrink-0 text-crimson-300" aria-hidden />
+      <div className={cn('reach-zone', selected.length > 0 && 'pb-[calc(env(safe-area-inset-bottom)+236px)]')}>
+        <div className="app-card flex h-12 items-center gap-3 px-4">
+          <Search size={17} className="shrink-0 text-fog-400" aria-hidden />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search his wardrobe"
             aria-label="Search his wardrobe"
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-crimson-50 outline-none placeholder:text-fog-300"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-fog-100 outline-none placeholder:text-fog-400"
           />
           {query && (
             <button
@@ -184,7 +256,7 @@ export default function StylePage() {
             <button
               type="button"
               onClick={() => setSelected([])}
-              className="press ml-auto min-h-8 rounded-full px-3 text-[12px] font-semibold text-fog-400 transition-colors hover:text-fog-200"
+              className="press ml-auto min-h-[44px] rounded-full px-3 text-[13px] font-semibold text-fog-400 transition-colors hover:text-fog-200"
             >
               Clear all
             </button>
@@ -214,7 +286,7 @@ export default function StylePage() {
               <button
                 type="button"
                 onClick={() => { setLoading(true); void load(new AbortController().signal); }}
-                className="min-h-[44px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200"
+                className="min-h-[48px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200"
               >
                 Retry
               </button>
@@ -226,70 +298,109 @@ export default function StylePage() {
           </p>
         ) : (
           <div className="flex flex-col gap-5">
-            {shelves.map(({ layer, label, items: shelfItems }) => (
-              <section key={layer} aria-label={label}>
-                <div className="shelf-head">
-                  <h2 className="text-[15px] font-semibold leading-5 text-crimson-50">{label}</h2>
-                  <span className="text-[11px] font-medium text-fog-400">{shelfItems.length}</span>
-                </div>
-                <div className="shelf-rail">
-                  {shelfItems.map((it) => {
-                    const on = selected.includes(it.id);
-                    return (
-                      <button
-                        key={it.id}
-                        type="button"
-                        onClick={() => toggle(it.id)}
-                        aria-pressed={on}
-                        className={cn(
-                          'press relative w-[100px] shrink-0 overflow-hidden rounded-squircle border text-left transition-colors',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                          on ? 'border-crimson-400 bg-crimson-400/10' : 'border-white/[0.07] bg-ink-200'
-                        )}
-                      >
-                        <div className="relative aspect-[3/4] bg-ink-0">
-                          {it.image_url ? (
-                            <Image
-                              src={it.image_url}
-                              alt={it.name}
-                              fill
-                              sizes="100px"
-                              className="object-contain p-1"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Shirt size={22} className="text-fog-500" aria-hidden />
-                            </div>
+            {shelves.map(({ layer, label, items: shelfItems }) => {
+              const single = SINGLE_LAYERS.includes(layer);
+              const chosen = selected.find((id) => itemById.get(id)?.category?.layer_type === layer);
+              return (
+                <section key={layer} aria-label={label}>
+                  <div className="shelf-head">
+                    <h2 className="section-title flex items-center gap-2">
+                      {label}
+                      {chosen && (
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-crimson-400 text-white">
+                          <Check size={11} strokeWidth={3.4} aria-label="chosen" />
+                        </span>
+                      )}
+                    </h2>
+                    <span className="section-meta">
+                      {single && chosen ? 'One at a time' : shelfItems.length}
+                    </span>
+                  </div>
+                  <div className="shelf-rail">
+                    {shelfItems.map((it) => {
+                      const on = selected.includes(it.id);
+                      return (
+                        <button
+                          key={it.id}
+                          type="button"
+                          onClick={() => toggle(it)}
+                          aria-pressed={on}
+                          className={cn(
+                            'press relative w-[100px] shrink-0 overflow-hidden rounded-squircle border text-left transition-colors',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                            on ? 'border-crimson-400 bg-crimson-400/10' : 'border-white/[0.07] bg-ink-200'
                           )}
-                          {on && (
-                            <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-crimson-400 text-white">
-                              <Check size={14} strokeWidth={3} aria-hidden />
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate px-2 py-1.5 text-[11px] font-medium text-fog-200">{it.name}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+                        >
+                          <div className="relative aspect-[3/4] bg-ink-0">
+                            {it.image_url ? (
+                              <Image
+                                src={it.image_url}
+                                alt={it.name}
+                                fill
+                                sizes="100px"
+                                className="object-contain p-1"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <Shirt size={22} className="text-fog-500" aria-hidden />
+                              </div>
+                            )}
+                            {on && (
+                              <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-crimson-400 text-white">
+                                <Check size={14} strokeWidth={3} aria-hidden />
+                              </span>
+                            )}
+                          </div>
+                          <p className="truncate px-2 py-1.5 text-[11px] font-medium text-fog-200">{it.name}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Tray — the outfit so far, pinned above the nav */}
+      {/* Tray — the outfit so far, read as a composition rather than a row */}
       {selected.length > 0 && (
         <div
           className="fixed inset-x-0 z-40 animate-oneui-fade border-t border-white/[0.08]"
           style={{
-            bottom: 'calc(env(safe-area-inset-bottom) + 72px)',
+            bottom: 'calc(env(safe-area-inset-bottom) + 76px)',
             background: 'rgb(var(--ink-100) / 0.92)',
             backdropFilter: 'blur(28px) saturate(170%)',
             WebkitBackdropFilter: 'blur(28px) saturate(170%)',
           }}
         >
           <div className="mx-auto max-w-xl px-4 py-3">
+            {/* What the outfit has, and what it still needs */}
+            <div className="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {(['top', 'layer', 'bottom', 'shoes', 'extras'] as SlotId[])
+                .filter((s) => filledSlots.has(s) || requiredSlots.includes(s))
+                .map((slot) => {
+                  const filled = filledSlots.has(slot);
+                  return (
+                    <span
+                      key={slot}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 text-[12px] font-semibold',
+                        filled ? 'text-fog-100' : 'text-fog-400'
+                      )}
+                    >
+                      {filled ? (
+                        <Check size={12} strokeWidth={3} className="text-crimson-300" aria-hidden />
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-fog-500" aria-hidden />
+                      )}
+                      {SLOT_LABELS[slot]}
+                      {!filled && <span className="font-medium text-fog-500">missing</span>}
+                    </span>
+                  );
+                })}
+            </div>
+
             <div className="mb-2.5 flex gap-2 overflow-x-auto no-scrollbar">
               {selected.map((id) => {
                 const it = itemById.get(id);
@@ -298,7 +409,7 @@ export default function StylePage() {
                   <button
                     key={id}
                     type="button"
-                    onClick={() => toggle(id)}
+                    onClick={() => toggle(it)}
                     aria-label={`Remove ${it.name}`}
                     className="press relative h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-white/[0.1] bg-ink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                   >
@@ -316,13 +427,23 @@ export default function StylePage() {
                 );
               })}
             </div>
+
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              className="press flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full bg-crimson-400 text-[15px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              disabled={!complete}
+              className={cn(
+                'press flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                complete
+                  ? 'bg-crimson-400 text-white hover:bg-crimson-500'
+                  : 'cursor-not-allowed bg-white/[0.06] text-fog-400'
+              )}
             >
-              <Heart size={16} className="fill-current" aria-hidden />
-              {audience === 'partner' ? 'Send this to Gaurav' : 'Save this look'}
+              {complete && <Heart size={16} className="fill-current" aria-hidden />}
+              {complete
+                ? audience === 'partner' ? 'Send this look to Gaurav' : 'Save this look'
+                : `Add ${missing.map((s) => SLOT_LABELS[s].toLowerCase()).join(' and ')}`}
             </button>
           </div>
         </div>

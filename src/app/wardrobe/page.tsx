@@ -1,16 +1,17 @@
 'use client';
 
-import { OneUIButton, OneUIHeader } from '@/components/oneui';
+import { OneUIHeader } from '@/components/oneui';
 import { useIsOwner } from '@/components/RoleProvider';
-import { SeasonSwitch } from '@/components/SeasonSwitch';
+import { SeasonPill } from '@/components/SeasonPill';
 import { WardrobeShelves } from '@/components/WardrobeShelves';
 import { useSeason } from '@/hooks/useSeason';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { createClient } from '@/lib/supabase/client';
+import { itemSuitsSeason } from '@/lib/season';
 import type { Item } from '@/types';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const SEASON_FILTER_KEY = 'wearwise.wardrobe.seasonFilter';
 
@@ -55,22 +56,25 @@ export default function WardrobePage() {
     return () => controller.abort();
   }, [load]);
 
-  const active = items.filter((i) => !i.archived);
+  const active = useMemo(() => items.filter((i) => !i.archived), [items]);
+  const inSeasonCount = useMemo(
+    () => active.filter((i) => itemSuitsSeason(i, season)).length,
+    [active, season]
+  );
+  const shown = seasonFilterOn ? inSeasonCount : active.length;
 
   return (
     <main className="min-h-dvh pb-4">
       <OneUIHeader
-        eyebrow={isOwner ? 'WARDROBE' : "GAURAV'S WARDROBE"}
-        title={isOwner ? 'Your pieces' : 'Everything he owns'}
-        subtitle={loading ? '—' : loadError && items.length === 0 ? '—' : `${active.length} items`}
-        right={
-          isOwner ? (
-            <Link href="/wardrobe/add" aria-label="Add item">
-              <OneUIButton size="icon" intent="primary">
-                <Plus size={20} />
-              </OneUIButton>
-            </Link>
-          ) : undefined
+        title={isOwner ? 'Wardrobe' : 'His wardrobe'}
+        subtitle={
+          loading
+            ? 'Opening the shelves.'
+            : loadError && items.length === 0
+            ? undefined
+            : isOwner
+            ? 'Everything you own, by shelf.'
+            : 'Everything he owns, by shelf.'
         }
       />
       <div className="reach-zone">
@@ -105,24 +109,33 @@ export default function WardrobePage() {
           </div>
         ) : (
           <>
-            <SeasonSwitch
+            <SeasonPill
               season={season}
               source={source}
               override={override}
-              onToggle={toggle}
+              onSelect={toggle}
               onReset={() => setOverride(null)}
+              trail={`${shown} ${shown === 1 ? 'piece' : 'pieces'}`}
               tempC={weather?.temp_c}
-              className="mb-1"
+              filterOn={seasonFilterOn}
+              onFilterChange={changeSeasonFilter}
+              putAway={active.length - inSeasonCount}
+              className="self-start"
             />
             <WardrobeShelves
               items={active}
               season={season}
               seasonFilterOn={seasonFilterOn}
-              onSeasonFilterChange={changeSeasonFilter}
             />
           </>
         )}
       </div>
+
+      {isOwner && (
+        <Link href="/wardrobe/add" aria-label="Add a piece" className="fab">
+          <Plus size={24} strokeWidth={2.4} aria-hidden />
+        </Link>
+      )}
     </main>
   );
 }

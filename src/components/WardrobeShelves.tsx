@@ -12,9 +12,9 @@ import { useMemo, useState } from 'react';
 interface Props {
   items: Item[];
   season: Season;
-  /** When false the season filter is ignored and everything shows. */
+  /** When false the season filter is ignored and everything shows.
+   *  The control that flips it lives in the season pill above, not here. */
   seasonFilterOn: boolean;
-  onSeasonFilterChange: (on: boolean) => void;
 }
 
 const SORT_KEY = 'wearwise.wardrobe.sort';
@@ -82,7 +82,7 @@ function matchesQuery(it: Item, q: string): boolean {
     .some((v) => String(v).toLowerCase().includes(q));
 }
 
-export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterChange }: Props) {
+export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
   const [query, setQuery] = useState('');
   const [sort, setSortState] = useState<SortKey>(() => {
     if (typeof window === 'undefined') return 'newest';
@@ -101,8 +101,6 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
     () => (seasonFilterOn ? items.filter((it) => itemSuitsSeason(it, season)) : items),
     [items, season, seasonFilterOn]
   );
-
-  const hiddenBySeason = items.length - inSeason.length;
 
   const q = query.trim().toLowerCase();
   const searchResults = useMemo(
@@ -135,48 +133,48 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
 
   const controls = (
     <>
-      <div className="glass-card mb-3 flex h-12 items-center gap-3 px-4">
-        <Search size={17} className="shrink-0 text-crimson-300" aria-hidden />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search wardrobe"
-          aria-label="Search wardrobe"
-          className="min-w-0 flex-1 bg-transparent text-[15px] text-crimson-50 outline-none placeholder:text-fog-300"
-        />
-        {query && (
+      {/* Sticky so search stays reachable however far down the shelves you are. */}
+      <div className="sticky top-0 z-30 -mx-4 mb-3 bg-ink-0/85 px-4 pb-2 pt-2 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="app-card flex h-12 min-w-0 flex-1 items-center gap-3 px-4">
+            <Search size={17} className="shrink-0 text-fog-400" aria-hidden />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search wardrobe"
+              aria-label="Search wardrobe"
+              className="min-w-0 flex-1 bg-transparent text-[15px] text-fog-100 outline-none placeholder:text-fog-400"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="press -mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fog-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              >
+                <X size={16} aria-hidden />
+              </button>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => setQuery('')}
-            aria-label="Clear search"
-            className="press -mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fog-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            onClick={() => setSortOpen((v) => !v)}
+            aria-expanded={sortOpen}
+            aria-label={`Sort: ${SORTS.find((s) => s.id === sort)?.label}`}
+            className={cn(
+              'press flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+              sortOpen
+                ? 'border-transparent bg-crimson-400 text-white'
+                : 'border-white/[0.08] bg-white/[0.06] text-fog-200'
+            )}
           >
-            <X size={16} aria-hidden />
+            <SlidersHorizontal size={17} aria-hidden />
           </button>
-        )}
-      </div>
+        </div>
 
-      <div className="mb-4 flex items-center gap-2">
-        <OneUIChip active={seasonFilterOn} onClick={() => onSeasonFilterChange(!seasonFilterOn)}>
-          {SEASON_META[season].label} only
-        </OneUIChip>
-        {seasonFilterOn && hiddenBySeason > 0 && (
-          <span className="text-[11px] font-medium text-fog-400">{hiddenBySeason} put away</span>
-        )}
-        <button
-          type="button"
-          onClick={() => setSortOpen((v) => !v)}
-          aria-expanded={sortOpen}
-          className="press ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] px-3.5 text-[13px] font-semibold text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
-        >
-          <SlidersHorizontal size={14} className="text-crimson-300" aria-hidden />
-          {SORTS.find((s) => s.id === sort)?.label}
-        </button>
-      </div>
-
-      {sortOpen && (
-        <div className="glass-card mb-4 animate-oneui-fade p-3">
-          <div className="flex flex-wrap gap-2">
+        {sortOpen && (
+          <div className="animate-oneui-fade mt-2 flex flex-wrap gap-2">
             {SORTS.map((s) => (
               <OneUIChip
                 key={s.id}
@@ -190,8 +188,8 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
               </OneUIChip>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 
@@ -203,14 +201,14 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
         <button
           type="button"
           onClick={() => setExpanded(null)}
-          className="press mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-full pr-3 text-[15px] font-semibold text-crimson-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+          className="press mb-3 inline-flex min-h-[48px] items-center gap-2 rounded-full pr-3 text-[15px] font-semibold text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
         >
           <ArrowLeft size={18} aria-hidden />
           All shelves
         </button>
         <div className="mb-3 flex items-baseline justify-between px-1">
-          <h2 className="text-oneui-h text-crimson-50">{shelf?.label ?? 'Shelf'}</h2>
-          <p className="text-oneui-cap text-crimson-100/45">{shelf?.items.length ?? 0} pieces</p>
+          <h2 className="text-oneui-h text-fog-100">{shelf?.label ?? 'Shelf'}</h2>
+          <p className="section-meta">{shelf?.items.length ?? 0} pieces</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {(shelf?.items ?? []).map((it, idx) => (
@@ -232,7 +230,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
           </p>
         ) : (
           <>
-            <p className="mb-3 px-1 text-oneui-cap text-crimson-100/45">
+            <p className="mb-3 px-1 section-meta">
               {searchResults.length} {searchResults.length === 1 ? 'match' : 'matches'}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -267,11 +265,11 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
               style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
             >
               <div className="shelf-head">
-                <h2 className="text-[17px] font-semibold leading-6 text-crimson-50">{label}</h2>
+                <h2 className="text-[17px] font-semibold leading-6 text-fog-100">{label}</h2>
                 <button
                   type="button"
                   onClick={() => setExpanded(layer)}
-                  className="press shrink-0 rounded-full px-2 py-1 text-[12px] font-semibold text-crimson-100/55 transition-colors hover:text-crimson-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                  className="press inline-flex min-h-[36px] shrink-0 items-center rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                 >
                   {shelfItems.length} · See all
                 </button>
@@ -291,7 +289,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
                     onClick={() => setExpanded(layer)}
                     className={cn(
                       'press flex w-[116px] shrink-0 flex-col items-center justify-center gap-1 rounded-squircle',
-                      'border border-dashed border-white/[0.12] text-crimson-200',
+                      'border border-dashed border-white/[0.12] text-fog-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400'
                     )}
                   >
@@ -306,8 +304,8 @@ export function WardrobeShelves({ items, season, seasonFilterOn, onSeasonFilterC
           {orphans.length > 0 && (
             <section aria-label="Uncategorised">
               <div className="shelf-head">
-                <h2 className="text-[17px] font-semibold leading-6 text-crimson-50">Uncategorised</h2>
-                <span className="text-[12px] font-semibold text-crimson-100/55">{orphans.length}</span>
+                <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Uncategorised</h2>
+                <span className="section-meta">{orphans.length}</span>
               </div>
               <div className="shelf-rail">
                 {orphans.map((it) => (

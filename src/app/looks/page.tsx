@@ -4,19 +4,31 @@ import { LookCard } from '@/components/LookCard';
 import { OneUIChip, OneUIHeader, Squircle } from '@/components/oneui';
 import { useIsOwner } from '@/components/RoleProvider';
 import { useSeason } from '@/hooks/useSeason';
+import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
 import { SEASONS, SEASON_META, type Season } from '@/lib/season';
+import { modeLabel } from '@/lib/today-context';
 import type { Item, Outfit } from '@/types';
-import { Heart, Shirt } from 'lucide-react';
+import { Check, Heart, Loader2, RotateCcw, Shirt } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Filter = Season | 'all';
+type Tab = 'saved' | 'history';
 
+/**
+ * Two tools, not one feed.
+ *
+ * Saved inspiration and the wear log were stacked on one page: her picks, then
+ * his shelf, then a month of history, all scrolling into each other. They
+ * answer different questions ("what should I wear" versus "what did I wear"),
+ * so they get a segmented control and stop competing for the same screen.
+ */
 export default function LooksPage() {
   const isOwner = useIsOwner();
   const { season } = useSeason(null);
+  const [tab, setTab] = useState<Tab>('saved');
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [itemById, setItemById] = useState<Map<string, Item>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -59,13 +71,10 @@ export default function LooksPage() {
     [filter]
   );
 
-  const history = useMemo(
-    () => outfits.filter((o) => o.worn_at).slice(0, 30),
-    [outfits]
-  );
+  const history = useMemo(() => outfits.filter((o) => o.worn_at).slice(0, 30), [outfits]);
 
   const wear = useCallback(
-    async (look: Outfit) => {
+    async (look: Outfit, label?: string) => {
       setWearingId(look.id);
       setActionError(null);
       try {
@@ -74,9 +83,9 @@ export default function LooksPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items: look.items,
-            reasoning: look.name ? `Wore the saved look "${look.name}".` : look.ai_reasoning ?? undefined,
+            reasoning: label ?? (look.name ? `Wore the saved look "${look.name}".` : look.ai_reasoning ?? undefined),
             confidence: look.confidence ?? undefined,
-            context: { ...look.context, mode: 'saved-look' },
+            context: { ...look.context, mode: look.context?.mode ?? 'saved-look' },
           }),
         });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
@@ -101,27 +110,43 @@ export default function LooksPage() {
     }
   }, [outfits]);
 
+  const showTabs = isOwner && history.length > 0;
+  const activeTab: Tab = showTabs ? tab : 'saved';
+
   return (
     <main className="min-h-dvh pb-4">
       <OneUIHeader
-        eyebrow="LOOKS"
-        title={isOwner ? 'Saved looks' : 'Looks for him'}
-        subtitle={loading || loadError ? '—' : `${saved.length} saved · ${history.length} worn`}
+        title={isOwner ? 'Looks' : 'Looks for him'}
+        subtitle={
+          loading || loadError
+            ? undefined
+            : isOwner
+            ? `${saved.length} saved, ${history.length} worn`
+            : `${picks.length} you sent, ${mine.length} of his`
+        }
       />
 
       <div className="reach-zone">
-        {/* Season filter */}
-        <div className="chip-row">
-          <OneUIChip active={filter === 'all'} onClick={() => setFilter('all')}>
-            All
-          </OneUIChip>
-          {SEASONS.map((s) => (
-            <OneUIChip key={s} active={filter === s} onClick={() => setFilter(s)}>
-              {SEASON_META[s].label}
-              {s === season ? ' · now' : ''}
-            </OneUIChip>
-          ))}
-        </div>
+        {showTabs && (
+          <div role="tablist" aria-label="Looks view" className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.05] p-1">
+            {(['saved', 'history'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                role="tab"
+                type="button"
+                aria-selected={activeTab === t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  'press flex min-h-[48px] items-center justify-center rounded-full text-[14px] font-semibold transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                  activeTab === t ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
+                )}
+              >
+                {t === 'saved' ? 'Saved' : 'History'}
+              </button>
+            ))}
+          </div>
+        )}
 
         {actionError && (
           <div role="alert" className="rounded-[1.5rem] border border-error-border bg-error/40 px-4 py-3 text-oneui-body text-error-text">
@@ -145,23 +170,32 @@ export default function LooksPage() {
               <button
                 type="button"
                 onClick={() => { setLoading(true); void load(); }}
-                className="min-h-[44px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200 transition-colors hover:bg-crimson-400/[0.22]"
+                className="min-h-[48px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200 transition-colors hover:bg-crimson-400/[0.22]"
               >
                 Retry
               </button>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'saved' ? (
           <>
-            {/* From Ishita */}
+            <div className="chip-row">
+              <OneUIChip active={filter === 'all'} onClick={() => setFilter('all')}>
+                All
+              </OneUIChip>
+              {SEASONS.map((s) => (
+                <OneUIChip key={s} active={filter === s} onClick={() => setFilter(s)}>
+                  {SEASON_META[s].label}
+                  {s === season ? ' · now' : ''}
+                </OneUIChip>
+              ))}
+            </div>
+
             {picks.length > 0 && (
               <section aria-label="Looks from Ishita" className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 px-1 pt-1">
+                <h2 className="section-title flex items-center gap-2 px-1 pt-1">
                   <Heart size={14} className="fill-current text-crimson-300" aria-hidden />
-                  <h2 className="text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-                    {isOwner ? 'From Ishita' : 'You picked these'}
-                  </h2>
-                </div>
+                  {isOwner ? 'From Ishita' : 'You picked these'}
+                </h2>
                 {filtered(picks).map((look) => (
                   <LookCard
                     key={look.id}
@@ -177,15 +211,12 @@ export default function LooksPage() {
               </section>
             )}
 
-            {/* Saved shelf */}
             <section aria-label="Saved looks" className="flex flex-col gap-3">
-              <h2 className="px-1 pt-2 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-                {isOwner ? 'Your shelf' : 'His shelf'}
-              </h2>
+              <h2 className="section-title px-1 pt-2">{isOwner ? 'Your looks' : 'His shelf'}</h2>
               {filtered(mine).length === 0 ? (
                 <p className="px-1 py-6 text-oneui-body text-fog-400">
                   {mine.length === 0
-                    ? 'No saved looks yet. Generate a fit and tap Save to name one.'
+                    ? 'Nothing saved yet. Tap the bookmark on today’s fit to keep one.'
                     : `Nothing saved for ${filter === 'all' ? 'this filter' : SEASON_META[filter as Season].label.toLowerCase()}.`}
                 </p>
               ) : (
@@ -204,52 +235,83 @@ export default function LooksPage() {
               )}
             </section>
 
-            {/* History — owner only; she does not need his wear log */}
-            {isOwner && history.length > 0 && (
-              <section aria-label="Wear history" className="flex flex-col gap-3">
-                <h2 className="px-1 pt-4 text-oneui-cap font-semibold uppercase tracking-widest text-crimson-300">
-                  Recently worn
-                </h2>
-                {history.map((o) => (
-                  <Squircle key={o.id} variant="flat" className="p-3">
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                      {o.items.map((id) => {
-                        const it = itemById.get(id);
-                        return (
-                          <div
-                            key={id}
-                            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-squircle-sm bg-ink-300"
-                          >
-                            {it?.image_url ? (
-                              <Image src={it.image_url} alt={it.name} width={64} height={64} sizes="64px" className="h-full w-full object-contain" />
-                            ) : (
-                              <Shirt size={20} className="text-fog-500" aria-hidden />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-oneui-cap text-fog-300">
-                      <span>
-                        {new Date(o.worn_at ?? o.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                      </span>
-                      <span>
-                        {o.context?.mode && <span className="mr-2">{o.context.mode}</span>}
-                        {o.context?.temp_c !== undefined && <span>{Math.round(o.context.temp_c)}°</span>}
-                      </span>
-                    </div>
-                  </Squircle>
-                ))}
-              </section>
-            )}
-
-            {saved.length === 0 && history.length === 0 && (
+            {saved.length === 0 && (
               <p className="py-10 text-center text-oneui-body text-fog-400">
-                Nothing here yet. Generate a fit on the{' '}
-                <Link className="text-crimson-300 underline" href="/">Today</Link> tab and save it.
+                Nothing here yet. Save a fit from the{' '}
+                <Link className="text-crimson-300 underline" href="/">Today</Link> tab.
               </p>
             )}
           </>
+        ) : (
+          <section aria-label="Wear history" className="flex flex-col gap-3">
+            {history.map((o) => {
+              const worn = new Date(o.worn_at ?? o.created_at);
+              const repeated = wornIds.has(o.id);
+              return (
+                <Squircle key={o.id} variant="flat" className="p-3">
+                  <div className="mb-2 flex items-baseline justify-between gap-3 px-0.5">
+                    <p className="text-[14px] font-semibold text-fog-100">
+                      {worn.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </p>
+                    <p className="section-meta">
+                      {worn.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {o.items.map((id) => {
+                      const it = itemById.get(id);
+                      return (
+                        <div
+                          key={id}
+                          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-squircle-sm bg-ink-0"
+                        >
+                          {it?.image_url ? (
+                            <Image src={it.image_url} alt={it.name} width={64} height={64} sizes="64px" className="h-full w-full object-contain" />
+                          ) : (
+                            <Shirt size={20} className="text-fog-500" aria-hidden />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-2.5 flex items-center justify-between gap-3 px-0.5">
+                    <p className="min-w-0 truncate text-[12px] font-medium text-fog-400">
+                      {[
+                        o.context?.mode ? modeLabel(o.context.mode) : null,
+                        o.context?.city,
+                        o.context?.temp_c !== undefined && o.context?.temp_c !== null
+                          ? `${Math.round(o.context.temp_c)}°`
+                          : null,
+                        o.context?.condition,
+                      ].filter(Boolean).join(' · ')}
+                    </p>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => void wear(o, 'Repeated an outfit from the wear log.')}
+                        disabled={wearingId === o.id || repeated}
+                        className={cn(
+                          'press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 disabled:opacity-70',
+                          repeated ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400/[0.16] text-crimson-200'
+                        )}
+                      >
+                        {wearingId === o.id ? (
+                          <><Loader2 size={14} className="animate-spin" aria-hidden /> Logging</>
+                        ) : repeated ? (
+                          <><Check size={14} aria-hidden /> Logged</>
+                        ) : (
+                          <><RotateCcw size={14} aria-hidden /> Wear again</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </Squircle>
+              );
+            })}
+          </section>
         )}
       </div>
     </main>

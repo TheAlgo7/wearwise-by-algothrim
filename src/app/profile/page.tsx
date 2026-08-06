@@ -8,8 +8,8 @@ export default function ProfilePage() {
   return (
     <main className="min-h-dvh pb-4">
       <OneUIHeader
-        eyebrow="BLUEPRINT"
         title="Your style"
+        subtitle="The blueprint every recommendation is measured against."
       />
       <div className="reach-zone">
         <StyleBlueprint />

@@ -1,0 +1,173 @@
+'use client';
+
+import { OutfitComposition } from '@/components/OutfitComposition';
+import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
+import { cn } from '@/lib/cn';
+import type { GeneratedOutfit, Item } from '@/types';
+import { BookmarkCheck, BookmarkPlus, Check, Loader2, RefreshCw } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+const LAYER_ORDER: Record<string, number> = {
+  base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4,
+  timepiece: 5, accessory: 6, eyewear: 7, headwear: 8, jewelry: 9,
+};
+
+interface Props {
+  outfit: GeneratedOutfit;
+  items: Item[];
+  itemById: Map<string, Item>;
+  /** 0-based position in the current batch, and how many are in it. */
+  index: number;
+  total: number;
+  worn: boolean;
+  saved: boolean;
+  /** True while a fresh batch is being fetched behind the current one. */
+  busy: boolean;
+  onWear: () => void;
+  onAnother: () => void;
+  onSave: () => void;
+}
+
+/**
+ * The answer, and only the answer.
+ *
+ * One outfit fills most of the screen, with a sentence explaining it and two
+ * ways to respond: take it, or push back. The alternatives still exist — they
+ * are just behind "Another option" instead of demanding to be compared in a
+ * carousel before he has had coffee.
+ */
+export function TodayFit({
+  outfit, items, itemById, index, total, worn, saved, busy,
+  onWear, onAnother, onSave,
+}: Props) {
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const resolved = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          outfit.items.map((id) => itemById.get(id)).filter(Boolean).map((i) => [i!.id, i!])
+        ).values()
+      ).sort(
+        (a, b) =>
+          (LAYER_ORDER[a.category?.layer_type ?? ''] ?? 99) -
+          (LAYER_ORDER[b.category?.layer_type ?? ''] ?? 99)
+      ),
+    [outfit.items, itemById]
+  );
+
+  return (
+    <>
+      <section aria-label="Today's outfit" className="animate-oneui-fade flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Today&apos;s fit</h2>
+          <div className="flex items-center gap-1">
+            {total > 1 && (
+              <span className="mr-1 text-[12px] font-medium text-fog-400">
+                {index + 1} of {total}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onSave}
+              aria-label={saved ? 'Saved to your shelf' : 'Save this look'}
+              aria-pressed={saved}
+              className={cn(
+                'press flex h-11 w-11 items-center justify-center rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                saved ? 'text-crimson-300' : 'text-fog-300 hover:text-fog-100'
+              )}
+            >
+              {saved ? <BookmarkCheck size={19} aria-hidden /> : <BookmarkPlus size={19} aria-hidden />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          aria-label={`See all ${resolved.length} pieces in this outfit`}
+          className="press block w-full rounded-squircle-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+        >
+          <OutfitComposition items={resolved} priority />
+        </button>
+
+        {/* Clamped so the two actions stay above the nav on a phone. The full
+            reasoning is one tap away in the detail sheet. */}
+        <p className="line-clamp-3 px-1 text-[14px] leading-[1.55] text-fog-200 text-pretty">
+          {outfit.reasoning}
+        </p>
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onWear}
+            disabled={worn}
+            className={cn(
+              'press flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-[16px] font-semibold transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0',
+              worn
+                ? 'bg-white/[0.07] text-fog-200'
+                : 'bg-crimson-400 text-white hover:bg-crimson-500'
+            )}
+          >
+            <Check size={19} strokeWidth={2.3} aria-hidden />
+            {worn ? 'Worn today' : 'Wear this'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onAnother}
+            disabled={busy}
+            className={cn(
+              'press flex h-12 w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-fog-200 transition-colors',
+              'hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+              'disabled:opacity-50'
+            )}
+          >
+            {busy ? (
+              <>
+                <Loader2 size={16} className="animate-spin" aria-hidden />
+                Looking again
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} aria-hidden />
+                Another option
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+
+      <OutfitDetailSheet
+        outfit={outfit}
+        items={items}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        saved={saved}
+        worn={worn}
+        onSave={onSave}
+        onWear={() => { onWear(); setDetailOpen(false); }}
+      />
+    </>
+  );
+}
+
+/** Shown while the first fit of the day is being put together. */
+export function TodayFitSkeleton() {
+  return (
+    <section aria-label="Building today's outfit" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Today&apos;s fit</h2>
+        <span className="flex items-center gap-2 text-[12px] font-medium text-fog-400">
+          <Loader2 size={13} className="animate-spin" aria-hidden />
+          Putting it together
+        </span>
+      </div>
+      <div className="aspect-[5/6] animate-pulse rounded-squircle-lg bg-white/[0.05]" />
+      <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/[0.05]" />
+      <div className="h-14 animate-pulse rounded-full bg-white/[0.05]" />
+    </section>
+  );
+}

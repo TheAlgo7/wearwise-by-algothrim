@@ -6,7 +6,7 @@ export const metadata = { title: 'Offline' };
 export default function OfflinePage() {
   return (
     <main className="min-h-dvh">
-      <OneUIHeader eyebrow="OFFLINE" title="No connection" />
+      <OneUIHeader title="No connection" />
       <div className="reach-zone">
         <Squircle variant="raised" className="p-8 flex flex-col items-center text-center gap-3">
           <div className="h-16 w-16 rounded-full bg-ink-300 flex items-center justify-center">

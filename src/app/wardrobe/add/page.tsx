@@ -7,9 +7,8 @@ export default function AddItemPage() {
   return (
     <main className="min-h-dvh">
       <OneUIHeader
-        eyebrow="WARDROBE"
         title="Add a piece"
-        subtitle="Photograph it. WearWise cleans the background and auto-tags it."
+        subtitle="Photograph it. WearWise cleans the background and tags it for you."
       />
       <div className="reach-zone">
         <AddModeSwitch />

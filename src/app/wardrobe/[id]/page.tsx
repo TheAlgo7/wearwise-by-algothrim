@@ -81,9 +81,8 @@ export default function ItemDetailPage({ params }: PageProps) {
   return (
     <main className="min-h-dvh pb-4">
       <OneUIHeader
-        eyebrow={item.category?.name ?? 'ITEM'}
         title={item.name}
-        subtitle={item.notes ?? undefined}
+        subtitle={[item.category?.name, item.notes].filter(Boolean).join(' · ') || undefined}
         right={
           <Link href="/wardrobe" aria-label="Back">
             <OneUIButton size="icon" intent="secondary"><ArrowLeft size={18} /></OneUIButton>
@@ -154,7 +153,7 @@ export default function ItemDetailPage({ params }: PageProps) {
             <span>Manage item</span>
             <ChevronDown
               size={15}
-              className={cn(manageOpen ? 'rotate-180' : '', 'transition-transform text-crimson-300')}
+              className={cn(manageOpen ? 'rotate-180' : '', 'transition-transform text-fog-400')}
             />
           </button>
 
@@ -177,12 +176,12 @@ export default function ItemDetailPage({ params }: PageProps) {
                 </OneUIButton>
               </div>
               {confirmDelete && (
-                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-crimson-300">
+                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-error-text">
                   Tap again to permanently delete. This cannot be undone.
                 </p>
               )}
               {!confirmDelete && (
-                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-crimson-100/45">
+                <p className="mt-2 px-1 text-[11px] leading-[1.4] text-fog-400">
                   Archive hides this piece from outfit generation.
                 </p>
               )}

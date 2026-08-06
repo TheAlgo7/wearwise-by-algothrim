@@ -107,8 +107,38 @@
     @apply flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+132px)];
   }
 
-  .oneui-hero     { @apply text-oneui-hero text-crimson-50; }
-  .oneui-hero-sub { @apply text-oneui-cap text-crimson-300 tracking-widest uppercase font-semibold; }
+  .oneui-hero     { @apply text-oneui-hero text-fog-100; }
+  /* Kept only so old call sites compile. New work uses `.section-title`. */
+  .oneui-hero-sub { @apply text-[13px] font-semibold text-fog-300; }
+
+  /* Section label. Sentence case, fog white, no uppercase crimson eyebrow —
+     the accent is spent on decisions, not on labelling what you can already see. */
+  .section-title {
+    @apply text-[15px] font-semibold leading-5 text-fog-100;
+  }
+  .section-meta {
+    @apply text-[12px] font-medium text-fog-400;
+  }
+
+  /* Context pill. One tappable line summarising everything the engine is
+     assuming right now; tapping it opens the sheet where those are editable. */
+  .context-pill {
+    @apply press inline-flex min-h-[44px] max-w-full items-center gap-2 rounded-full
+           border border-white/[0.08] bg-white/[0.05] pl-4 pr-3 text-[13px] font-medium text-fog-200
+           transition-colors hover:bg-white/[0.09]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400;
+  }
+
+  /* Floating action button, lower-right reach zone. */
+  .fab {
+    @apply press fixed z-40 flex h-14 w-14 items-center justify-center rounded-full
+           bg-crimson-400 text-white transition-colors hover:bg-crimson-500
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400
+           focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0;
+    right: calc(16px + env(safe-area-inset-right));
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    box-shadow: 0 8px 28px rgb(var(--accent-600) / 0.5);
+  }
 
   .chip-row {
     @apply flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4;
@@ -148,12 +178,8 @@
   to   { opacity: 1; transform: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* Deliberately no `prefers-reduced-motion` override.
+   Gaurav runs reduce-motion ON at the OS level, so the blanket
+   `animation-duration: 0.01ms` rule that used to live here made the entire app
+   static on the only phone it runs on. Motion here is short, opacity-and-
+   translate only, and never loops, so it stays on. */
