@@ -1,7 +1,9 @@
 'use client';
 
+import { GroomingCard } from '@/components/home/GroomingCard';
 import { SeasonPill } from '@/components/SeasonPill';
 import { cn } from '@/lib/cn';
+import { useWardrobe } from '@/hooks/useWardrobe';
 import { useSeason } from '@/hooks/useSeason';
 import { createClient } from '@/lib/supabase/client';
 import { pickGreeting } from '@/lib/greetings';
@@ -21,7 +23,7 @@ import { useEffect, useMemo, useState } from 'react';
  * she has already sent and a shortcut into his wardrobe.
  */
 export function PartnerHome() {
-  const [items, setItems] = useState<Item[]>([]);
+  const { items } = useWardrobe();
   const [looks, setLooks] = useState<Outfit[]>([]);
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,12 +33,14 @@ export function PartnerHome() {
     const controller = new AbortController();
     const supa = createClient();
     (async () => {
-      const [{ data: i }, { data: o }] = await Promise.all([
-        supa.from('items').select('*, category:categories(*)').eq('archived', false).abortSignal(controller.signal),
-        supa.from('outfits').select('*').eq('is_saved', true).order('created_at', { ascending: false }).limit(40).abortSignal(controller.signal),
-      ]);
+      const { data: o } = await supa
+        .from('outfits')
+        .select('*')
+        .eq('is_saved', true)
+        .order('created_at', { ascending: false })
+        .limit(40)
+        .abortSignal(controller.signal);
       if (controller.signal.aborted) return;
-      setItems((i ?? []) as Item[]);
       setLooks((o ?? []) as Outfit[]);
       setLoading(false);
     })();
@@ -135,6 +139,8 @@ export function PartnerHome() {
           </span>
           <ChevronRight size={18} className="shrink-0 text-fog-400" aria-hidden />
         </Link>
+
+        <GroomingCard />
 
         {/* A glance at his wardrobe */}
         {preview.length > 0 && (

@@ -6,9 +6,8 @@ import { SeasonPill } from '@/components/SeasonPill';
 import { WardrobeShelves } from '@/components/WardrobeShelves';
 import { useSeason } from '@/hooks/useSeason';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { createClient } from '@/lib/supabase/client';
+import { useWardrobe, invalidateWardrobe } from '@/hooks/useWardrobe';
 import { itemSuitsSeason } from '@/lib/season';
-import type { Item } from '@/types';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -17,14 +16,15 @@ const SEASON_FILTER_KEY = 'wearwise.wardrobe.seasonFilter';
 
 export default function WardrobePage() {
   const isOwner = useIsOwner();
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  // Honest error state — a failed read renders as an error with Retry,
-  // never as a silently empty wardrobe. A failed refresh keeps existing items.
-  const [loadError, setLoadError] = useState(false);
+  // Shared across screens and across back-navigations, so the second visit
+  // paints from memory instead of refetching 119 rows and re-rendering them.
+  const { items, ready, error: loadError } = useWardrobe();
+  const loading = !ready && items.length === 0;
   const [seasonFilterOn, setSeasonFilterOn] = useState(false);
   const { season, source, override, toggle, setOverride, weather } = useSeason(null);
-  useScrollRestoration('wardrobe', !loading);
+  // Restores the moment there is a list to scroll within, which with the cache
+  // is the first paint rather than several hundred milliseconds later.
+  useScrollRestoration('wardrobe', items.length > 0);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -35,26 +35,6 @@ export default function WardrobePage() {
     setSeasonFilterOn(on);
     window.localStorage.setItem(SEASON_FILTER_KEY, on ? '1' : '0');
   }, []);
-
-  const load = useCallback(async (signal: AbortSignal) => {
-    const supa = createClient();
-    const { data, error } = await supa
-      .from('items')
-      .select('*, category:categories(*)')
-      .order('created_at', { ascending: false })
-      .abortSignal(signal);
-    if (signal.aborted) return;
-    setLoadError(Boolean(error));
-    if (!error) setItems((data ?? []) as Item[]);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load(controller.signal);
-    return () => controller.abort();
-  }, [load]);
 
   const active = useMemo(() => items.filter((i) => !i.archived), [items]);
   const inSeasonCount = useMemo(
@@ -100,7 +80,7 @@ export default function WardrobePage() {
               </div>
               <button
                 type="button"
-                onClick={() => { setLoading(true); void load(new AbortController().signal); }}
+                onClick={() => { invalidateWardrobe(); window.location.reload(); }}
                 className="min-h-[44px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200 transition-colors hover:bg-crimson-400/[0.22]"
               >
                 Retry

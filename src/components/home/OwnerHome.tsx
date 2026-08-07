@@ -6,6 +6,7 @@ import { PickInbox } from '@/components/PickInbox';
 import { SaveLookSheet } from '@/components/SaveLookSheet';
 import { CareCard } from '@/components/home/CareCard';
 import { useCare } from '@/hooks/useCare';
+import { useWardrobe } from '@/hooks/useWardrobe';
 import { TodayContextSheet } from '@/components/home/TodayContextSheet';
 import { TodayFit, TodayFitSkeleton } from '@/components/home/TodayFit';
 import { useSeason } from '@/hooks/useSeason';
@@ -60,8 +61,7 @@ export function OwnerHome() {
 
   const { season, source, override, setOverride, hydrated } = useSeason(weather);
 
-  const [items, setItems] = useState<Item[]>([]);
-  const [itemsReady, setItemsReady] = useState(false);
+  const { items, ready: itemsReady } = useWardrobe();
   const [savedLooks, setSavedLooks] = useState<Outfit[]>([]);
 
   const [outfits, setOutfits] = useState<GeneratedOutfit[]>([]);
@@ -111,23 +111,6 @@ export function OwnerHome() {
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, []);
-
-  // ── Wardrobe ──
-  useEffect(() => {
-    const controller = new AbortController();
-    const supa = createClient();
-    (async () => {
-      const { data } = await supa
-        .from('items')
-        .select('*, category:categories(*)')
-        .eq('archived', false)
-        .abortSignal(controller.signal);
-      if (controller.signal.aborted) return;
-      setItems((data ?? []) as Item[]);
-      setItemsReady(true);
-    })();
-    return () => controller.abort();
   }, []);
 
   const loadLooks = useCallback(async (signal?: AbortSignal) => {

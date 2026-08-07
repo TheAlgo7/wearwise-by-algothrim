@@ -7,12 +7,12 @@ import { useSeason } from '@/hooks/useSeason';
 import { cn } from '@/lib/cn';
 import { LAYER_TYPES, type LayerType } from '@/lib/constants';
 import { SEASON_META, itemSuitsSeason } from '@/lib/season';
-import { createClient } from '@/lib/supabase/client';
+import { useWardrobe, invalidateWardrobe } from '@/hooks/useWardrobe';
 import type { Item } from '@/types';
 import { Check, Heart, Search, Shirt, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 /**
  * Build a look, piece by piece.
@@ -77,34 +77,13 @@ export default function StylePage() {
   const router = useRouter();
   const isOwner = useIsOwner();
   const { season } = useSeason(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const { items, ready, error: loadError } = useWardrobe();
+  const loading = !ready && items.length === 0;
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const [seasonOnly, setSeasonOnly] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sent, setSent] = useState(false);
-
-  const load = useCallback(async (signal: AbortSignal) => {
-    const supa = createClient();
-    const { data, error } = await supa
-      .from('items')
-      .select('*, category:categories(*)')
-      .eq('archived', false)
-      .abortSignal(signal);
-    if (signal.aborted) return;
-    setLoadError(Boolean(error));
-    if (!error) setItems((data ?? []) as Item[]);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load(controller.signal);
-    return () => controller.abort();
-  }, [load]);
 
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
@@ -285,7 +264,7 @@ export default function StylePage() {
               </div>
               <button
                 type="button"
-                onClick={() => { setLoading(true); void load(new AbortController().signal); }}
+                onClick={() => { invalidateWardrobe(); window.location.reload(); }}
                 className="min-h-[48px] shrink-0 rounded-full bg-crimson-400/[0.14] px-5 text-[13px] font-semibold text-crimson-200"
               >
                 Retry

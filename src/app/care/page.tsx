@@ -1,5 +1,6 @@
 'use client';
 
+import { CareCalendar } from '@/components/care/CareCalendar';
 import { RoutineStep } from '@/components/care/RoutineStep';
 import { OneUIHeader, OneUISheet } from '@/components/oneui';
 import { useCare } from '@/hooks/useCare';
@@ -11,7 +12,7 @@ import type { CareProduct, CareStep, DueItem } from '@/lib/care/types';
 import { AlertTriangle, Droplets, Moon, Scissors, Sparkles, Sun } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type Tab = 'today' | 'products';
+type Tab = 'today' | 'calendar' | 'products';
 
 /**
  * Care.
@@ -75,8 +76,8 @@ export default function CarePage() {
       />
 
       <div className="reach-zone">
-        <div role="tablist" aria-label="Care view" className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.05] p-1">
-          {(['today', 'products'] as Tab[]).map((t) => (
+        <div role="tablist" aria-label="Care view" className="grid grid-cols-3 gap-1 rounded-full bg-white/[0.05] p-1">
+          {(['today', 'calendar', 'products'] as Tab[]).map((t) => (
             <button
               key={t}
               role="tab"
@@ -89,7 +90,7 @@ export default function CarePage() {
                 tab === t ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
               )}
             >
-              {t === 'today' ? 'Today' : 'Products'}
+              {t === 'today' ? 'Today' : t === 'calendar' ? 'Calendar' : 'Products'}
             </button>
           ))}
         </div>
@@ -153,6 +154,8 @@ export default function CarePage() {
               Adjust what the app assumes
             </button>
           </>
+        ) : tab === 'calendar' ? (
+          <CareCalendar logs={state.logs} due={plan.due} />
         ) : (
           <ProductShelves products={state.products} />
         )}
