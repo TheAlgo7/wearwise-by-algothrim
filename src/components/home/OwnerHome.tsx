@@ -395,6 +395,14 @@ export function OwnerHome() {
     [signature]
   );
 
+  const previous = useCallback(() => {
+    if (optionIdx === 0) return;
+    const next = optionIdx - 1;
+    setOptionIdx(next);
+    patchCache({ index: next });
+    setStatusMsg(`Option ${next + 1} of ${outfits.length}.`);
+  }, [optionIdx, outfits.length, patchCache]);
+
   const another = useCallback(() => {
     if (optionIdx + 1 < outfits.length) {
       const next = optionIdx + 1;
@@ -600,6 +608,7 @@ export function OwnerHome() {
             stale={stale}
             onWear={() => void markWorn()}
             onAnother={another}
+            onPrevious={previous}
             onSave={() => setSaveTarget(current)}
             onKeepPrevious={keepPrevious}
           />

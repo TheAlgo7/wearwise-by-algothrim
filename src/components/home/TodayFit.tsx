@@ -4,7 +4,7 @@ import { OutfitComposition } from '@/components/OutfitComposition';
 import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
 import type { GeneratedOutfit, Item } from '@/types';
-import { BookmarkCheck, BookmarkPlus, Check, Loader2, RefreshCw } from 'lucide-react';
+import { BookmarkCheck, BookmarkPlus, Check, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const LAYER_ORDER: Record<string, number> = {
@@ -27,6 +27,7 @@ interface Props {
   stale?: boolean;
   onWear: () => void;
   onAnother: () => void;
+  onPrevious: () => void;
   onSave: () => void;
   /** Stop waiting and treat the fit already on screen as today's answer. */
   onKeepPrevious?: () => void;
@@ -45,7 +46,7 @@ const PATIENCE_MS = 8000;
  */
 export function TodayFit({
   outfit, items, itemById, index, total, worn, saved, busy, stale,
-  onWear, onAnother, onSave, onKeepPrevious,
+  onWear, onAnother, onPrevious, onSave, onKeepPrevious,
 }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -119,16 +120,24 @@ export function TodayFit({
           <OutfitComposition items={resolved} priority />
         </button>
 
-        {/* Clamped so the two actions stay above the nav on a phone. The full
-            reasoning is one tap away in the detail sheet. */}
-        <p
+        {/* Tappable, because it is clamped and there was previously no way to
+            tell that the rest of the sentence existed. */}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
           className={cn(
-            'line-clamp-3 px-1 text-[14px] leading-[1.55] text-fog-200 text-pretty transition-opacity duration-300',
+            'press block w-full rounded-squircle-sm px-1 text-left transition-opacity duration-300',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
             stale && 'opacity-40'
           )}
         >
-          {outfit.reasoning}
-        </p>
+          <span className="line-clamp-3 block text-[14px] leading-[1.55] text-fog-200 text-pretty">
+            {outfit.reasoning}
+          </span>
+          <span className="mt-1 block text-[12px] font-semibold text-fog-400">
+            See the pieces
+          </span>
+        </button>
 
         {/* An outfit that answers yesterday's question is not something to
             tap "Wear this" on, so the actions wait. If the model is taking
@@ -167,28 +176,47 @@ export function TodayFit({
             {worn ? 'Worn today' : 'Wear this'}
           </button>
 
-          <button
-            type="button"
-            onClick={onAnother}
-            disabled={busy}
-            className={cn(
-              'press flex h-12 w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-fog-200 transition-colors',
-              'hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-              'disabled:opacity-50'
+          {/* Going forward without being able to go back meant an option he
+              liked was gone the moment he looked at the next one. */}
+          <div className="flex items-center gap-2">
+            {index > 0 && (
+              <button
+                type="button"
+                onClick={onPrevious}
+                aria-label="Previous option"
+                className="press flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              >
+                <ChevronLeft size={20} aria-hidden />
+              </button>
             )}
-          >
-            {busy ? (
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden />
-                Looking again
-              </>
-            ) : (
-              <>
-                <RefreshCw size={16} aria-hidden />
-                Another option
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={onAnother}
+              disabled={busy}
+              className={cn(
+                'press flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-fog-200 transition-colors',
+                'hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                'disabled:opacity-50'
+              )}
+            >
+              {busy ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" aria-hidden />
+                  Looking again
+                </>
+              ) : index + 1 < total ? (
+                <>
+                  Next option
+                  <ChevronRight size={16} aria-hidden />
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} aria-hidden />
+                  Generate more
+                </>
+              )}
+            </button>
+          </div>
         </div>
         )}
       </section>

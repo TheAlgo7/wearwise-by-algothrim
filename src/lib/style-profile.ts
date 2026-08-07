@@ -86,6 +86,10 @@ Tops: boxy, drop-shoulder or oversized, to add upper-body volume against the wid
 Sleeves: roll button-down sleeves to just below the elbow — forearms on show.
 Footwear: chunky enough to carry the puddle hem. Chelsea boots when elevated, heavy sneakers when casual.
 Accessories: silver only, never gold. Watch on the left wrist. Never a tie with a polo or knitwear.
+Belts: default to one of his three favourites — the black plaque-buckle dress belt, the black textured plaque-buckle belt, or the black embossed silver-bar belt. Pick a different belt only when the outfit genuinely calls for it, and say why in the reasoning.
+Bottoms he leaves the house in: bootcuts, gurkhas, the white jeans, the slate cargos. Lounge and pyjama bottoms are for home only — never put them in a going-out look no matter how they photograph.
+Shirts are tops in their own right. A button-down worn alone is a complete outfit, not a layer waiting for something underneath.
+Colour and proportion decide the outfit. Temperature is a constraint to respect, not the thing to optimise for: never build a look around the weather when a better-looking combination is available within it.
 Long torso needs mid-rise, never low-rise.`;
 
 function mergeAvoided(

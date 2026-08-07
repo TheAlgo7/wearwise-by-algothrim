@@ -138,12 +138,16 @@ export async function POST(req: Request) {
   const byLayer = (layers: string[], cap: number) =>
     ranked.filter((i) => layers.includes(i.category?.layer_type ?? '')).slice(0, cap);
 
+  // Caps were 7 tops and 5 bottoms, so the model only ever saw 7 of his 44 tops
+  // and 5 of his 17 bottoms — the reason the same handful of outfits kept
+  // coming back and most of the wardrobe never appeared. Roughly doubled; the
+  // prompt is still well inside budget.
   const candidates = [
-    ...byLayer(['base', 'mid', 'outer'], 7),
-    ...byLayer(['bottom'], 5),
-    ...byLayer(['footwear'], 4),
+    ...byLayer(['base', 'mid', 'outer'], 16),
+    ...byLayer(['bottom'], 9),
+    ...byLayer(['footwear'], 6),
     ...byLayer(['timepiece'], 3),                           // watches always guaranteed a slot
-    ...byLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 7),
+    ...byLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 8),
   ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx); // dedup
 
   // BUG-008 fallback: if temp gate wiped out the wardrobe, surface best-available items

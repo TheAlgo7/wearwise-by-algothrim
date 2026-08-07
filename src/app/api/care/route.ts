@@ -100,19 +100,22 @@ export async function GET(req: NextRequest) {
   const at = process.env.NODE_ENV !== 'production' ? req.nextUrl.searchParams.get('at') : null;
   const now = at && !Number.isNaN(Date.parse(at)) ? new Date(at) : new Date();
 
-  const plan = buildCarePlan(
-    profile,
-    (products ?? []) as CareProduct[],
-    (logs ?? []) as CareLog[],
-    ctx,
-    now
-  );
+  const p = (products ?? []) as CareProduct[];
+  const l = (logs ?? []) as CareLog[];
+
+  // Both routines, always. The screen shows what is due now and what is due
+  // tonight side by side rather than making him come back at 10pm to find out.
+  const plan = buildCarePlan(profile, p, l, ctx, now);
+  const morning = plan.phase === 'morning' ? plan : buildCarePlan(profile, p, l, ctx, now, 'morning');
+  const evening = plan.phase === 'evening' ? plan : buildCarePlan(profile, p, l, ctx, now, 'evening');
 
   return NextResponse.json({
     plan,
+    morning,
+    evening,
     profile,
     products: products ?? [],
-    logs: (logs ?? []).slice(0, 60),
+    logs: l.slice(0, 60),
   });
 }
 

@@ -69,18 +69,29 @@ export function BottomNav() {
               key={href}
               href={href}
               aria-current={active ? 'page' : undefined}
+              aria-label={label}
               className={cn(
-                // 48px tall, and every label stays visible. The old bar showed the
-                // label only on the active tab and animated its width, so the whole
-                // pill shifted under your thumb between taps. Stacking icon over
-                // label keeps four of them on a phone without that trick.
-                'relative flex h-12 min-w-[64px] flex-col items-center justify-center gap-1 rounded-full px-2',
+                // Icon always, label only on the active tab, which expands into
+                // it. This is WearWise's nav, shared with Go and Vandana, and
+                // stacking icon-over-label to fit four tabs made it look like
+                // every other app. 48px targets, the distinctive shape kept.
+                'relative flex h-12 items-center justify-center rounded-full px-3.5 min-w-[48px]',
                 'transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100',
+                active ? 'text-white' : 'text-fog-300 hover:text-fog-100',
               )}
+              style={active ? { background: 'rgb(var(--accent-400))' } : undefined}
             >
-              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} aria-hidden className="shrink-0" />
-              <span className="whitespace-nowrap text-[11px] font-semibold leading-none">
+              <Icon size={20} strokeWidth={active ? 2.2 : 1.7} aria-hidden className="flex-shrink-0" />
+              <span
+                className="overflow-hidden whitespace-nowrap text-[13px] font-semibold leading-none"
+                style={{
+                  maxWidth: active ? '80px' : '0px',
+                  marginLeft: active ? '7px' : '0px',
+                  opacity: active ? 1 : 0,
+                  transition:
+                    'max-width 240ms cubic-bezier(0.22,1,0.36,1) 40ms, margin-left 240ms cubic-bezier(0.22,1,0.36,1) 40ms, opacity 160ms ease 60ms',
+                }}
+              >
                 {label}
               </span>
             </Link>

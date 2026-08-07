@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 export interface CareState {
   plan: CarePlan;
+  /** Both routines, so the screen can show tonight alongside this morning. */
+  morning: CarePlan;
+  evening: CarePlan;
   profile: CareProfile;
   products: CareProduct[];
   logs: CareLog[];

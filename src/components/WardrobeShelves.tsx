@@ -20,10 +20,15 @@ interface Props {
 const SORT_KEY = 'wearwise.wardrobe.sort';
 
 /**
- * Shelf order is deliberate: the pieces a look is built around come first,
- * finishing touches last. It is the order you actually get dressed in.
+ * Shelves are categories, not layer types.
+ *
+ * Grouping by layer put 21 button-down shirts under "Mid layers", which is
+ * both wrong and useless: you cannot wear a mid layer on its own, and nobody
+ * looking for a shirt thinks "I need a mid layer". A shirt is a shirt and a
+ * tee is a tee. Layer order still decides the order the shelves appear in,
+ * because that is the order you get dressed in.
  */
-const SHELF_ORDER: LayerType[] = [
+const LAYER_ORDER: LayerType[] = [
   'base',
   'mid',
   'outer',
@@ -36,33 +41,61 @@ const SHELF_ORDER: LayerType[] = [
   'accessory',
 ];
 
-const SHELF_LABELS: Record<LayerType, string> = {
-  base: 'Tops',
-  mid: 'Mid layers',
-  outer: 'Outerwear',
-  bottom: 'Bottoms',
-  footwear: 'Shoes',
-  accessory: 'Accessories',
-  headwear: 'Headwear',
-  eyewear: 'Eyewear',
-  timepiece: 'Watches',
-  jewelry: 'Jewellery',
+/** Plural display names for categories stored in the singular. */
+const SHELF_LABELS: Record<string, string> = {
+  'T-shirt': 'T-shirts',
+  'Shirt': 'Shirts',
+  'Polo': 'Polos',
+  'Trousers': 'Trousers',
+  'Jeans': 'Jeans',
+  'Cargos': 'Cargos',
+  'Shorts': 'Shorts',
+  'Lounge & Pyjama': 'Lounge & pyjama',
+  'Sneakers': 'Sneakers',
+  'Boots': 'Boots',
+  'Formal Shoes': 'Formal shoes',
+  'Sandals / Slides': 'Sandals & slides',
+  'Cap / Hat': 'Caps & hats',
+  'Sunglasses': 'Sunglasses',
+  'Watch': 'Watches',
+  'Belt': 'Belts',
+  'Tie': 'Ties',
+  'Bandana / Scarf': 'Bandanas & scarves',
+  'Sport Accessory': 'Sport',
+  'Overshirt': 'Overshirts',
+  'Jacket': 'Jackets',
+  'Coat': 'Coats',
+  'Blazer': 'Blazers',
+  'Hoodie': 'Hoodies',
+  'Sweatshirt': 'Sweatshirts',
+  'Sweater / Knit': 'Knitwear',
+  'Tank / Vest': 'Tanks & vests',
+  'Joggers': 'Joggers',
 };
 
-type SortKey = 'newest' | 'least-worn' | 'most-worn' | 'name';
+function shelfLabel(name: string): string {
+  return SHELF_LABELS[name] ?? name;
+}
+
+// "Least worn" and "Most worn" are gone. times_worn is 0 on all 105 items and
+// always will be: he does not log wears and has said he never intends to, so
+// both sorts returned the list in an arbitrary order while claiming to mean
+// something. Colour is what he actually browses by.
+type SortKey = 'newest' | 'name' | 'color';
 
 const SORTS: Array<{ id: SortKey; label: string }> = [
   { id: 'newest', label: 'Recent' },
-  { id: 'least-worn', label: 'Least worn' },
-  { id: 'most-worn', label: 'Most worn' },
   { id: 'name', label: 'A-Z' },
+  { id: 'color', label: 'By colour' },
 ];
 
 function sortItems(list: Item[], sort: SortKey): Item[] {
   return [...list].sort((a, b) => {
-    if (sort === 'least-worn') return (a.times_worn ?? 0) - (b.times_worn ?? 0);
-    if (sort === 'most-worn') return (b.times_worn ?? 0) - (a.times_worn ?? 0);
     if (sort === 'name') return a.name.localeCompare(b.name);
+    if (sort === 'color') {
+      return (a.primary_color ?? 'zz').localeCompare(b.primary_color ?? 'zz') ||
+        a.name.localeCompare(b.name);
+    }
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 }
@@ -90,7 +123,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
   });
   const [sortOpen, setSortOpen] = useState(false);
   /** When set, the view drills into one shelf as a full grid. */
-  const [expanded, setExpanded] = useState<LayerType | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   function setSort(val: SortKey) {
     sessionStorage.setItem(SORT_KEY, val);
@@ -109,19 +142,24 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
   );
 
   const shelves = useMemo(() => {
-    const grouped = new Map<LayerType, Item[]>();
+    const grouped = new Map<string, { key: string; label: string; layer: LayerType; items: Item[] }>();
     for (const it of inSeason) {
-      const layer = it.category?.layer_type;
-      if (!layer) continue;
-      const bucket = grouped.get(layer);
-      if (bucket) bucket.push(it);
-      else grouped.set(layer, [it]);
+      const cat = it.category;
+      if (!cat?.layer_type || !LAYER_TYPES.includes(cat.layer_type)) continue;
+      const key = cat.id ?? cat.name;
+      const bucket = grouped.get(key);
+      if (bucket) bucket.items.push(it);
+      else grouped.set(key, { key, label: shelfLabel(cat.name), layer: cat.layer_type, items: [it] });
     }
-    return SHELF_ORDER.filter((l) => grouped.has(l)).map((l) => ({
-      layer: l,
-      label: SHELF_LABELS[l],
-      items: sortItems(grouped.get(l) ?? [], sort),
-    }));
+    return [...grouped.values()]
+      .map((s) => ({ ...s, items: sortItems(s.items, sort) }))
+      // Dressing order first, then the fuller shelf, then alphabetical.
+      .sort(
+        (a, b) =>
+          LAYER_ORDER.indexOf(a.layer) - LAYER_ORDER.indexOf(b.layer) ||
+          b.items.length - a.items.length ||
+          a.label.localeCompare(b.label)
+      );
   }, [inSeason, sort]);
 
   // Items with a category whose layer_type is missing from LAYER_TYPES would
@@ -195,7 +233,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
 
   // ── Drilled into one shelf ──
   if (expanded) {
-    const shelf = shelves.find((s) => s.layer === expanded);
+    const shelf = shelves.find((s) => s.key === expanded);
     return (
       <div>
         <button
@@ -257,9 +295,9 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
         </p>
       ) : (
         <div className="flex flex-col gap-6">
-          {shelves.map(({ layer, label, items: shelfItems }, i) => (
+          {shelves.map(({ key, label, items: shelfItems }, i) => (
             <section
-              key={layer}
+              key={key}
               aria-label={label}
               className="animate-shelf-in"
               style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
@@ -268,7 +306,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
                 <h2 className="text-[17px] font-semibold leading-6 text-fog-100">{label}</h2>
                 <button
                   type="button"
-                  onClick={() => setExpanded(layer)}
+                  onClick={() => setExpanded(key)}
                   className="press inline-flex min-h-[36px] shrink-0 items-center rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                 >
                   {shelfItems.length} · See all
@@ -286,7 +324,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
                 {shelfItems.length > 12 && (
                   <button
                     type="button"
-                    onClick={() => setExpanded(layer)}
+                    onClick={() => setExpanded(key)}
                     className={cn(
                       'press flex w-[116px] shrink-0 flex-col items-center justify-center gap-1 rounded-squircle',
                       'border border-dashed border-white/[0.12] text-fog-200',

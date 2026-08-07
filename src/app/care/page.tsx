@@ -7,27 +7,26 @@ import { cn } from '@/lib/cn';
 import { modeForDate } from '@/lib/modes';
 import { readTodayContext } from '@/lib/today-context';
 import { readCachedWeather } from '@/lib/weather-cache';
-import type { CareProduct, DueItem } from '@/lib/care/types';
-import { AlertTriangle, Check, Droplets, Scissors, Sparkles } from 'lucide-react';
+import type { CareProduct, CareStep, DueItem } from '@/lib/care/types';
+import { AlertTriangle, Droplets, Moon, Scissors, Sparkles, Sun } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type Tab = 'routine' | 'products';
+type Tab = 'today' | 'products';
 
 /**
  * Care.
  *
- * Two segments, not five. GPT's sketch had Skin, Hair and Body as separate
- * tabs, but that is a filing cabinet, not a routine: nobody does "all their
- * skin steps" and then "all their hair steps" — they shampoo in the shower and
- * moisturise after it. The routine interleaves them in the order they actually
- * happen, and the domain only becomes a grouping where it is genuinely a
- * grouping, which is the product shelf.
+ * Not a checklist. The first version put a tick circle on every step and he was
+ * right to reject it: he does not want washing his face to have an unfinished
+ * state, and nothing here is worth logging. It reads out instead — both
+ * routines, morning and night, written plainly.
  *
- * No rings, no streaks, no score. This is meant to remove thinking, not add a
- * game to washing your face.
+ * "Next up" comes first because that is what he opened this screen looking for
+ * and could not find: when the next shave, trim and haircut are due.
+ *
+ * No rings, no streaks, no score.
  */
 export default function CarePage() {
-  // Read once on mount. The context belongs to Today; Care just inherits it.
   const [query, setQuery] = useState(() => ({
     mode: 'casual',
     environment: 'outdoor',
@@ -53,36 +52,20 @@ export default function CarePage() {
     setHydrated(true);
   }, []);
 
-  const { state, loading, error, log, undo, patchProfile } = useCare(query, hydrated);
-  const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('routine');
+  const { state, loading, error, patchProfile } = useCare(query, hydrated);
+  const [tab, setTab] = useState<Tab>('today');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const plan = state?.plan;
-  const done = useMemo(() => new Set(plan?.doneKeys ?? []), [plan?.doneKeys]);
+  const nowPhase = plan?.phase ?? 'morning';
 
-  const runStep = async (key: string, productId: string | null, domain: string) => {
-    setBusy(true);
-    setActionError(null);
-    try {
-      await log({
-        action: key,
-        domain: domain === 'skin' || domain === 'hair' || domain === 'body' ? domain : 'skin',
-        product_id: productId,
-      });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Could not log that.');
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Anything overdue or due within the week, most pressing first.
+  const upcoming = useMemo(
+    () => (plan?.due ?? []).filter((d) => d.inDays === null || d.inDays <= 21),
+    [plan?.due]
+  );
 
-  const remaining = (plan?.steps ?? []).filter((s) => !done.has(s.key));
-  const allDone = Boolean(plan) && remaining.length === 0;
-
-  const greeting =
-    plan?.phase === 'evening' ? 'Good evening, Gaurav' : 'Good morning, Gaurav';
+  const greeting = nowPhase === 'evening' ? 'Good evening, Gaurav' : 'Good morning, Gaurav';
 
   return (
     <main className="min-h-dvh pb-4">
@@ -93,7 +76,7 @@ export default function CarePage() {
 
       <div className="reach-zone">
         <div role="tablist" aria-label="Care view" className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.05] p-1">
-          {(['routine', 'products'] as Tab[]).map((t) => (
+          {(['today', 'products'] as Tab[]).map((t) => (
             <button
               key={t}
               role="tab"
@@ -106,21 +89,15 @@ export default function CarePage() {
                 tab === t ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
               )}
             >
-              {t === 'routine' ? 'Routine' : 'Products'}
+              {t === 'today' ? 'Today' : 'Products'}
             </button>
           ))}
         </div>
 
-        {actionError && (
-          <div role="alert" className="rounded-[1.5rem] border border-error-border bg-error/40 px-4 py-3 text-oneui-body text-error-text">
-            {actionError}
-          </div>
-        )}
-
         {loading ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-28 animate-pulse rounded-squircle bg-white/[0.05]" />
+              <div key={i} className="h-24 animate-pulse rounded-squircle bg-white/[0.05]" />
             ))}
           </div>
         ) : error || !plan || !state ? (
@@ -128,11 +105,11 @@ export default function CarePage() {
             <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load your routine</p>
             <p className="mt-1 text-[13px] leading-5 text-fog-400">{error ?? 'No care profile set up yet.'}</p>
           </div>
-        ) : tab === 'routine' ? (
+        ) : tab === 'today' ? (
           <>
-            {plan.flags.length > 0 && (
+            {plan.flags.filter((f) => f !== 'Wash day').length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {plan.flags.map((f) => (
+                {plan.flags.filter((f) => f !== 'Wash day').map((f) => (
                   <span
                     key={f}
                     className="inline-flex min-h-[32px] items-center rounded-full bg-crimson-400/[0.14] px-3 text-[12px] font-semibold text-crimson-200"
@@ -143,56 +120,35 @@ export default function CarePage() {
               </div>
             )}
 
-            {allDone ? (
-              <div className="app-card flex items-center gap-3 p-5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-crimson-400 text-white">
-                  <Check size={22} strokeWidth={2.8} aria-hidden />
-                </span>
-                <div>
-                  <p className="text-[16px] font-semibold text-fog-100">
-                    {plan.phase === 'evening' ? 'Evening care done' : 'Morning care done'}
-                  </p>
-                  <p className="text-[13px] text-fog-400">Nothing else until tonight.</p>
-                </div>
+            {/* What he came here to find */}
+            <section aria-label="Next up">
+              <div className="shelf-head">
+                <h2 className="section-title">Next up</h2>
               </div>
-            ) : (
-              <>
-                <div className="flex items-baseline justify-between px-1">
-                  <h2 className="section-title">Do now</h2>
-                  <span className="section-meta">
-                    {remaining.length} {remaining.length === 1 ? 'step' : 'steps'} · {plan.minutes} min
-                  </span>
-                </div>
-                <ol className="flex flex-col gap-2.5">
-                  {plan.steps.map((s, i) => (
-                    <RoutineStep
-                      key={s.key}
-                      step={s}
-                      order={i + 1}
-                      done={done.has(s.key)}
-                      busy={busy}
-                      onDone={() => void runStep(s.key, s.productId, domainOf(s.key))}
-                      onSkip={() => void runStep(s.key, s.productId, domainOf(s.key))}
-                      onUndo={() => { setBusy(true); void undo(s.key).finally(() => setBusy(false)); }}
-                    />
-                  ))}
-                </ol>
-              </>
-            )}
-
-            <section aria-label="Next due" className="mt-2">
-              <h2 className="section-title mb-2 px-1">Next due</h2>
-              <ul className="flex flex-col gap-2">
-                {plan.due.slice(0, 7).map((d) => (
+              <ul className="app-card divide-y divide-white/[0.05] px-4">
+                {upcoming.map((d) => (
                   <DueRow key={d.key} item={d} />
                 ))}
               </ul>
             </section>
 
+            <Routine
+              title="This morning"
+              icon={<Sun size={15} aria-hidden />}
+              steps={state.morning?.steps ?? []}
+              muted={nowPhase !== 'morning'}
+            />
+            <Routine
+              title="Tonight"
+              icon={<Moon size={15} aria-hidden />}
+              steps={state.evening?.steps ?? []}
+              muted={nowPhase !== 'evening'}
+            />
+
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
-              className="press mt-1 inline-flex min-h-[48px] items-center justify-center self-start rounded-full px-4 text-[14px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              className="press inline-flex min-h-[48px] items-center justify-center self-start rounded-full px-4 text-[14px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
             >
               Adjust what the app assumes
             </button>
@@ -208,8 +164,8 @@ export default function CarePage() {
             <section>
               <h3 className="mb-1 px-1 text-[15px] font-semibold text-fog-100">Dandruff right now</h3>
               <p className="mb-2.5 px-1 text-[12px] leading-5 text-fog-400">
-                This decides how often the Minimalist shampoo comes out. A treatment shampoo used
-                every wash is not better, it is just harsher.
+                Decides how often the Minimalist shampoo comes out. A treatment shampoo used every
+                wash is not better, just harsher.
               </p>
               <div role="radiogroup" aria-label="Dandruff" className="grid grid-cols-3 gap-1 rounded-full bg-white/[0.05] p-1">
                 {(['active', 'occasional', 'none'] as const).map((v) => (
@@ -220,7 +176,7 @@ export default function CarePage() {
                     aria-checked={state.profile.dandruff === v}
                     onClick={() => void patchProfile({ dandruff: v })}
                     className={cn(
-                      'press flex min-h-[48px] items-center justify-center rounded-full text-[13px] font-semibold capitalize transition-colors',
+                      'press flex min-h-[48px] items-center justify-center rounded-full text-[13px] font-semibold transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
                       state.profile.dandruff === v ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
                     )}
@@ -241,9 +197,9 @@ export default function CarePage() {
                 className="press flex min-h-[60px] w-full items-center justify-between gap-4 rounded-squircle border border-white/[0.07] bg-white/[0.04] px-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
               >
                 <span className="min-w-0">
-                  <span className="block text-[15px] font-semibold text-fog-100">Share the hair plan</span>
+                  <span className="block text-[15px] font-semibold text-fog-100">Share your grooming dates</span>
                   <span className="block text-[12px] leading-5 text-fog-400">
-                    Only the hairstyle goal and next cut date. Never your routine, logs or photos.
+                    She sees haircut, shave and trim timing. Never products, routines or photos.
                   </span>
                 </span>
                 <span
@@ -266,11 +222,26 @@ export default function CarePage() {
   );
 }
 
-/** Which domain a step belongs to, for the log row. */
-function domainOf(key: string): string {
-  if (key === 'shampoo' || key === 'condition' || key === 'style') return 'hair';
-  if (key === 'body_wash' || key === 'trim') return 'body';
-  return 'skin';
+function Routine({
+  title, icon, steps, muted,
+}: { title: string; icon: React.ReactNode; steps: CareStep[]; muted: boolean }) {
+  if (steps.length === 0) return null;
+  return (
+    <section aria-label={title} className="mt-1">
+      <div className="shelf-head">
+        <h2 className="section-title flex items-center gap-2">
+          <span className={muted ? 'text-fog-500' : 'text-crimson-300'}>{icon}</span>
+          {title}
+        </h2>
+        <span className="section-meta">{steps.length} steps</span>
+      </div>
+      <ol className={cn('app-card px-4 pt-4', muted && 'opacity-75')}>
+        {steps.map((s, i) => (
+          <RoutineStep key={s.key} step={s} order={i + 1} muted={muted} />
+        ))}
+      </ol>
+    </section>
+  );
 }
 
 function DueRow({ item }: { item: DueItem }) {
@@ -281,14 +252,14 @@ function DueRow({ item }: { item: DueItem }) {
     : overdue ? `${Math.abs(item.inDays)}d over`
     : today ? 'Today'
     : item.inDays === 1 ? 'Tomorrow'
-    : `${item.inDays}d`;
+    : `in ${item.inDays}d`;
 
   const Icon = item.domain === 'hair' ? Scissors : item.domain === 'body' ? Droplets : Sparkles;
 
   return (
-    <li className="app-card flex items-center gap-3 p-3.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-fog-300">
-        <Icon size={16} aria-hidden />
+    <li className="flex items-center gap-3 py-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-fog-300">
+        <Icon size={15} aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-semibold text-fog-100">{item.label}</span>

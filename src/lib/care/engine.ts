@@ -160,10 +160,12 @@ export function buildCarePlan(
   products: CareProduct[],
   logs: CareLog[],
   ctx: CareContext,
-  now: Date = new Date()
+  now: Date = new Date(),
+  /** Force a phase. The screen shows both routines, not just the current one. */
+  phaseOverride?: Phase
 ): CarePlan {
   const hour = localHour(now);
-  const phase: Phase = hour < 17 ? 'morning' : 'evening';
+  const phase: Phase = phaseOverride ?? (hour < 17 ? 'morning' : 'evening');
   const today = dayKey(now);
   const doneToday = new Set(
     logs.filter((l) => dayKey(new Date(l.done_at)) === today).map((l) => l.action)
@@ -210,6 +212,8 @@ export function buildCarePlan(
   const soothing = find(products, 'skin', 'serum');
   const moisturiser = find(products, 'skin', 'moisturiser');
   const sunscreen = find(products, 'skin', 'sunscreen');
+  const bodyWash = find(products, 'body', 'wash');
+  const bodyLotion = find(products, 'body', 'moisturiser');
   const saltSpray = find(products, 'hair', 'styling', { order: 1 });
   const clay = find(products, 'hair', 'styling', { order: 3 });
   const heatProtectant = find(products, 'hair', 'styling', { wishlist: true, order: 0 });
@@ -284,6 +288,33 @@ export function buildCarePlan(
           { detail: 'Small amount, 2-3 min' })
       );
     }
+
+    // ── Body ──
+    // Shower, then lotion. Both products are fragranced, which is fine most
+    // days and the wrong idea on skin that was shaved this week.
+    const sinceAnyTrim = daysSince(logs, (l) => l.action === 'trim', now);
+    const freshlyGroomed = sinceAnyTrim !== null && sinceAnyTrim <= 2;
+    const loofahDay =
+      !freshlyGroomed && !shavedToday &&
+      (daysSince(logs, (l) => l.action === 'exfoliate', now) ?? 99) >= 4;
+
+    steps.push(
+      step('body_wash', 'Shower', bodyWash,
+        freshlyGroomed || shavedToday
+          ? 'Hands only while the skin is still settling. No loofah on freshly groomed skin.'
+          : loofahDay
+          ? 'Loofah is fine today, gently. Let it dry out properly afterwards.'
+          : 'Palms are enough. The loofah is a twice-a-week thing, not a daily one.',
+        { detail: loofahDay && !freshlyGroomed && !shavedToday ? 'With the loofah' : 'Hands only' })
+    );
+
+    steps.push(
+      step('body_moisturise', 'Body lotion', bodyLotion,
+        freshlyGroomed || shavedToday
+          ? 'While the skin is still damp. It is fragranced, so if a shaved patch stings, skip that patch rather than the whole step.'
+          : 'Straight out of the shower, while the skin is still slightly damp. That is most of what makes it work.',
+        { missing: bodyLotion ? undefined : 'No body moisturiser recorded yet.' })
+    );
 
     if (!stayingHome) {
       steps.push(
