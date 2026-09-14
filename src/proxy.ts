@@ -73,7 +73,9 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   // Everything except the unlock flow, PWA plumbing, and static assets.
+  // `/api/keepalive` is exempt too: Vercel Cron carries no auth cookie, so the
+  // gate was 401ing the nightly Supabase ping before it ever left the app.
   matcher: [
-    '/((?!unlock|api/unlock|offline|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icons/|apple-touch-icon).*)',
+    '/((?!unlock|api/unlock|api/keepalive|offline|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icons/|apple-touch-icon).*)',
   ],
 };
