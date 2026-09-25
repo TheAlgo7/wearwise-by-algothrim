@@ -10,6 +10,8 @@ interface Props {
   items: Item[];
   /** Larger images on the hero card, smaller in lists. */
   priority?: boolean;
+  /** Pieces settle in one after another. Off for thumbnails in a grid. */
+  animate?: boolean;
   className?: string;
 }
 
@@ -18,11 +20,13 @@ interface Props {
  *
  * The old card put every piece in an 88px square and scrolled them sideways,
  * which read as inventory: five products that happen to share a card. Laid out
- * the way the clothes actually sit — shirt large up top, bottom under it, shoes
- * to one side, watch and glasses alongside — the same five items read as one
+ * the way the clothes actually sit (shirt large up top, bottom under it, shoes
+ * to one side, watch and glasses alongside) the same five items read as one
  * look, which is the thing being recommended.
  *
- * One canvas, no per-item borders. The borders were what made it a list.
+ * One plate, no per-item borders. The borders were what made it a list. The
+ * plate is `.photo-well`, which dissolves the black each photo was flattened
+ * onto, so the pieces sit on it instead of in dark boxes.
  */
 
 const BANDS = {
@@ -42,14 +46,21 @@ function bandOf(item: Item): keyof typeof BANDS | null {
   return null;
 }
 
-export function OutfitComposition({ items, priority, className }: Props) {
+export function OutfitComposition({ items, priority, animate = false, className }: Props) {
   const grouped = useMemo(() => {
     const out: Record<keyof typeof BANDS, Item[]> = {
       top: [], layer: [], bottom: [], shoes: [], extra: [],
     };
     const loose: Item[] = [];
+    // An open shirt worn over a tee is the layer, not a second top: the tee
+    // leads and the shirt sits beside it (matching /api/generate's dedupe).
+    const isShirt = (i: Item) => (i.category?.name ?? '').toLowerCase() === 'shirt';
+    const hasTee = items.some((i) => i.category?.layer_type === 'base' && !isShirt(i));
+    const overShirt = hasTee
+      ? items.find((i) => i.category?.layer_type === 'base' && isShirt(i) && i.can_be_worn_open)
+      : undefined;
     for (const it of items) {
-      const band = bandOf(it);
+      const band = it === overShirt ? 'layer' : bandOf(it);
       if (band) out[band].push(it);
       else loose.push(it);
     }
@@ -74,14 +85,20 @@ export function OutfitComposition({ items, priority, className }: Props) {
   const bottomLead = bottom.length > 0 ? bottom : shoes.slice(0, 1);
   const bottomSide = bottom.length > 0 ? shoes : shoes.slice(1);
 
-  // Nothing recognisable to arrange — fall back to an even grid rather than
-  // rendering an empty canvas.
+  // The order pieces arrive in, which is the order you get dressed in.
+  const order = new Map(
+    [...topLead, ...topSide, ...bottomLead, ...bottomSide, ...extra].map((it, i) => [it.id, i])
+  );
+  const delay = (it: Item) => (animate ? order.get(it.id) ?? 0 : null);
+
+  // Nothing recognisable to arrange: fall back to an even grid rather than
+  // rendering an empty plate.
   if (topLead.length === 0 && bottomLead.length === 0) {
     return (
-      <div className={cn('rounded-squircle-lg bg-ink-0 p-3', className)}>
+      <div className={cn('photo-well rounded-squircle-lg p-3', className)}>
         <div className="grid grid-cols-3 gap-2">
           {items.map((it) => (
-            <Cell key={it.id} item={it} priority={priority} />
+            <Cell key={it.id} item={it} priority={priority} step={delay(it)} />
           ))}
         </div>
       </div>
@@ -101,9 +118,9 @@ export function OutfitComposition({ items, priority, className }: Props) {
     <div
       className={cn(
         // Capped in viewport units, not just by aspect ratio: on a tall phone an
-        // unbounded 5:6 canvas pushed "Wear this" under the nav bar, which is
+        // unbounded 5:6 plate pushed "Wear this" under the nav bar, which is
         // the one thing this screen exists to put in front of him.
-        'mx-auto grid w-full gap-2 rounded-squircle-lg bg-ink-0 p-2',
+        'photo-well mx-auto grid w-full gap-2 rounded-squircle-lg p-2',
         hasExtras ? 'aspect-[5/6] max-h-[38dvh]' : 'aspect-square max-h-[38dvh]',
         className
       )}
@@ -115,34 +132,34 @@ export function OutfitComposition({ items, priority, className }: Props) {
       {/* Band one: the piece the look is built around, plus what goes over it */}
       {topLead.length > 0 && (
         <div className="min-h-0" style={{ gridColumn: `span ${topSpan}` }}>
-          <Stack items={topLead} priority={priority} />
+          <Stack items={topLead} priority={priority} delay={delay} />
         </div>
       )}
       {topSide.length > 0 && (
         <div className="min-h-0" style={{ gridColumn: 'span 2' }}>
-          <Stack items={topSide} priority={priority} />
+          <Stack items={topSide} priority={priority} delay={delay} />
         </div>
       )}
 
       {/* Band two: bottom, and what is on his feet */}
       {bottomLead.length > 0 && (
         <div className="min-h-0" style={{ gridColumn: `span ${bottomSpan}` }}>
-          <Stack items={bottomLead} priority={priority} />
+          <Stack items={bottomLead} priority={priority} delay={delay} />
         </div>
       )}
       {bottomSide.length > 0 && (
         <div className="min-h-0" style={{ gridColumn: 'span 3' }}>
-          <Stack items={bottomSide} priority={priority} />
+          <Stack items={bottomSide} priority={priority} delay={delay} />
         </div>
       )}
 
-      {/* Band three: watch, glasses, cap — the pieces that finish it */}
+      {/* Band three: watch, glasses, cap, the pieces that finish it */}
       {hasExtras && (
         <div className="min-h-0" style={{ gridColumn: 'span 6' }}>
           <div className="flex h-full items-center justify-center gap-2">
             {extra.slice(0, 4).map((it) => (
               <div key={it.id} className="h-full min-w-0 flex-1">
-                <Cell item={it} priority={false} />
+                <Cell item={it} priority={false} step={delay(it)} />
               </div>
             ))}
           </div>
@@ -153,23 +170,32 @@ export function OutfitComposition({ items, priority, className }: Props) {
 }
 
 /** One or two pieces sharing a slot, split vertically when there are two. */
-function Stack({ items, priority }: { items: Item[]; priority?: boolean }) {
+function Stack({
+  items, priority, delay,
+}: { items: Item[]; priority?: boolean; delay: (it: Item) => number | null }) {
   if (items.length === 0) return <div className="h-full" />;
-  if (items.length === 1) return <Cell item={items[0]} priority={priority} />;
+  if (items.length === 1) return <Cell item={items[0]} priority={priority} step={delay(items[0])} />;
   return (
     <div className="flex h-full flex-col gap-2">
       {items.slice(0, 2).map((it) => (
         <div key={it.id} className="min-h-0 flex-1">
-          <Cell item={it} priority={false} />
+          <Cell item={it} priority={false} step={delay(it)} />
         </div>
       ))}
     </div>
   );
 }
 
-function Cell({ item, priority }: { item: Item; priority?: boolean }) {
+function Cell({ item, priority, step }: { item: Item; priority?: boolean; step: number | null }) {
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      style={
+        step === null
+          ? undefined
+          : { animation: `piece-in 460ms var(--ease-spring) ${step * 60}ms backwards` }
+      }
+    >
       {item.image_url ? (
         <Image
           src={item.image_url}

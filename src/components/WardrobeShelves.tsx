@@ -203,7 +203,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
               'press flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
               sortOpen
-                ? 'border-transparent bg-crimson-400 text-white'
+                ? 'border-white/[0.16] bg-ink-500 text-fog-100'
                 : 'border-white/[0.08] bg-white/[0.06] text-fog-200'
             )}
           >

@@ -16,14 +16,29 @@ This was the rule from the start and the app had drifted a long way off it: head
 | Secondary and supporting text | `fog-200` → `fog-300` |
 | Metadata, counts, hints | `fog-400` |
 | Empty-state and placeholder icons | `fog-500` |
-| **Selected / active state** | `bg-crimson-400`, white text |
-| **Primary action** | `bg-crimson-400` |
+| Selected segment, filter chip, multi-select chip | `.seg-item[aria-checked]` / `OneUIChip active`: raised `ink-500`, `fog-100` text |
+| **Primary action** (Wear this, Done today, Style him, the add FAB) | `bg-crimson-400` |
+| **Active nav tab** | `bg-crimson-400` |
 | **AI reasoning surface** | `crimson-400/[0.06]` fill, `crimson-300` label |
 | **Ishita signal** (her picks, her heart) | `crimson-300` |
+| **Genuinely overdue or due today** (Care) | `crimson-300` text |
 | **Unread / new notification dot** | `crimson-400` |
 | Focus ring | `ring-crimson-400` |
 
-Anything not in that table is fog. Borders stay near-invisible (`white/[0.05]`–`white/[0.08]`), content cards stay opaque, and glass is reserved for the bottom nav and modal sheets.
+Anything not in that table is fog. Borders stay near-invisible (`white/[0.05]` to `white/[0.08]`), content cards stay opaque, and glass is reserved for the bottom nav and modal sheets.
+
+**September 2026: selection went neutral.** Segmented controls, filter chips and the profile's multi-select chips used to be solid crimson when chosen. The Looks screen had four crimson pills on it (tab, filter, nav, and seventeen tinted "Wearing this" buttons) before you reached a single look. A view switcher or a filter is navigation, not a decision, so its selected state is a raised neutral. Crimson is spent on doing something.
+
+### Colour from the clothes
+
+The app's own palette is quiet on purpose; the colour comes from what he owns. `lib/colour-story.ts` maps each item's `primary_color` to a garment swatch and gives every outfit:
+
+- **Swatches**: up to four colours, clothes before accessories, shown under the plate on Today, in the outfit sheet, and as dots on Looks tiles and wardrobe cards.
+- **A light** (`--story`): the first non-neutral colour. `.fit-stage` spills it around the outfit plate, never onto it, so a black shirt still photographs black. `--story` is a registered `@property`, so a new outfit fades its light in over 900ms.
+
+### Photo plates
+
+Most garment photos are flattened onto black with a faint vignette, not cut out with alpha (checked: 4 of 5 sampled are RGB with a black corner). On pure black that vignette showed as a dark box around trousers and shirts. Every photo now sits on `.photo-well`: a floor of `--well` (21 16 17) with `mix-blend-mode: lighten` on the image, which dissolves the black box into the floor. Use `.photo-well` for any garment photo; never `bg-ink-0` or `bg-black`.
 
 ---
 
@@ -31,26 +46,30 @@ Anything not in that table is fog. Borders stay near-invisible (`white/[0.05]`�
 
 ### Background (ink scale)
 
-| Token | Hex | Role |
-|---|---|---|
-| `ink-0` | `#000000` | Base canvas, document background |
-| `ink-50` | `#0A0A0C` | Page-level background |
-| `ink-100` | `#121012` | Primary app background |
-| `ink-200` | `#1A1819` | Card and surface background |
-| `ink-300` | `#1C1A1D` | Elevated surface (sheet backgrounds) |
-| `ink-400` | `#252225` | Input backgrounds |
-| `ink-500` | `#2F2C30` | Dividers, subtle borders |
-| `ink-600` | `#3A363B` | Strong borders |
+Rebuilt in OKLCH on the accent's own hue (about 10°) in September 2026. The old `ink-200` and `ink-300` were two RGB points apart, so raised and flat surfaces were the same colour; every step is now visibly distinct.
+
+| Token | Hex | OKLCH | Role |
+|---|---|---|---|
+| `ink-0` | `#000000` | | Base canvas, AMOLED black |
+| `ink-50` | `#090606` | 12.5% 0.008 10 | Page-level background |
+| `ink-100` | `#110C0C` | 16% 0.010 10 | Sheet background |
+| `ink-200` | `#1B1415` | 20% 0.012 10 | Card and surface |
+| `ink-300` | `#241C1D` | 23.5% 0.013 10 | Elevated surface, toasts |
+| `ink-400` | `#2E2526` | 27.5% 0.014 10 | Inputs |
+| `ink-500` | `#3D3234` | 33% 0.015 10 | Selected segment / chip |
+| `ink-600` | `#504446` | 40% 0.016 10 | Strong borders |
 
 ### Text (fog scale)
 
-| Token | Hex | Role |
-|---|---|---|
-| `fog-100` | `#F5EEF0` | Primary body text |
-| `fog-200` | `#D9C8CC` | Secondary text, inactive labels |
-| `fog-300` | `#A89098` | Placeholder text, tertiary |
-| `fog-400` | `#7A6870` | Disabled, ghost |
-| `fog-500` | `#4A3A40` | Subtle divider tint |
+| Token | Hex | On `ink-200` | Role |
+|---|---|---|---|
+| `fog-100` | `#F6F0F1` | 16.1:1 | Primary text |
+| `fog-200` | `#DACDCF` | 11.8:1 | Secondary text |
+| `fog-300` | `#B7A6A8` | 7.8:1 | Tertiary, inactive labels |
+| `fog-400` | `#968486` | 5.1:1 | Metadata, counts, hints |
+| `fog-500` | `#6E5F61` | 3.0:1 | Icons and placeholders only, never body text |
+
+The old `fog-400` and `fog-500` sat at roughly 3.4:1 and 1.9:1 and were used for metadata and icons respectively.
 
 ### Accent (crimson scale)
 
@@ -149,7 +168,11 @@ Focus ring: `focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:r
 
 Filter chips: h-11 (44px), `px-4`, `text-[13px]`. Mode chips: h-12 (48px), `px-5`, `text-[14px]`.
 
-Active: `bg-crimson-400`, white text, no border. Inactive: `bg-white/[0.06]`, `text-fog-200`, `border-white/[0.08]`.
+Active: raised neutral, `bg-ink-500`, `text-fog-100`, `border-white/[0.16]`, the same as a chosen segment. Inactive: `bg-white/[0.04]`, `text-fog-300`, `border-white/[0.08]`.
+
+### Segmented control (`.seg` + `.seg-item`)
+
+Every tab bar and single-choice row (Looks Saved/History, Care Today/Calendar/Products, the season and context switches, One piece/Several). Container `bg-white/[0.05]` pill; the item carrying `aria-checked="true"` or `aria-selected="true"` becomes a raised `ink-500` pill with a faint inner top highlight. Items are 48px tall. Selection state is driven by the ARIA attribute, so a control cannot look selected without also announcing it.
 
 ### Squircle
 
@@ -170,9 +193,12 @@ Place, then temperature, then choices: the facts the user did not pick come firs
 
 ### Bottom Nav (BottomNav)
 
-Fixed to bottom, floating pill. Container: `bg-ink-200/70 border-white/[0.08] rounded-full` with `backdrop-blur(28px) saturate(190%)` (One UI 9 glass).
+Fixed to bottom, floating pill, `.nav-glass`.
 
-Three destinations for the owner (Today, Wardrobe, Looks), four for the partner (Home, Wardrobe, Style him, Picks). Items are 48px tall with the icon stacked over an 11px label; **every label is always visible**. The old bar showed the label only on the active tab and animated its width, so the whole pill shifted under the thumb between taps.
+- **Liquid glass on Chromium** (his S24). `hooks/useLiquidGlass.ts` draws a bevel normal map of the pill on a canvas, inlines it into an SVG `feDisplacementMap`, and applies it with `backdrop-filter: url(#ww-nav-glass) blur(5px) saturate(1.25) brightness(0.82)`. The map is rebuilt whenever the pill resizes, because the active label slides open and changes its width. The tint thins to `ink-100 / 0.58` so there is something to refract; the rim light stays faint and the inner glow is `accent-600`, never a white shine.
+- **Frosted everywhere else** (Ishita's iPhone). Safari cannot use an SVG filter as a backdrop, so the hook is gated on a Chromium brand, not `@supports`, and Safari keeps `ink-200 / 0.92` with `blur(28px) saturate(190%)`.
+
+Four destinations each: Today, Wardrobe, Care, Looks for him; Home, Wardrobe, Style him, Picks for her. Icon always, label only on the active tab, which slides open into it. Care's icon is `Droplets`: sparkles reads as "AI", and Care is the part of the app that deliberately does not call a model.
 
 Active item: `bg-crimson-400`, white text. Inactive: `text-fog-300`.
 
@@ -180,9 +206,15 @@ Active item: `bg-crimson-400`, white text. Inactive: `text-fog-300`.
 
 The home screen hero, roughly two thirds of the visible screen.
 
-- `OutfitComposition` lays items out as a flat-lay on one `ink-0` canvas: top large in band one with layers beside it, bottom and shoes in band two, accessories along band three. **No per-item borders or cards** — those are what made the old version read as a product list rather than an outfit.
-- Below it: the reasoning sentence in `fog-200`, then `Wear this` (h-14, crimson) and `Another option` (h-12, ghost). Save is a bookmark icon in the section header, not a third button.
-- The alternatives are real but hidden. `Another option` walks the batch, then generates a fresh one when it runs out.
+- `OutfitComposition` lays items out as a flat-lay on one `.photo-well` plate: top large in band one with layers beside it, bottom and shoes in band two, accessories along band three. **No per-item borders or cards**: those are what made the old version read as a product list rather than an outfit. With `animate`, pieces settle in one after another in dressing order (`piece-in`, 60ms apart), and the plate is keyed by its item ids so a new option replays it.
+- The plate sits in a `.fit-stage` lit by the outfit's `--story` colour, with the swatch line under it.
+- Then one row: `Wear this` (h-14, crimson, flexible) beside `Another` (h-14, neutral). They used to be stacked, and on a 6.8in phone "Wear this" landed under the nav. A back chevron appears on the left once he has moved past the first option.
+- Then the reasoning, clamped to two lines, and "Why this works" into the full sheet. Save is a bookmark icon in the section header, not a third button.
+- The alternatives are real but hidden. `Another` walks the batch, then generates a fresh one when it runs out.
+
+### Looks (LookTile + LookSheet)
+
+A two-column grid of small flat-lays (the same `OutfitComposition`, square, not animated), each with its name, up to three colour dots, and one line of state: `Worn today`, `From Ishita`, or the season. Tapping opens `LookSheet`: the plate in its lit stage, the note or reasoning, `Wear this today`, and a quiet two-tap `Delete look`. The previous full-width cards made seventeen looks about 5,000px tall, and their button read "Wearing this", which sounds like a status.
 
 ### OneUIHeader
 
@@ -206,6 +238,9 @@ Never ease-in. No bounce, no elastic. Exponential out only.
 
 - `animate-oneui-pop`: scale 0.97→1 + opacity 0→1, 180ms spring. Active state appearances (nav pill, modal entry).
 - `animate-oneui-fade`: translateY 6px→0 + opacity 0→1, 220ms ease-out. Filter panel reveal.
+- `piece-in`: translateY 10px + scale 0.97 → rest, 460ms spring, staggered 60ms per garment. A new outfit arriving.
+- `--story` transition: 900ms. The outfit's light changes colour instead of snapping.
+- `animate-heart-in`: the check when an outfit is marked worn.
 
 ### Reduced motion
 
@@ -286,11 +321,19 @@ Steps are compact rows with a 48px check circle on the right, not full-width but
 
 No rings, no streaks, no score. This is meant to remove thinking, not gamify washing your face.
 
+### Grooming dates tell the truth
+
+`lib/care/grooming.ts` is the single source for shave, trim and haircut timing, used by both the Care engine (his screen) and `/api/grooming-status` (Ishita's card).
+
+- **Logging exists.** Every "Next up" row is a button that opens a sheet: `Done today`, `Yesterday`, or `Earlier` with a date picker (up to 120 days back). A toast confirms with `Undo`, which deletes that exact log by id. Before this, nothing in the app could record a shave, so every date froze on the 4 August seed and counted up forever.
+- **Haircut milestones follow the last cut.** Edge clean-up is 16 days after any haircut, the shape cut 42 days after the last full one. Those match the old hardcoded 20 Aug and 15 Sep exactly, but now move when a cut is logged.
+- **Stale is not overdue.** Past `max(2 × cadence, cadence + 7)` days with no log, a date is unknown: it shows "Last logged 4 Aug" with a neutral `Log it`, sorts after real dates, never raises a chip on Today, and is **never sent to Ishita**. Only genuinely due dates get crimson.
+
 ### Today card
 
-One card between the context pill and the outfit: `Care now · Morning · 5 steps · 7.5 min` plus the step names. Chips appear only for exceptions (`Post-shave`, `Skin recovery`, `Event tomorrow`), never for facts the step list already shows. Once the routine is done it collapses to a single line — the reward for finishing is less screen.
+One line between the context pill and the outfit: `☀ Morning care · 9 steps · 14 min` with at most one chip for an exception (`Post-shave`, `Event tomorrow`) or a genuinely due grooming date. The step names used to be listed here too; that was the card that pushed `Wear this` below the fold. Once the routine is done it collapses to "Morning care done".
 
-The outfit stays the visual hero. `OutfitComposition` is capped at `38dvh` so `Wear this` survives the extra card.
+The outfit stays the visual hero. `OutfitComposition` is capped at `38dvh`.
 
 ---
 
@@ -328,4 +371,4 @@ PWA icons at `public/icons/`. Formats: SVG (primary), PNG fallbacks.
 | `icon-maskable.svg` | Android adaptive icon | Content within central 80% |
 | `apple-touch-icon.svg` | iOS home screen | 180×180 effective size; no rounded corners needed |
 
-*Last updated: August 2026, the "Focus" pass: decision-first home, three-tab owner navigation, crimson restraint, outfit-aware builder.*
+*Last updated: September 2026, the "Colour story" pass: OKLCH ink and fog, neutral selection, outfits lit by their own colours, photo plates, Wear this above the fold, Looks as a grid, grooming dates that can be logged and never pretend, liquid glass nav. Before that, August 2026, the "Focus" pass.*

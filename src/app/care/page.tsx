@@ -9,7 +9,7 @@ import { modeForDate } from '@/lib/modes';
 import { readTodayContext } from '@/lib/today-context';
 import { readCachedWeather } from '@/lib/weather-cache';
 import type { CareProduct, CareStep, DueItem } from '@/lib/care/types';
-import { AlertTriangle, Droplets, Moon, Scissors, Sparkles, Sun } from 'lucide-react';
+import { AlertTriangle, CalendarDays, Check, Droplets, Loader2, Moon, Scissors, Sparkles, Sun } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type Tab = 'today' | 'calendar' | 'products';
@@ -53,9 +53,25 @@ export default function CarePage() {
     setHydrated(true);
   }, []);
 
-  const { state, loading, error, patchProfile } = useCare(query, hydrated);
+  const { state, loading, error, patchProfile, log, undo } = useCare(query, hydrated);
   const [tab, setTab] = useState<Tab>('today');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [logging, setLogging] = useState<DueItem | null>(null);
+  const [toast, setToast] = useState<{ text: string; id: string | null } | null>(null);
+
+  // One toast at a time, gone after a few seconds unless he reaches for Undo.
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const record = async (item: DueItem, when: Date) => {
+    if (!item.log) return;
+    const id = await log({ ...item.log, done_at: when.toISOString() });
+    setLogging(null);
+    setToast({ text: `${item.label} logged`, id });
+  };
 
   const plan = state?.plan;
   const nowPhase = plan?.phase ?? 'morning';
@@ -76,7 +92,7 @@ export default function CarePage() {
       />
 
       <div className="reach-zone">
-        <div role="tablist" aria-label="Care view" className="grid grid-cols-3 gap-1 rounded-full bg-white/[0.05] p-1">
+        <div role="tablist" aria-label="Care view" className="seg grid-cols-3">
           {(['today', 'calendar', 'products'] as Tab[]).map((t) => (
             <button
               key={t}
@@ -84,11 +100,7 @@ export default function CarePage() {
               type="button"
               aria-selected={tab === t}
               onClick={() => setTab(t)}
-              className={cn(
-                'press flex min-h-[48px] items-center justify-center rounded-full text-[14px] font-semibold transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                tab === t ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-              )}
+              className="seg-item"
             >
               {t === 'today' ? 'Today' : t === 'calendar' ? 'Calendar' : 'Products'}
             </button>
@@ -125,10 +137,11 @@ export default function CarePage() {
             <section aria-label="Next up">
               <div className="shelf-head">
                 <h2 className="section-title">Next up</h2>
+                <span className="section-meta">Tap one when it&apos;s done</span>
               </div>
-              <ul className="app-card divide-y divide-white/[0.05] px-4">
+              <ul className="app-card divide-y divide-white/[0.05] px-2">
                 {upcoming.map((d) => (
-                  <DueRow key={d.key} item={d} />
+                  <DueRow key={d.key} item={d} onLog={d.log ? () => setLogging(d) : undefined} />
                 ))}
               </ul>
             </section>
@@ -170,7 +183,7 @@ export default function CarePage() {
                 Decides how often the Minimalist shampoo comes out. A treatment shampoo used every
                 wash is not better, just harsher.
               </p>
-              <div role="radiogroup" aria-label="Dandruff" className="grid grid-cols-3 gap-1 rounded-full bg-white/[0.05] p-1">
+              <div role="radiogroup" aria-label="Dandruff" className="seg grid-cols-3">
                 {(['active', 'occasional', 'none'] as const).map((v) => (
                   <button
                     key={v}
@@ -178,11 +191,7 @@ export default function CarePage() {
                     role="radio"
                     aria-checked={state.profile.dandruff === v}
                     onClick={() => void patchProfile({ dandruff: v })}
-                    className={cn(
-                      'press flex min-h-[48px] items-center justify-center rounded-full text-[13px] font-semibold transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                      state.profile.dandruff === v ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-                    )}
+                    className="seg-item text-[13px]"
                   >
                     {v === 'active' ? 'Flaking' : v === 'occasional' ? 'Sometimes' : 'None'}
                   </button>
@@ -212,8 +221,8 @@ export default function CarePage() {
                   )}
                 >
                   <span
-                    className="absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-200"
-                    style={{ left: state.profile.share_with_partner ? '26px' : '4px' }}
+                    className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform duration-200"
+                    style={{ transform: state.profile.share_with_partner ? 'translateX(22px)' : 'none' }}
                   />
                 </span>
               </button>
@@ -221,7 +230,146 @@ export default function CarePage() {
           </div>
         </OneUISheet>
       )}
+
+      {/* Keyed, so each item opens on a fresh sheet rather than the last one's state. */}
+      <LogSheet key={logging?.key ?? 'closed'} item={logging} onClose={() => setLogging(null)} onRecord={record} />
+
+      {toast && (
+        <div
+          role="status"
+          className="animate-oneui-pop fixed inset-x-4 z-[60] mx-auto flex max-w-md items-center gap-3 rounded-full border border-white/[0.08] bg-ink-300 py-1.5 pl-5 pr-1.5 shadow-oneui-raised"
+          style={{ bottom: 'calc(96px + env(safe-area-inset-bottom))' }}
+        >
+          <Check size={16} className="shrink-0 text-crimson-300" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-fog-100">{toast.text}</span>
+          {toast.id && (
+            <button
+              type="button"
+              onClick={() => {
+                const id = toast.id!;
+                setToast(null);
+                void undo({ id }).catch(() => setToast({ text: 'Could not undo that', id: null }));
+              }}
+              className="press min-h-[44px] shrink-0 rounded-full px-4 text-[14px] font-semibold text-crimson-200 transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              Undo
+            </button>
+          )}
+        </div>
+      )}
     </main>
+  );
+}
+
+/**
+ * "When did you do it?" Three answers cover almost every case: today,
+ * yesterday, or a date he picks. Backfilling matters because the log went
+ * quiet for weeks; one honest tap per item brings every date back to true.
+ */
+function LogSheet({
+  item, onClose, onRecord,
+}: {
+  item: DueItem | null;
+  onClose: () => void;
+  onRecord: (item: DueItem, when: Date) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState('');
+
+  // One clock read per sheet, so today, yesterday and the picker's range agree.
+  const [now] = useState(() => Date.now());
+  const istDay = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const todayIso = istDay(now);
+  const yesterdayIso = istDay(now - 86_400_000);
+  const earliestIso = istDay(now - 119 * 86_400_000);
+
+  const go = async (when: Date) => {
+    if (!item || busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await onRecord(item, when);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Could not log that');
+      setBusy(false);
+    }
+  };
+
+  // Midday IST on the chosen day, so the date never slips across midnight.
+  const atNoonIst = (iso: string) => new Date(`${iso}T12:00:00+05:30`);
+
+  return (
+    <OneUISheet open={item !== null} onClose={onClose} title={item?.label ?? 'Log it'}>
+      {item && (
+        <div className="flex flex-col gap-4 pb-1">
+          <p className="px-1 text-[14px] leading-5 text-fog-300 text-pretty">
+            {item.stale
+              ? `${item.detail}. When did you last do it?`
+              : item.detail}
+          </p>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void go(new Date())}
+            className="press flex h-14 w-full items-center justify-center gap-2 rounded-full bg-crimson-400 text-[16px] font-semibold text-white transition-colors hover:bg-crimson-500 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-100"
+          >
+            {busy ? <Loader2 size={18} className="animate-spin" aria-hidden /> : <Check size={18} strokeWidth={2.3} aria-hidden />}
+            Done today
+          </button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void go(atNoonIst(yesterdayIso))}
+              className="press flex h-12 items-center justify-center rounded-full bg-white/[0.07] text-[15px] font-semibold text-fog-100 transition-colors hover:bg-white/[0.11] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              Yesterday
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setPicking((v) => !v)}
+              aria-expanded={picking}
+              className="press flex h-12 items-center justify-center gap-1.5 rounded-full bg-white/[0.07] text-[15px] font-semibold text-fog-100 transition-colors hover:bg-white/[0.11] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            >
+              <CalendarDays size={16} aria-hidden />
+              Earlier
+            </button>
+          </div>
+
+          {picking && (
+            <div className="animate-oneui-fade flex items-center gap-2">
+              <label htmlFor="care-log-date" className="sr-only">Date it was done</label>
+              <input
+                id="care-log-date"
+                type="date"
+                value={picked}
+                min={earliestIso}
+                max={todayIso}
+                onChange={(e) => setPicked(e.target.value)}
+                className="h-12 min-w-0 flex-1 rounded-squircle-sm border border-white/[0.08] bg-ink-200 px-4 text-[15px] text-fog-100 outline-none [color-scheme:dark] focus:border-crimson-400"
+              />
+              <button
+                type="button"
+                disabled={busy || !picked}
+                onClick={() => void go(atNoonIst(picked))}
+                className="press h-12 shrink-0 rounded-full bg-white/[0.12] px-5 text-[15px] font-semibold text-fog-100 transition-colors hover:bg-white/[0.16] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+              >
+                Save
+              </button>
+            </div>
+          )}
+
+          {err && (
+            <p role="alert" className="px-1 text-[13px] text-error-text">{err}</p>
+          )}
+        </div>
+      )}
+    </OneUISheet>
   );
 }
 
@@ -247,11 +395,12 @@ function Routine({
   );
 }
 
-function DueRow({ item }: { item: DueItem }) {
-  const overdue = item.inDays !== null && item.inDays < 0;
-  const today = item.inDays === 0;
+function DueRow({ item, onLog }: { item: DueItem; onLog?: () => void }) {
+  const overdue = !item.stale && item.inDays !== null && item.inDays < 0;
+  const today = !item.stale && item.inDays === 0;
   const when =
-    item.inDays === null ? '—'
+    item.stale ? null
+    : item.inDays === null ? null
     : overdue ? `${Math.abs(item.inDays)}d over`
     : today ? 'Today'
     : item.inDays === 1 ? 'Tomorrow'
@@ -259,8 +408,8 @@ function DueRow({ item }: { item: DueItem }) {
 
   const Icon = item.domain === 'hair' ? Scissors : item.domain === 'body' ? Droplets : Sparkles;
 
-  return (
-    <li className="flex items-center gap-3 py-3">
+  const body = (
+    <>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-fog-300">
         <Icon size={15} aria-hidden />
       </span>
@@ -268,14 +417,38 @@ function DueRow({ item }: { item: DueItem }) {
         <span className="block text-[14px] font-semibold text-fog-100">{item.label}</span>
         <span className="block truncate text-[12px] text-fog-400">{item.detail}</span>
       </span>
-      <span
-        className={cn(
-          'shrink-0 text-[12px] font-semibold',
-          overdue || today ? 'text-crimson-300' : 'text-fog-400'
-        )}
-      >
-        {when}
-      </span>
+      {item.stale ? (
+        // Unknown, not overdue: an invitation, not an alarm.
+        <span className="shrink-0 rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-semibold text-fog-200">
+          Log it
+        </span>
+      ) : when ? (
+        <span
+          className={cn(
+            'shrink-0 text-[12px] font-semibold tabular-nums',
+            overdue || today ? 'text-crimson-300' : 'text-fog-400'
+          )}
+        >
+          {when}
+        </span>
+      ) : null}
+    </>
+  );
+
+  return (
+    <li>
+      {onLog ? (
+        <button
+          type="button"
+          onClick={onLog}
+          aria-label={`${item.label}. ${item.detail}.${when ? ` ${when}.` : ''} Log it`}
+          className="press flex min-h-[60px] w-full items-center gap-3 rounded-[16px] px-2 py-2.5 text-left transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="flex min-h-[60px] items-center gap-3 px-2 py-2.5">{body}</div>
+      )}
     </li>
   );
 }

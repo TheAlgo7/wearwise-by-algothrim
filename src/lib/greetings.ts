@@ -94,7 +94,9 @@ const OWNER_TIME: Record<Bucket, string[]> = {
 
 const OWNER_SEASON: Record<Season, string[]> = {
   summer: ['Another hot one.', 'Dress light today.', 'The heat is winning.'],
-  monsoon: ['Wet season rules apply.', 'Something that dries fast.', 'Monsoon dressing.'],
+  // The headline is the biggest text on the screen, so a line has to make sense
+  // with nothing around it. "Something that dries fast." read as a riddle.
+  monsoon: ['Wet season rules apply.', 'Monsoon. Wear what dries fast.', 'Monsoon dressing.'],
   autumn: ['Best weather of the year.', 'Finally, good weather.', 'You can wear anything today.'],
   winter: ['Cold out. Layer up.', 'Winter is here.', 'Time for the good jackets.'],
 };
@@ -106,7 +108,7 @@ const OWNER_WEATHER: Array<{ when: (c: GreetingContext) => boolean; lines: strin
   },
   {
     when: (c) => typeof c.tempC === 'number' && c.tempC <= 10,
-    lines: ['Properly cold today.', 'This is jacket weather.', 'Single digits.'],
+    lines: ['Properly cold today.', 'This is jacket weather.', 'Single digits outside.'],
   },
   {
     when: (c) => /rain|drizzle|shower|thunder/i.test(c.condition ?? ''),

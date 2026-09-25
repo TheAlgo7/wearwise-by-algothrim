@@ -1,5 +1,6 @@
 import { APP_TIMEZONE, localHour } from '@/lib/weather';
 import { modeLabel } from '@/lib/today-context';
+import { groomingDue } from '@/lib/care/grooming';
 import type {
   CareLog, CarePlan, CareProduct, CareProfile, CareStep, DueItem, Phase,
 } from '@/lib/care/types';
@@ -33,13 +34,7 @@ const TREATMENT_SHAMPOO_D: Record<string, number | null> = {
   occasional: 7,
   none: null,
 };
-const SHAVE_CADENCE_D = 4;
-const AREA_CADENCE_D: Record<string, number> = {
-  underarms: 10,
-  intimate: 14,
-  chest: 21,
-  legs: 21,
-};
+// Shave, trim and haircut cadences live in ./grooming, shared with Ishita's card.
 
 /** How long a logged reaction keeps actives off the table. */
 const REACTION_LOOKBACK_D = 3;
@@ -47,10 +42,6 @@ const REACTION_LOOKBACK_D = 3;
 const MAX_TREATMENT_NIGHTS = 3;
 /** An active used this recently means tonight is a recovery night. */
 const ACTIVE_COOLDOWN_H = 36;
-
-/** Grow-out plan milestones. One-off dates rather than repeating cadences. */
-const EDGE_CLEANUP_ON = '2026-08-20';
-const SHAPE_CUT_ON = '2026-09-15';
 
 /** Occasions worth protecting the skin for the night before. */
 const EVENT_MODES = new Set(['impress', 'night']);
@@ -90,15 +81,6 @@ function dayNumber(d: Date): number {
  */
 function daysBetween(from: Date, to: Date): number {
   return dayNumber(to) - dayNumber(from);
-}
-
-/** Whole days from `now` until a plain YYYY-MM-DD date. */
-function daysUntil(iso: string, now: Date): number {
-  return Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86_400_000) - dayNumber(now);
-}
-
-function pluralDays(n: number): string {
-  return `${n} ${n === 1 ? 'day' : 'days'}`;
 }
 
 function latest(logs: CareLog[], match: (l: CareLog) => boolean): CareLog | null {
@@ -374,49 +356,13 @@ export function buildCarePlan(
     });
   }
 
-  const sinceShave = daysSince(logs, (l) => l.action === 'shave' && l.area === 'face', now);
-  if (sinceShave !== null) {
-    due.push({
-      key: 'shave',
-      label: 'Clean shave',
-      inDays: SHAVE_CADENCE_D - sinceShave,
-      detail: sinceShave === 0 ? 'Done today' : `Last done ${pluralDays(sinceShave)} ago`,
-      domain: 'body',
-    });
-  }
+  // Shave, trims and haircuts: shared with Ishita's card so the two can never
+  // disagree, and aware of when a date has gone stale rather than overdue.
+  due.push(...groomingDue(logs, now));
 
-  for (const [area, cadence] of Object.entries(AREA_CADENCE_D)) {
-    const since = daysSince(logs, (l) => l.action === 'trim' && l.area === area, now);
-    if (since === null) continue;
-    due.push({
-      key: `trim-${area}`,
-      label: `${area[0].toUpperCase()}${area.slice(1)}`,
-      inDays: cadence - since,
-      detail: since === 0 ? 'Done today' : `Last done ${pluralDays(since)} ago`,
-      domain: 'body',
-    });
-  }
-
-  const sinceHaircut = daysSince(logs, (l) => l.action === 'haircut', now);
-  due.push({
-    key: 'edge-cleanup',
-    label: 'Edge clean-up',
-    inDays: daysUntil(EDGE_CLEANUP_ON, now),
-    detail: 'Sideburns, around the ears, nape. No top cutting, no fringe shortening.',
-    domain: 'hair',
-  });
-  due.push({
-    key: 'shape-cut',
-    label: 'Shape cut',
-    inDays: daysUntil(SHAPE_CUT_ON, now),
-    detail:
-      sinceHaircut !== null
-        ? `Two-block shape, ${pluralDays(sinceHaircut)} into the grow-out.`
-        : 'Two-block shape with the off-centre fringe.',
-    domain: 'hair',
-  });
-
-  due.sort((a, b) => (a.inDays ?? 999) - (b.inDays ?? 999));
+  due.sort(
+    (a, b) => Number(Boolean(a.stale)) - Number(Boolean(b.stale)) || (a.inDays ?? 999) - (b.inDays ?? 999)
+  );
 
   // ── Headline ──
   const weatherWord =

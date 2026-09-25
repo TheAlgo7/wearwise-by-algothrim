@@ -73,6 +73,15 @@ export interface DueItem {
   inDays: number | null;
   detail: string;
   domain: CareDomain;
+  /**
+   * Nothing logged for far longer than the cadence, so the date is unknown
+   * rather than overdue. Shown quietly, never as a crimson overdue count.
+   */
+  stale?: boolean;
+  /** ISO timestamp of the log this date is counted from. */
+  lastDone?: string | null;
+  /** What to record when he says it is done. Absent for things like a wash. */
+  log?: { action: 'shave' | 'trim' | 'haircut'; area: string; domain: 'hair' | 'body' };
 }
 
 export interface CarePlan {

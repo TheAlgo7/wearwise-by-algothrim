@@ -310,7 +310,7 @@ export default function StylePage() {
                             on ? 'border-crimson-400 bg-crimson-400/10' : 'border-white/[0.07] bg-ink-200'
                           )}
                         >
-                          <div className="relative aspect-[3/4] bg-ink-0">
+                          <div className="photo-well relative aspect-[3/4]">
                             {it.image_url ? (
                               <Image
                                 src={it.image_url}
@@ -394,7 +394,7 @@ export default function StylePage() {
                     type="button"
                     onClick={() => toggle(it)}
                     aria-label={`Remove ${it.name}`}
-                    className="press relative h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-white/[0.1] bg-ink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                    className="photo-well press relative h-14 w-14 shrink-0 overflow-hidden rounded-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                   >
                     {it.image_url ? (
                       <Image src={it.image_url} alt={it.name} width={56} height={56} sizes="56px" className="h-full w-full object-contain" />

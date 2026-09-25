@@ -2,6 +2,7 @@
 
 import { OneUIButton } from '@/components/oneui';
 import { cn } from '@/lib/cn';
+import { colourStory } from '@/lib/colour-story';
 import { BookmarkCheck, BookmarkPlus, Check, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
@@ -20,20 +21,17 @@ interface Props {
   onWear?: () => void;
 }
 
+/**
+ * Every piece in the outfit, large, with the full reasoning.
+ *
+ * The slide always runs. It used to switch itself off under
+ * `prefers-reduced-motion`, and Gaurav keeps that on at the OS level, so on the
+ * only phone this app lives on the sheet appeared and vanished with no motion
+ * at all.
+ */
 export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, onSave, onWear }: Props) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
-  // Reactive reduced-motion: seed from the current match (lazy, SSR-safe), then keep in sync.
-  const [reducedMotion, setReducedMotion] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
 
   useEffect(() => {
     if (open) {
@@ -60,11 +58,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
     };
   }, [open, onClose]);
 
-  // Focus trap — keeps keyboard navigation inside the dialog while open
+  // Focus trap: keeps keyboard navigation inside the dialog while open
   const trapRef = useFocusTrap(visible);
 
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const resolved = useMemo(() => outfit.items.map((id) => byId.get(id)).filter(Boolean) as Item[], [outfit.items, byId]);
+  const story = useMemo(() => colourStory(resolved), [resolved]);
 
   if (!mounted) return null;
 
@@ -81,37 +80,47 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
       {/* Sheet */}
       <div
         ref={trapRef}
-        className="relative w-full max-w-xl flex flex-col rounded-t-[28px] overflow-hidden border border-b-0 border-white/[0.08]"
+        className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-white/[0.08]"
         style={{
           // One UI 9 glass: translucent floating surface, dimmed page bleeds through
-          background: 'rgba(18,16,18,0.84)',
+          background: 'rgb(var(--ink-100) / 0.88)',
           backdropFilter: 'blur(32px) saturate(160%)',
           WebkitBackdropFilter: 'blur(32px) saturate(160%)',
           maxHeight: '92dvh',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: reducedMotion ? 'none' : 'transform 400ms var(--ease-spring)',
+          transition: 'transform 400ms var(--ease-spring)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
         }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="outfit-sheet-title"
       >
-        {/* Drag handle — One UI 9 chunkier handle */}
-        <div className="pt-3 pb-0 flex justify-center shrink-0">
+        {/* Drag handle, One UI 9 chunkier handle */}
+        <div className="flex shrink-0 justify-center pb-0 pt-3">
           <div className="h-1.5 w-12 rounded-full bg-white/25" />
         </div>
 
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 flex items-start justify-between shrink-0">
-          <div>
-            <h2 id="outfit-sheet-title" className="text-[24px] font-semibold text-fog-100 leading-[1.15] tracking-tight mt-1">
-              {resolved.length} piece outfit
+        <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-3 pt-4">
+          <div className="min-w-0">
+            <h2 id="outfit-sheet-title" className="mt-1 text-[24px] font-semibold leading-[1.15] tracking-tight text-fog-100">
+              {resolved.length} pieces
             </h2>
+            {story.swatches.length > 0 && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-fog-300">
+                {story.swatches.map((s) => (
+                  <span key={s.name} className="inline-flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-full ring-1 ring-inset ring-white/[0.18]" style={{ background: s.hex }} aria-hidden />
+                    {s.name}
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="press mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0 bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            className="press mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             <X size={18} className="text-fog-300" />
           </button>
@@ -119,7 +128,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
         {/* Scrollable body */}
         <div
-          className="overflow-y-auto flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)]"
+          className="flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+24px)]"
           role="region"
           aria-label="Outfit details"
           tabIndex={0}
@@ -130,7 +139,7 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
               <div key={it.id}>
                 {/* Photo */}
                 <div
-                  className="rounded-[20px] overflow-hidden flex items-center justify-center bg-ink-0"
+                  className="photo-well flex items-center justify-center overflow-hidden rounded-[20px]"
                   style={{ aspectRatio: resolved.length === 1 ? '4/3' : '1' }}
                 >
                   {it.image_url ? (
@@ -139,10 +148,10 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
                       alt={it.name}
                       width={400}
                       height={400}
-                      className="w-full h-full object-contain"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
-                    <span className="text-fog-500 text-[11px] text-center px-4 leading-relaxed">
+                    <span className="px-4 text-center text-[11px] leading-relaxed text-fog-400">
                       {it.name}
                     </span>
                   )}
@@ -150,12 +159,12 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
                 {/* Item info */}
                 <div className="mt-2.5 px-0.5">
-                  <p className="text-[14px] font-semibold text-fog-100 leading-tight">{it.name}</p>
-                  <p className="text-[11px] text-fog-300 mt-0.5 capitalize">
+                  <p className="text-[14px] font-semibold leading-tight text-fog-100">{it.name}</p>
+                  <p className="mt-0.5 text-[12px] capitalize text-fog-300">
                     {[it.category?.name, it.fit].filter(Boolean).join(' · ')}
                   </p>
                   {it.material.length > 0 && (
-                    <p className="text-[11px] mt-0.5 capitalize text-fog-400">
+                    <p className="mt-0.5 text-[12px] capitalize text-fog-400">
                       {it.material.join(', ')}
                     </p>
                   )}
@@ -166,11 +175,11 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
 
           {/* Reasoning */}
           {outfit.reasoning && (
-            <div className="mt-5 rounded-[16px] px-4 py-4 bg-crimson-400/[0.06] border border-crimson-400/[0.12]">
+            <div className="mt-5 rounded-[18px] border border-crimson-400/[0.14] bg-crimson-400/[0.06] px-4 py-4">
               <p className="mb-2 text-[13px] font-semibold text-crimson-300">
                 Why this works
               </p>
-              <p className="text-[13px] leading-[1.7] text-fog-200">{outfit.reasoning}</p>
+              <p className="text-[14px] leading-[1.65] text-fog-200 text-pretty">{outfit.reasoning}</p>
             </div>
           )}
 
@@ -178,21 +187,24 @@ export function OutfitDetailSheet({ outfit, items, open, onClose, saved, worn, o
           <div className="mt-4 flex gap-2">
             <OneUIButton
               intent={worn ? 'secondary' : 'primary'}
-              size="md"
+              size="lg"
               onClick={() => { onWear?.(); onClose(); }}
-              leftIcon={<Check size={16} />}
+              disabled={worn}
+              leftIcon={<Check size={17} />}
               className="flex-1"
             >
-              {worn ? 'Worn today' : 'Wearing this'}
+              {worn ? 'Worn today' : 'Wear this'}
             </OneUIButton>
-            <OneUIButton
-              intent={saved ? 'secondary' : 'ghost'}
-              size="md"
-              onClick={onSave}
-              leftIcon={saved ? <BookmarkCheck size={16} /> : <BookmarkPlus size={16} />}
-            >
-              {saved ? 'Saved' : 'Save'}
-            </OneUIButton>
+            {onSave && (
+              <OneUIButton
+                intent="secondary"
+                size="lg"
+                onClick={onSave}
+                leftIcon={saved ? <BookmarkCheck size={17} /> : <BookmarkPlus size={17} />}
+              >
+                {saved ? 'Saved' : 'Save'}
+              </OneUIButton>
+            )}
           </div>
         </div>
       </div>

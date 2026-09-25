@@ -1,10 +1,11 @@
 'use client';
 
 import { OneUIButton, OneUIChip, Squircle } from '@/components/oneui';
+import { swatchFor } from '@/lib/colour-story';
 import { FITS } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 import { STYLE_PROFILE_ID, type AvoidedCombination, type SignatureCombo, type StyleProfile } from '@/lib/supabase/types';
-import { Check, Loader2, Palette, Ruler, Save, Sparkles, TriangleAlert } from 'lucide-react';
+import { Check, Loader2, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const DEFAULT_COLORS = ['black','white','cream','beige','olive','charcoal','navy','denim','tan','grey','brown','rust','burgundy'];
@@ -25,7 +26,18 @@ const COLOR_HEX: Record<string, string> = {
   burgundy: '#6F1635',
 };
 
-const serializeSignatureCombos = (combos: SignatureCombo[]) =>
+/** Shared garment swatches first, the blueprint's own list as a fallback. */
+const hexFor = (c: string) => swatchFor(c) ?? COLOR_HEX[c] ?? '#6E5F61';
+
+/**
+ * Every colour worth offering: whatever is already in the blueprint, then the
+ * defaults. The chips used to show only the 13 defaults, so 8 of his 14 saved
+ * colours (coffee, sand, maroon, teal...) could be neither seen nor removed.
+ */
+const paletteOptions = (profile: StyleProfile) =>
+  Array.from(new Set([...profile.preferred_colors, ...(profile.avoided_colors ?? []), ...DEFAULT_COLORS]));
+
+const serializeSignatureCombos =(combos: SignatureCombo[]) =>
   combos.map((c) => [c.name, c.vibe].filter(Boolean).join(' | ')).join('\n');
 
 const parseSignatureCombos = (text: string): SignatureCombo[] =>
@@ -124,26 +136,33 @@ export function StyleBlueprint() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* A sentence, not three stat tiles. "Frame: Set / Palette: 14 / Avoid: 0"
+          was a dashboard for a form; this reads back what the stylist knows. */}
       <Squircle variant="raised" className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-crimson-400/15">
-            <Sparkles size={20} className="text-crimson-300" />
+        <p className="text-oneui-h text-fog-100">Style DNA</p>
+        <p className="mt-1.5 text-[14px] leading-[1.55] text-fog-300 text-pretty">
+          {[
+            profile.height_cm ? `${profile.height_cm} cm` : null,
+            profile.preferred_fits.length ? `${profile.preferred_fits.slice(0, 3).join(', ')} fits` : null,
+            profile.preferred_colors.length
+              ? `${profile.preferred_colors.length} colours you wear`
+              : null,
+            (profile.avoided_colors ?? []).length
+              ? `${(profile.avoided_colors ?? []).length} you avoid`
+              : null,
+          ].filter(Boolean).join(' · ') || 'Add your fit and rules.'}
+        </p>
+        {profile.preferred_colors.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5" aria-hidden>
+            {profile.preferred_colors.map((c) => (
+              <span
+                key={c}
+                className="h-5 w-5 rounded-full ring-1 ring-inset ring-white/[0.18]"
+                style={{ background: hexFor(c) }}
+              />
+            ))}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-oneui-h text-fog-100">Style DNA</p>
-            <p className="mt-1 text-oneui-cap text-fog-400 text-pretty">
-              {[
-                profile.height_cm ? `${profile.height_cm} cm` : null,
-                profile.preferred_fits.length ? `${profile.preferred_fits.slice(0, 3).join(', ')} fits` : null,
-              ].filter(Boolean).join(' · ') || 'Add your fit and rules.'}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <Stat icon={<Ruler size={15} />} label="Frame" value={profile.body_type ? 'Set' : 'Open'} />
-          <Stat icon={<Palette size={15} />} label="Palette" value={`${profile.preferred_colors.length}`} />
-          <Stat icon={<TriangleAlert size={15} />} label="Avoid" value={`${(profile.avoided_colors ?? []).length}`} />
-        </div>
+        )}
       </Squircle>
 
       <Squircle variant="raised" className="p-4 flex flex-col gap-3">
@@ -181,12 +200,12 @@ export function StyleBlueprint() {
       <Squircle variant="raised" className="p-4">
         <Field label="Preferred palette">
           <div className="flex flex-wrap gap-2">
-            {DEFAULT_COLORS.map((c) => (
+            {paletteOptions(profile).map((c) => (
               <OneUIChip
                 key={c}
                 active={profile.preferred_colors.includes(c)}
                 onClick={() => toggle('preferred_colors', c)}
-                leftIcon={<Swatch color={COLOR_HEX[c]} />}
+                leftIcon={<Swatch color={hexFor(c)} />}
               >
                 {c}
               </OneUIChip>
@@ -198,12 +217,12 @@ export function StyleBlueprint() {
       <Squircle variant="raised" className="p-4">
         <Field label="Avoid these colors">
           <div className="flex flex-wrap gap-2">
-            {DEFAULT_COLORS.map((c) => (
+            {paletteOptions(profile).map((c) => (
               <OneUIChip
                 key={c}
                 active={(profile.avoided_colors ?? []).includes(c)}
                 onClick={() => toggle('avoided_colors', c)}
-                leftIcon={<Swatch color={COLOR_HEX[c]} />}
+                leftIcon={<Swatch color={hexFor(c)} />}
               >
                 {c}
               </OneUIChip>
@@ -259,18 +278,6 @@ export function StyleBlueprint() {
       >
         {saving ? 'Saving…' : saved ? 'Saved' : 'Save blueprint'}
       </OneUIButton>
-    </div>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-[16px] bg-white/[0.05] border border-white/[0.06] px-3 py-2">
-      <div className="flex items-center gap-1.5 text-fog-400">
-        {icon}
-        <span className="text-[12px] font-semibold">{label}</span>
-      </div>
-      <p className="mt-1 text-[15px] leading-none font-semibold text-fog-100">{value}</p>
     </div>
   );
 }

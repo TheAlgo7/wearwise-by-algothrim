@@ -636,7 +636,7 @@ export function OwnerHome() {
                   >
                     <div className="grid grid-cols-2 gap-1.5">
                       {resolved.map((it) => (
-                        <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] bg-ink-0">
+                        <div key={it.id} className="photo-well aspect-square overflow-hidden rounded-[12px]">
                           {it.image_url ? (
                             <Image
                               src={it.image_url}

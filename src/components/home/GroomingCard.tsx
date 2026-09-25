@@ -31,7 +31,9 @@ export function GroomingCard() {
     return () => controller.abort();
   }, []);
 
-  if (!status?.enabled || status.next.length === 0) return null;
+  // Stale dates never reach her (see /api/grooming-status), so an empty list
+  // means nothing recent is logged. The haircut goal is still worth showing.
+  if (!status?.enabled || (status.next.length === 0 && !status.hairstyleGoal)) return null;
 
   return (
     <section aria-label="His grooming" className="app-card p-4">
@@ -51,6 +53,7 @@ export function GroomingCard() {
         <p className="mt-1 text-[12px] leading-5 text-fog-400 text-pretty">{status.hairstyleGoal}</p>
       )}
 
+      {status.next.length > 0 && (
       <ul className="mt-3 flex flex-col gap-2">
         {status.next.slice(0, 4).map((n) => {
           const overdue = n.inDays !== null && n.inDays < 0;
@@ -59,7 +62,7 @@ export function GroomingCard() {
             <li key={n.key} className="flex items-baseline justify-between gap-3">
               <span className="min-w-0">
                 <span className="block truncate text-[13px] font-medium text-fog-200">{n.label}</span>
-                <span className="block truncate text-[11px] text-fog-500">{n.detail}</span>
+                <span className="block truncate text-[11px] text-fog-400">{n.detail}</span>
               </span>
               <span
                 className={cn(
@@ -77,6 +80,7 @@ export function GroomingCard() {
           );
         })}
       </ul>
+      )}
     </section>
   );
 }

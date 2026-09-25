@@ -3,6 +3,7 @@
 import { OutfitComposition } from '@/components/OutfitComposition';
 import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
+import { colourStory } from '@/lib/colour-story';
 import type { GeneratedOutfit, Item } from '@/types';
 import { BookmarkCheck, BookmarkPlus, Check, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -75,6 +76,10 @@ export function TodayFit({
     [outfit.items, itemById]
   );
 
+  const story = useMemo(() => colourStory(resolved), [resolved]);
+  // Remounting the plate on a new outfit is what replays the pieces settling in.
+  const plateKey = resolved.map((i) => i.id).join('|');
+
   return (
     <>
       <section aria-label="Today's outfit" className="animate-oneui-fade flex flex-col gap-3">
@@ -87,7 +92,7 @@ export function TodayFit({
                 Updating for today
               </span>
             ) : total > 1 ? (
-              <span className="mr-1 text-[12px] font-medium text-fog-400">
+              <span className="mr-1 text-[12px] font-medium tabular-nums text-fog-400">
                 {index + 1} of {total}
               </span>
             ) : null}
@@ -107,37 +112,41 @@ export function TodayFit({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setDetailOpen(true)}
-          aria-label={`See all ${resolved.length} pieces in this outfit`}
-          className={cn(
-            'press block w-full rounded-squircle-lg text-left transition-opacity duration-300',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-            stale && 'opacity-40'
-          )}
-        >
-          <OutfitComposition items={resolved} priority />
-        </button>
+        {/* The plate, lit by the outfit's own colour. */}
+        <div className="fit-stage" style={{ '--story': story.light } as React.CSSProperties}>
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            aria-label={`See all ${resolved.length} pieces in this outfit`}
+            className={cn(
+              'press block w-full rounded-squircle-lg text-left transition-opacity duration-300',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+              stale && 'opacity-40'
+            )}
+          >
+            <OutfitComposition key={plateKey} items={resolved} priority animate />
+          </button>
+        </div>
 
-        {/* Tappable, because it is clamped and there was previously no way to
-            tell that the rest of the sentence existed. */}
-        <button
-          type="button"
-          onClick={() => setDetailOpen(true)}
-          className={cn(
-            'press block w-full rounded-squircle-sm px-1 text-left transition-opacity duration-300',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-            stale && 'opacity-40'
-          )}
-        >
-          <span className="line-clamp-3 block text-[14px] leading-[1.55] text-fog-200 text-pretty">
-            {outfit.reasoning}
-          </span>
-          <span className="mt-1 block text-[12px] font-semibold text-fog-400">
-            See the pieces
-          </span>
-        </button>
+        {story.swatches.length > 0 && (
+          <p
+            className={cn(
+              'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[13px] font-medium text-fog-300 transition-opacity duration-300',
+              stale && 'opacity-40'
+            )}
+            aria-label={`Colours: ${story.swatches.map((s) => s.name).join(', ')}`}
+          >
+            {story.swatches.map((s) => (
+              <span key={s.name} className="inline-flex items-center gap-1.5" aria-hidden>
+                <span
+                  className="h-3 w-3 rounded-full ring-1 ring-inset ring-white/[0.18]"
+                  style={{ background: s.hex }}
+                />
+                {s.name}
+              </span>
+            ))}
+          </p>
+        )}
 
         {/* An outfit that answers yesterday's question is not something to
             tap "Wear this" on, so the actions wait. If the model is taking
@@ -159,66 +168,88 @@ export function TodayFit({
             )}
           </div>
         ) : (
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={onWear}
-            disabled={worn}
-            className={cn(
-              'press flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-[16px] font-semibold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0',
-              worn
-                ? 'bg-white/[0.07] text-fog-200'
-                : 'bg-crimson-400 text-white hover:bg-crimson-500'
-            )}
-          >
-            <Check size={19} strokeWidth={2.3} aria-hidden />
-            {worn ? 'Worn today' : 'Wear this'}
-          </button>
-
-          {/* Going forward without being able to go back meant an option he
-              liked was gone the moment he looked at the next one. */}
+          /* One row, so both answers to "is this it?" sit above the fold. The
+             column version put "Wear this" under the nav on a 6.8in phone. */
           <div className="flex items-center gap-2">
+            {/* Going forward without being able to go back meant an option he
+                liked was gone the moment he looked at the next one. */}
             {index > 0 && (
               <button
                 type="button"
                 onClick={onPrevious}
                 aria-label="Previous option"
-                className="press flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                className="press flex h-14 w-11 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
               >
                 <ChevronLeft size={20} aria-hidden />
               </button>
             )}
             <button
               type="button"
+              onClick={onWear}
+              disabled={worn}
+              className={cn(
+                'press flex h-14 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full text-[16px] font-semibold transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0',
+                worn
+                  ? 'bg-white/[0.07] text-fog-200'
+                  : 'bg-crimson-400 text-white hover:bg-crimson-500'
+              )}
+            >
+              <Check
+                key={worn ? 'worn' : 'wear'}
+                size={19}
+                strokeWidth={2.3}
+                aria-hidden
+                className={worn ? 'animate-heart-in text-crimson-300' : undefined}
+              />
+              {worn ? 'Worn today' : 'Wear this'}
+            </button>
+            <button
+              type="button"
               onClick={onAnother}
               disabled={busy}
+              aria-label={
+                busy ? 'Finding another outfit'
+                : index + 1 < total ? `Another option, ${index + 2} of ${total}`
+                : 'Generate a fresh option'
+              }
               className={cn(
-                'press flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-fog-200 transition-colors',
-                'hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                'disabled:opacity-50'
+                'press flex h-14 shrink-0 items-center justify-center gap-1.5 rounded-full bg-white/[0.07] px-5 text-[15px] font-semibold text-fog-100 transition-colors',
+                'hover:bg-white/[0.11] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                'disabled:opacity-60'
               )}
             >
               {busy ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" aria-hidden />
-                  Looking again
-                </>
+                <Loader2 size={17} className="animate-spin" aria-hidden />
               ) : index + 1 < total ? (
-                <>
-                  Next option
-                  <ChevronRight size={16} aria-hidden />
-                </>
+                <ChevronRight size={17} aria-hidden />
               ) : (
-                <>
-                  <RefreshCw size={16} aria-hidden />
-                  Generate more
-                </>
+                <RefreshCw size={16} aria-hidden />
               )}
+              Another
             </button>
           </div>
-        </div>
         )}
+
+        {/* Tappable, because it is clamped and there was previously no way to
+            tell that the rest of the sentence existed. */}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          className={cn(
+            'press block w-full rounded-squircle-sm px-1 text-left transition-opacity duration-300',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+            stale && 'opacity-40'
+          )}
+        >
+          <span className="line-clamp-2 block text-[14px] leading-[1.55] text-fog-200 text-pretty">
+            {outfit.reasoning}
+          </span>
+          <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-fog-400">
+            Why this works
+            <ChevronRight size={13} aria-hidden />
+          </span>
+        </button>
       </section>
 
       <OutfitDetailSheet
@@ -246,9 +277,12 @@ export function TodayFitSkeleton() {
           Putting it together
         </span>
       </div>
-      <div className="aspect-[5/6] animate-pulse rounded-squircle-lg bg-white/[0.05]" />
-      <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/[0.05]" />
-      <div className="h-14 animate-pulse rounded-full bg-white/[0.05]" />
+      <div className="photo-well mx-auto aspect-[5/6] max-h-[38dvh] w-full animate-pulse rounded-squircle-lg" />
+      <div className="h-4 w-1/2 animate-pulse rounded-full bg-white/[0.05]" />
+      <div className="flex gap-2">
+        <div className="h-14 flex-1 animate-pulse rounded-full bg-white/[0.05]" />
+        <div className="h-14 w-[118px] animate-pulse rounded-full bg-white/[0.05]" />
+      </div>
     </section>
   );
 }

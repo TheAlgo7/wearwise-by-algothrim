@@ -45,11 +45,48 @@ export async function getWeatherByCoords(lat: number, lon: number): Promise<Weat
   return toSnapshot(await fetchJson<OWResponse>(url));
 }
 
+/**
+ * Regions people type as a destination, mapped to the town to take weather
+ * from. Asked by name, "Goa" resolves to a village in Himachal.
+ */
+const REGION_TOWNS: Record<string, string> = {
+  goa: 'Panaji', 'north goa': 'Mapusa', 'south goa': 'Margao',
+  coorg: 'Madikeri', kodagu: 'Madikeri', kashmir: 'Srinagar', ladakh: 'Leh',
+  kerala: 'Kochi', sikkim: 'Gangtok', spiti: 'Kaza', andaman: 'Port Blair',
+  meghalaya: 'Shillong', himachal: 'Shimla', uttarakhand: 'Dehradun', rajasthan: 'Jaipur',
+};
+
+/**
+ * Trip weather by place name.
+ *
+ * The weather endpoint's own `q=` lookup picks an arbitrary match: "Manali"
+ * came back as the Chennai suburb at 34°C rather than Manali in Himachal, so a
+ * mountain trip got dressed for heat. The geocoding endpoint ranks the
+ * well-known place first, so the name goes through it and the weather is asked
+ * for by coordinates. Bare names are assumed to be in India. The label stays
+ * the name as typed ("Ooty", not "Udhagamandalam").
+ */
 export async function getWeatherByCity(city: string): Promise<WeatherSnapshot> {
   const key = process.env.OPENWEATHER_API_KEY;
   if (!key) throw new Error('OPENWEATHER_API_KEY not set');
-  const url = `${BASE}/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`;
-  return toSnapshot(await fetchJson<OWResponse>(url));
+
+  const parts = city.split(',').map((s) => s.trim()).filter(Boolean);
+  const last = parts[parts.length - 1] ?? '';
+  const hasCountry = parts.length > 1 && /^[A-Za-z]{2}$/.test(last);
+  const name = REGION_TOWNS[(parts[0] ?? '').toLowerCase()] ?? parts[0] ?? city;
+  const state = parts.length > (hasCountry ? 2 : 1) ? parts[1] : undefined;
+  const q = [name, state, hasCountry ? last.toUpperCase() : 'IN'].filter(Boolean).join(',');
+
+  const hits = await fetchJson<Array<{ lat: number; lon: number }>>(
+    `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=1&appid=${key}`
+  ).catch(() => []);
+
+  const snapshot = hits[0]
+    ? toSnapshot(await fetchJson<OWResponse>(`${BASE}/weather?lat=${hits[0].lat}&lon=${hits[0].lon}&appid=${key}&units=metric`))
+    : toSnapshot(await fetchJson<OWResponse>(`${BASE}/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`));
+
+  const typed = (parts[0] ?? '').replace(/\b\w/g, (c) => c.toUpperCase());
+  return typed ? { ...snapshot, city: typed } : snapshot;
 }
 
 /**

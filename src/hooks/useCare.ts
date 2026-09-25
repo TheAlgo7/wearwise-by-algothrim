@@ -78,23 +78,35 @@ export function useCare(query: CareQuery, enabled = true) {
     return () => controller.abort();
   }, [load, enabled]);
 
-  /** Log a step and pull a fresh plan, since one action can change the next. */
+  /**
+   * Log something and pull a fresh plan, since one action can change the next
+   * (a shave today makes tonight a recovery night). Returns the new log's id so
+   * the caller can offer Undo.
+   */
   const log = useCallback(
-    async (body: { action: string; domain: string; area?: string | null; product_id?: string | null; note?: string | null; severity?: number | null }) => {
+    async (body: {
+      action: string; domain: string; area?: string | null; product_id?: string | null;
+      note?: string | null; severity?: number | null; done_at?: string | null;
+    }): Promise<string | null> => {
       const res = await fetch('/api/care', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.details ?? data.error ?? `HTTP ${res.status}`);
       await load();
+      return (data.log?.id as string | undefined) ?? null;
     },
     [load]
   );
 
+  /** Remove one log by id, or failing that the latest of an action today. */
   const undo = useCallback(
-    async (action: string) => {
-      await fetch(`/api/care?action=${encodeURIComponent(action)}`, { method: 'DELETE' });
+    async (target: { id: string } | { action: string }) => {
+      const q = 'id' in target ? `id=${target.id}` : `action=${encodeURIComponent(target.action)}`;
+      const res = await fetch(`/api/care?${q}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
       await load();
     },
     [load]

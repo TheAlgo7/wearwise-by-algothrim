@@ -14,23 +14,37 @@
     --duration-base: 240ms;
     --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 
-    /* ── Owner palette (Gaurav) — crimson on red-tinted near-black ──
+    /* ── Owner palette (Gaurav) — crimson on warm near-black ──
        Channels are space-separated RGB so Tailwind's /alpha modifiers work.
-       Overridden wholesale by [data-role="partner"] below. */
-    --ink-0:   0 0 0;
-    --ink-50:  10 10 12;
-    --ink-100: 18 16 18;
-    --ink-200: 26 24 25;
-    --ink-300: 28 26 29;
-    --ink-400: 37 34 37;
-    --ink-500: 47 44 48;
-    --ink-600: 58 54 59;
+       Overridden wholesale by [data-role="partner"] below.
 
-    --fog-100: 245 238 240;
-    --fog-200: 217 200 204;
-    --fog-300: 168 144 152;
-    --fog-400: 122 104 112;
-    --fog-500: 74 58 64;
+       September 2026: ink and fog were rebuilt in OKLCH on the accent's own
+       hue (~10°). The old ink-200 and ink-300 were 2 RGB points apart, so a
+       raised surface and a flat one were the same colour, and fog-500 (used
+       for icons) sat at 1.9:1. Every step is now visibly distinct, and the
+       quietest text still clears 5:1 on a card.
+         ink  L: 12.5 / 16 / 20 / 23.5 / 27.5 / 33 / 40,  C 0.008-0.016
+         fog  L: 96 / 86 / 74 / 63 / 50,                  C 0.006-0.022 */
+    --ink-0:   0 0 0;
+    --ink-50:  9 6 6;
+    --ink-100: 17 12 12;
+    --ink-200: 27 20 21;
+    --ink-300: 36 28 29;
+    --ink-400: 46 37 38;
+    --ink-500: 61 50 52;
+    --ink-600: 80 68 70;
+
+    --fog-100: 246 240 241;
+    --fog-200: 218 205 207;
+    --fog-300: 183 166 168;
+    --fog-400: 150 132 134;
+    --fog-500: 110 95 97;
+
+    /* Floor of the outfit stage. Most garment photos are flattened onto black
+       with a faint vignette rather than cut out with alpha, so the stage sits
+       just above that black and the photos blend with `lighten`: the boxes
+       dissolve into the floor instead of showing as dark rectangles. */
+    --well: 21 16 17;
 
     --accent-50:  255 236 239;
     --accent-100: 255 217 218;
@@ -129,6 +143,77 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400;
   }
 
+  /* Segmented control. The chosen segment is a raised neutral, not crimson:
+     switching a view is navigation, not a decision. When every tab bar, filter
+     and toggle was solid crimson, the Looks screen had four crimson pills on it
+     before you reached a single look, and "Wear this" stopped standing out. */
+  .seg {
+    @apply grid gap-1 rounded-full bg-white/[0.05] p-1;
+  }
+  .seg-item {
+    @apply press flex min-h-[48px] items-center justify-center gap-2 rounded-full px-2
+           text-[14px] font-semibold text-fog-300 transition-colors duration-200 hover:text-fog-100
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400;
+  }
+  .seg-item[aria-checked='true'],
+  .seg-item[aria-selected='true'] {
+    @apply bg-ink-500 text-fog-100;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.07) inset, 0 2px 10px rgb(0 0 0 / 0.35);
+  }
+
+  /* A garment photo's plate. See --well: photos blend with `lighten`, so the
+     black they were flattened onto disappears into the plate. */
+  .photo-well {
+    background: rgb(var(--well));
+  }
+  .photo-well img {
+    mix-blend-mode: lighten;
+  }
+
+  /* The outfit, lit by its own colours. --story is the outfit's most telling
+     colour (see lib/colour-story.ts); it spills around the plate rather than
+     onto it, so the garments themselves are never tinted and a black shirt
+     still reads as black. Registered below, so a new outfit fades its light in
+     instead of snapping. */
+  .fit-stage {
+    position: relative;
+    isolation: isolate;
+    transition: --story 900ms var(--ease-spring);
+  }
+  .fit-stage::before {
+    content: '';
+    position: absolute;
+    inset: -44px -16px -28px;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(64% 58% at 50% 40%, color-mix(in oklab, var(--story) 44%, transparent), transparent 74%),
+      radial-gradient(50% 40% at 50% 104%, color-mix(in oklab, var(--story) 22%, transparent), transparent 82%);
+  }
+
+  /* The bottom nav's surface. Frosted by default, which is all Safari and
+     Firefox can do, and opaque enough that the crimson "Wear this" never bleeds
+     into a label. On Chromium useLiquidGlass adds edge refraction and sets
+     data-glass, which thins the tint so there is something to refract. The
+     rim light is faint and the inner glow is the accent's own deep red, never
+     a white shine. */
+  .nav-glass {
+    background: rgb(var(--ink-200) / 0.92);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    box-shadow: 0 -4px 40px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.05);
+  }
+  .nav-glass[data-glass='liquid'] {
+    background: rgb(var(--ink-100) / 0.58);
+    border-color: rgb(255 255 255 / 0.07);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.10),
+      inset 0 -1px 0 rgb(255 255 255 / 0.04),
+      inset 0 0 22px rgb(var(--accent-600) / 0.18),
+      0 12px 36px -8px rgb(0 0 0 / 0.8);
+  }
+
   /* Floating action button, lower-right reach zone. */
   .fab {
     @apply press fixed z-40 flex h-14 w-14 items-center justify-center rounded-full
@@ -170,6 +255,20 @@
   .pb-nav      { padding-bottom: calc(env(safe-area-inset-bottom) + 5rem); }
   .text-balance { text-wrap: balance; }
   .text-pretty  { text-wrap: pretty; }
+}
+
+/* Typed so it can transition: an unregistered custom property swaps instantly. */
+@property --story {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(110 95 97);
+}
+
+/* A new outfit arriving: pieces settle in one after another rather than the
+   whole plate popping, so "Another option" reads as a change, not a reload. */
+@keyframes piece-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* Page transition — runs on every route change via template.tsx */

@@ -31,6 +31,18 @@ const logSchema = z.object({
   product_id: z.string().uuid().nullish(),
   note: z.string().max(500).nullish(),
   severity: z.number().int().min(1).max(3).nullish(),
+  /**
+   * When it was done, for "I shaved yesterday". Defaults to now. Bounded to the
+   * window the engine reads, and never the future.
+   */
+  done_at: z
+    .string()
+    .datetime({ offset: true })
+    .refine((v) => {
+      const t = Date.parse(v);
+      return t <= Date.now() + 60_000 && t >= Date.now() - LOG_WINDOW_DAYS * 86_400_000;
+    }, 'Date must be within the last 120 days')
+    .nullish(),
 });
 
 const profilePatchSchema = z.object({
@@ -138,6 +150,7 @@ export async function POST(req: NextRequest) {
       product_id: parsed.data.product_id ?? null,
       note: parsed.data.note ?? null,
       severity: parsed.data.severity ?? null,
+      ...(parsed.data.done_at ? { done_at: parsed.data.done_at } : {}),
     })
     .select()
     .single();
@@ -174,10 +187,26 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ profile: data });
 }
 
-/** Undo the most recent log for an action today, for a mis-tap. */
+/**
+ * Undo a log, for a mis-tap. `?id=` removes that exact entry (what the Undo
+ * button sends); `?action=` removes the most recent one of that kind today.
+ */
 export async function DELETE(req: NextRequest) {
   const denied = await guard();
   if (denied) return denied;
+
+  const byId = req.nextUrl.searchParams.get('id');
+  if (byId) {
+    if (!z.string().uuid().safeParse(byId).success) {
+      return NextResponse.json({ error: 'Unknown log' }, { status: 400 });
+    }
+    const supa = createAdminClient();
+    const { error } = await supa.from('care_logs').delete().eq('id', byId);
+    if (error) {
+      return NextResponse.json({ error: 'Could not undo that', details: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   const action = req.nextUrl.searchParams.get('action');
   if (!action || !(LOG_ACTIONS as readonly string[]).includes(action)) {

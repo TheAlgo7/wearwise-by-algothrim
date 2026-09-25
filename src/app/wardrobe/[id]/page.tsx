@@ -4,6 +4,7 @@ import { OneUIButton, OneUIHeader, Squircle } from '@/components/oneui';
 import { useIsOwner } from '@/components/RoleProvider';
 import { cn } from '@/lib/cn';
 import { isFootwear } from '@/lib/item-presentation';
+import { SEASON_META, seasonsForItem } from '@/lib/season';
 import { createClient } from '@/lib/supabase/client';
 import type { Item } from '@/types';
 import { Archive, ArrowLeft, ChevronDown, RotateCcw, Trash2 } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function ItemDetailPage({ params }: PageProps) {
     return (
       <main className="min-h-dvh p-6">
         <div className="h-8 w-40 bg-ink-200 rounded animate-pulse mb-4" />
-        <div className="aspect-square rounded-squircle bg-black animate-pulse" />
+        <div className="photo-well aspect-square rounded-squircle animate-pulse" />
       </main>
     );
   }
@@ -90,7 +91,7 @@ export default function ItemDetailPage({ params }: PageProps) {
         }
       />
       <div className="reach-zone">
-        <div className={cn('relative overflow-hidden rounded-[28px] bg-black border-2 border-white/[0.15]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
+        <div className={cn('photo-well relative overflow-hidden rounded-[28px]', footwear ? 'aspect-[4/3]' : 'aspect-square')}>
           {item.image_url ? (
             <div className={cn('absolute', footwear ? 'inset-[12%]' : 'inset-[8%]')}>
               <Image
@@ -112,7 +113,16 @@ export default function ItemDetailPage({ params }: PageProps) {
             <KV k="Layer" v={item.category?.layer_type ?? '-'} />
             <KV k="Fit" v={item.fit ?? '-'} />
             <KV k="Formality" v={item.formality ? `${item.formality}/5` : '-'} />
-            <KV k="Worn" v={`${item.times_worn}x`} />
+            {/* Seasons, not "Worn 0x": wears are never logged, so that count
+                was 0 on every piece and always would be. */}
+            <KV
+              k="Seasons"
+              v={
+                seasonsForItem(item).length === 4
+                  ? 'All year'
+                  : seasonsForItem(item).map((s) => SEASON_META[s].label).join(', ') || '-'
+              }
+            />
           </div>
         </Squircle>
 

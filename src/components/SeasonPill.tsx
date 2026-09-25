@@ -74,7 +74,7 @@ export function SeasonPill({
             )}
           </div>
 
-          <div role="radiogroup" aria-label="Season" className="grid grid-cols-4 gap-1 rounded-full bg-white/[0.05] p-1">
+          <div role="radiogroup" aria-label="Season" className="seg grid-cols-4">
             {SEASONS.map((s) => {
               const active = season === s;
               return (
@@ -84,11 +84,7 @@ export function SeasonPill({
                   role="radio"
                   aria-checked={active}
                   onClick={() => { onSelect(s); setOpen(false); }}
-                  className={cn(
-                    'press flex min-h-[48px] items-center justify-center rounded-full text-[13px] font-semibold transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                    active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-                  )}
+                  className="seg-item text-[13px]"
                 >
                   {SEASON_META[s].label}
                 </button>
@@ -125,8 +121,8 @@ export function SeasonPill({
                 )}
               >
                 <span
-                  className="absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-200"
-                  style={{ left: filterOn ? '26px' : '4px' }}
+                  className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform duration-200"
+                  style={{ transform: filterOn ? 'translateX(22px)' : 'none' }}
                 />
               </span>
             </button>

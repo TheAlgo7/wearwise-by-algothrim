@@ -1,6 +1,6 @@
 'use client';
 
-import { LookCard } from '@/components/LookCard';
+import { LookSheet, LookTile } from '@/components/LookCard';
 import { OneUIChip, OneUIHeader, Squircle } from '@/components/oneui';
 import { useIsOwner } from '@/components/RoleProvider';
 import { useSeason } from '@/hooks/useSeason';
@@ -37,6 +37,7 @@ export default function LooksPage() {
   const [wearingId, setWearingId] = useState<string | null>(null);
   const [wornIds, setWornIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const supa = createClient();
@@ -101,6 +102,7 @@ export default function LooksPage() {
 
   const remove = useCallback(async (look: Outfit) => {
     setActionError(null);
+    setOpenId(null);
     const previous = outfits;
     setOutfits((prev) => prev.filter((o) => o.id !== look.id));
     const res = await fetch(`/api/looks?id=${look.id}`, { method: 'DELETE' }).catch(() => null);
@@ -128,7 +130,7 @@ export default function LooksPage() {
 
       <div className="reach-zone">
         {showTabs && (
-          <div role="tablist" aria-label="Looks view" className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.05] p-1">
+          <div role="tablist" aria-label="Looks view" className="seg grid-cols-2">
             {(['saved', 'history'] as Tab[]).map((t) => (
               <button
                 key={t}
@@ -136,11 +138,7 @@ export default function LooksPage() {
                 type="button"
                 aria-selected={activeTab === t}
                 onClick={() => setTab(t)}
-                className={cn(
-                  'press flex min-h-[48px] items-center justify-center rounded-full text-[14px] font-semibold transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                  activeTab === t ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-                )}
+                className="seg-item"
               >
                 {t === 'saved' ? 'Saved' : 'History'}
               </button>
@@ -190,29 +188,35 @@ export default function LooksPage() {
               ))}
             </div>
 
-            {picks.length > 0 && (
+            {filtered(picks).length > 0 && (
               <section aria-label="Looks from Ishita" className="flex flex-col gap-3">
-                <h2 className="section-title flex items-center gap-2 px-1 pt-1">
-                  <Heart size={14} className="fill-current text-crimson-300" aria-hidden />
-                  {isOwner ? 'From Ishita' : 'You picked these'}
-                </h2>
-                {filtered(picks).map((look) => (
-                  <LookCard
-                    key={look.id}
-                    look={look}
-                    itemById={itemById}
-                    canManage={isOwner}
-                    worn={wornIds.has(look.id)}
-                    wearing={wearingId === look.id}
-                    onWear={isOwner ? () => wear(look) : undefined}
-                    onDelete={isOwner ? () => remove(look) : undefined}
-                  />
-                ))}
+                <div className="shelf-head mb-0 pt-1">
+                  <h2 className="section-title flex items-center gap-2">
+                    <Heart size={14} className="fill-current text-crimson-300" aria-hidden />
+                    {isOwner ? 'From Ishita' : 'You picked these'}
+                  </h2>
+                  <span className="section-meta">{filtered(picks).length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+                  {filtered(picks).map((look, i) => (
+                    <LookTile
+                      key={look.id}
+                      look={look}
+                      index={i}
+                      itemById={itemById}
+                      worn={wornIds.has(look.id)}
+                      onOpen={() => setOpenId(look.id)}
+                    />
+                  ))}
+                </div>
               </section>
             )}
 
             <section aria-label="Saved looks" className="flex flex-col gap-3">
-              <h2 className="section-title px-1 pt-2">{isOwner ? 'Your looks' : 'His shelf'}</h2>
+              <div className="shelf-head mb-0 pt-2">
+                <h2 className="section-title">{isOwner ? 'Your looks' : 'His shelf'}</h2>
+                {filtered(mine).length > 0 && <span className="section-meta">{filtered(mine).length}</span>}
+              </div>
               {filtered(mine).length === 0 ? (
                 <p className="px-1 py-6 text-oneui-body text-fog-400">
                   {mine.length === 0
@@ -220,18 +224,18 @@ export default function LooksPage() {
                     : `Nothing saved for ${filter === 'all' ? 'this filter' : SEASON_META[filter as Season].label.toLowerCase()}.`}
                 </p>
               ) : (
-                filtered(mine).map((look) => (
-                  <LookCard
-                    key={look.id}
-                    look={look}
-                    itemById={itemById}
-                    canManage={isOwner}
-                    worn={wornIds.has(look.id)}
-                    wearing={wearingId === look.id}
-                    onWear={isOwner ? () => wear(look) : undefined}
-                    onDelete={isOwner ? () => remove(look) : undefined}
-                  />
-                ))
+                <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+                  {filtered(mine).map((look, i) => (
+                    <LookTile
+                      key={look.id}
+                      look={look}
+                      index={i}
+                      itemById={itemById}
+                      worn={wornIds.has(look.id)}
+                      onOpen={() => setOpenId(look.id)}
+                    />
+                  ))}
+                </div>
               )}
             </section>
 
@@ -264,7 +268,7 @@ export default function LooksPage() {
                       return (
                         <div
                           key={id}
-                          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-squircle-sm bg-ink-0"
+                          className="photo-well flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-squircle-sm"
                         >
                           {it?.image_url ? (
                             <Image src={it.image_url} alt={it.name} width={64} height={64} sizes="64px" className="h-full w-full object-contain" />
@@ -314,6 +318,22 @@ export default function LooksPage() {
           </section>
         )}
       </div>
+
+      {(() => {
+        const open = openId ? outfits.find((o) => o.id === openId) ?? null : null;
+        return (
+          <LookSheet
+            look={open}
+            itemById={itemById}
+            canManage={isOwner}
+            worn={open ? wornIds.has(open.id) : false}
+            wearing={open ? wearingId === open.id : false}
+            onClose={() => setOpenId(null)}
+            onWear={isOwner && open ? () => void wear(open) : undefined}
+            onDelete={isOwner && open ? () => void remove(open) : undefined}
+          />
+        );
+      })()}
     </main>
   );
 }

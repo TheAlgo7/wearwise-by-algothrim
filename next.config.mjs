@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The dev badge sits exactly where the floating nav does on a phone.
+  devIndicators: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },

@@ -10,7 +10,7 @@ import { pickGreeting } from '@/lib/greetings';
 import { SEASON_META, itemSuitsSeason } from '@/lib/season';
 import { cacheWeather } from '@/lib/weather-cache';
 import type { Item, Outfit, WeatherSnapshot } from '@/types';
-import { ChevronRight, Heart, Shirt, Sparkles } from 'lucide-react';
+import { ChevronRight, Heart, Shirt } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -128,8 +128,10 @@ export function PartnerHome() {
           href="/style"
           className="press app-card flex items-center gap-4 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
         >
+          {/* Heart, matching her nav's Style him tab, so the button and the
+              destination look like the same thing. */}
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-crimson-400 text-white">
-            <Sparkles size={22} aria-hidden />
+            <Heart size={21} className="fill-current" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold leading-6 text-fog-100">Style him</span>
@@ -164,7 +166,7 @@ export function PartnerHome() {
                   href={`/wardrobe/${it.id}`}
                   className="press w-[96px] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 rounded-squircle"
                 >
-                  <div className="aspect-[3/4] overflow-hidden rounded-squircle bg-ink-0">
+                  <div className="photo-well aspect-[3/4] overflow-hidden rounded-squircle">
                     <Image
                       src={it.image_url!}
                       alt={it.name}
@@ -224,7 +226,7 @@ export function PartnerHome() {
                     >
                       <div className="grid grid-cols-2 gap-1.5">
                         {resolved.map((it) => (
-                          <div key={it.id} className="aspect-square overflow-hidden rounded-[12px] bg-ink-0">
+                          <div key={it.id} className="photo-well aspect-square overflow-hidden rounded-[12px]">
                             {it.image_url ? (
                               <Image src={it.image_url} alt={it.name} width={72} height={72} sizes="72px" className="h-full w-full object-contain" />
                             ) : (

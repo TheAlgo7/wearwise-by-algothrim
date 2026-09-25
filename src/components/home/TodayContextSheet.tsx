@@ -1,7 +1,6 @@
 'use client';
 
 import { OneUIChip, OneUISheet } from '@/components/oneui';
-import { cn } from '@/lib/cn';
 import { MODES } from '@/lib/constants';
 import { SEASONS, SEASON_META, seasonSourceLabel, type Season } from '@/lib/season';
 import { PLANNED_FOR_LABELS, type PlannedFor, type TodayContext } from '@/lib/today-context';
@@ -189,7 +188,7 @@ function ContextForm({
                 <p className="text-[12px] font-medium text-fog-400">{seasonSourceLabel(seasonSource)}</p>
               )}
             </div>
-            <div role="radiogroup" aria-label="Season" className="grid grid-cols-4 gap-1 rounded-full bg-white/[0.05] p-1">
+            <div role="radiogroup" aria-label="Season" className="seg grid-cols-4">
               {SEASONS.map((s) => {
                 const active = resolvedSeason === s;
                 return (
@@ -199,11 +198,7 @@ function ContextForm({
                     role="radio"
                     aria-checked={active}
                     onClick={() => setOverride(override === s ? null : s)}
-                    className={cn(
-                      'press flex min-h-[44px] items-center justify-center rounded-full text-[13px] font-semibold transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                      active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-                    )}
+                    className="seg-item text-[13px]"
                   >
                     {SEASON_META[s].label}
                   </button>
@@ -252,7 +247,7 @@ function Segmented({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="grid gap-1 rounded-full bg-white/[0.05] p-1"
+      className="seg"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((o) => {
@@ -264,11 +259,7 @@ function Segmented({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={cn(
-              'press flex min-h-[48px] items-center justify-center gap-2 rounded-full px-2 text-[13px] font-semibold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-              active ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-            )}
+            className="seg-item text-[13px]"
           >
             {o.icon}
             <span className="truncate">{o.label}</span>

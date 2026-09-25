@@ -88,7 +88,7 @@ export function PickInbox({ picks, itemById, onWear, onSeen }: Props) {
                 {resolved.map((it) => (
                   <div
                     key={it.id}
-                    className="h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-white/[0.08] bg-ink-0"
+                    className="photo-well h-14 w-14 shrink-0 overflow-hidden rounded-[16px]"
                   >
                     {it.image_url ? (
                       <Image

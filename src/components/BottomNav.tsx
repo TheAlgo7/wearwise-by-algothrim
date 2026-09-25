@@ -2,9 +2,11 @@
 
 import { cn } from '@/lib/cn';
 import { useRole } from '@/components/RoleProvider';
-import { Heart, Home, Layers, Shirt, Sparkles } from 'lucide-react';
+import { useLiquidGlass } from '@/hooks/useLiquidGlass';
+import { Droplets, Heart, Home, Layers, Shirt } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRef } from 'react';
 
 /**
  * Four destinations each, for different reasons.
@@ -21,7 +23,9 @@ import { usePathname } from 'next/navigation';
 const OWNER_NAV = [
   { href: '/',         label: 'Today',    Icon: Home,     match: (p: string) => p === '/' },
   { href: '/wardrobe', label: 'Wardrobe', Icon: Shirt,    match: (p: string) => p.startsWith('/wardrobe') },
-  { href: '/care',     label: 'Care',     Icon: Sparkles, match: (p: string) => p.startsWith('/care') },
+  // Droplets, not sparkles: sparkles is the universal "AI" mark, and Care is the
+  // one part of the app that deliberately does not call a model.
+  { href: '/care',     label: 'Care',     Icon: Droplets, match: (p: string) => p.startsWith('/care') },
   { href: '/looks',    label: 'Looks',    Icon: Layers,   match: (p: string) => p.startsWith('/looks') || p.startsWith('/outfits') },
 ];
 
@@ -36,9 +40,12 @@ export function BottomNav() {
   const pathname = usePathname();
   const role = useRole();
   const NAV = role === 'partner' ? PARTNER_NAV : OWNER_NAV;
+  const glassRef = useRef<HTMLDivElement>(null);
+  const hidden = pathname.startsWith('/unlock');
+  useLiquidGlass(glassRef, 'ww-nav-glass', !hidden);
 
   // The lock screen is chrome-free.
-  if (pathname.startsWith('/unlock')) return null;
+  if (hidden) return null;
 
   return (
     <nav
@@ -53,14 +60,10 @@ export function BottomNav() {
       }}
     >
       <div
-        // Opaque enough to sit over the crimson primary action without the
-        // button's colour and label bleeding through the blur.
-        className="flex items-center gap-1 rounded-full p-1.5 bg-ink-200/[0.92] border border-white/[0.08]"
-        style={{
-          backdropFilter: 'blur(28px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(190%)',
-          boxShadow: '0 -4px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
-        }}
+        ref={glassRef}
+        // `.nav-glass` is frosted everywhere; on Chromium useLiquidGlass swaps
+        // in real edge refraction and a thinner tint (see globals.css).
+        className="nav-glass flex items-center gap-1 rounded-full p-1.5"
       >
         {NAV.map(({ href, label, Icon, match }) => {
           const active = match(pathname);

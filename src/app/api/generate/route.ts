@@ -240,9 +240,21 @@ export async function POST(req: Request) {
       // a belt with a tie is fine, two belts is not.
       const seenLayers = new Set<string>();
       const seenCategories = new Set<string>();
+
+      // An open shirt over a tee is one look, not two tops. Shirts are `base`
+      // (his taxonomy: they stand alone), so the one-per-layer rule below used
+      // to delete whichever came second. The prompt offers `open: true` shirts
+      // for exactly this layering, so the model kept proposing it, the tee kept
+      // vanishing, and the stylist note described a tee that was not on screen.
+      // With a tee present, one open-wearable shirt counts as the over-layer.
+      const isShirt = (i?: Item) => (i?.category?.name ?? '').toLowerCase() === 'shirt';
+      const baseItems = valid.map((id) => itemById.get(id)).filter((i) => i?.category?.layer_type === 'base');
+      const hasTee = baseItems.some((i) => !isShirt(i));
+      const overShirt = hasTee ? baseItems.find((i) => isShirt(i) && i?.can_be_worn_open)?.id : undefined;
+
       const deduped = valid.filter((id) => {
         const item = itemById.get(id);
-        const layer = item?.category?.layer_type ?? id;
+        const layer = id === overShirt ? 'mid' : (item?.category?.layer_type ?? id);
         if (SINGLE_PER_LAYER.has(layer)) {
           if (seenLayers.has(layer)) return false;
           seenLayers.add(layer);

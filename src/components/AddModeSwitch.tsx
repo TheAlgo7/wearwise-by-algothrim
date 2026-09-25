@@ -2,7 +2,6 @@
 
 import { AddItemForm } from '@/components/AddItemForm';
 import { BatchAddForm } from '@/components/BatchAddForm';
-import { cn } from '@/lib/cn';
 import { useState } from 'react';
 
 type Mode = 'one' | 'many';
@@ -18,7 +17,7 @@ export function AddModeSwitch() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div role="radiogroup" aria-label="How many pieces" className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.05] p-1">
+      <div role="radiogroup" aria-label="How many pieces" className="seg grid-cols-2">
         {([
           { id: 'one' as const, label: 'One piece' },
           { id: 'many' as const, label: 'Several' },
@@ -29,11 +28,7 @@ export function AddModeSwitch() {
             role="radio"
             aria-checked={mode === id}
             onClick={() => setMode(id)}
-            className={cn(
-              'press flex min-h-[42px] items-center justify-center rounded-full text-[14px] font-semibold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-              mode === id ? 'bg-crimson-400 text-white' : 'text-fog-300 hover:text-fog-100'
-            )}
+            className="seg-item"
           >
             {label}
           </button>

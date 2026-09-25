@@ -31,9 +31,11 @@ export function OneUIChip({
         // 48px / 44px. Android's guidance is a 48dp minimum touch target; the
         // filter row sits at 44 so a scrolling row of them does not eat the screen.
         isMode ? 'h-12 px-5 text-[14px]' : 'h-11 px-4 text-[13px]',
+        // Selected is a raised neutral, the same as a chosen segment. A filter
+        // narrows a view; it is not a decision, so it does not get the accent.
         active
-          ? 'bg-crimson-400 text-white border-transparent'
-          : 'bg-white/[0.06] text-fog-200 border-white/[0.08] hover:bg-white/[0.10] hover:text-fog-100',
+          ? 'bg-ink-500 text-fog-100 border-white/[0.16] shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_2px_10px_rgb(0_0_0/0.35)]'
+          : 'bg-white/[0.04] text-fog-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-fog-100',
         className
       )}
     >
