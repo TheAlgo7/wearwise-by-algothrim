@@ -242,7 +242,7 @@ export function TodayFit({
             stale && 'opacity-40'
           )}
         >
-          <span className="line-clamp-2 block text-[14px] leading-[1.55] text-fog-200 text-pretty">
+          <span className="line-clamp-2 text-[14px] leading-[1.55] text-fog-200 text-pretty">
             {outfit.reasoning}
           </span>
           <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-fog-400">
