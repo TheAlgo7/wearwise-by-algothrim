@@ -10,6 +10,7 @@ import { useWardrobe } from '@/hooks/useWardrobe';
 import { TodayContextSheet } from '@/components/home/TodayContextSheet';
 import { TodayFit, TodayFitSkeleton } from '@/components/home/TodayFit';
 import { useSeason } from '@/hooks/useSeason';
+import { useToday } from '@/hooks/useToday';
 import { createClient } from '@/lib/supabase/client';
 import { INDOOR_AC_TEMP_C } from '@/lib/constants';
 import { modeForDate } from '@/lib/modes';
@@ -493,9 +494,7 @@ export function OwnerHome() {
     weatherFor !== null
   );
 
-  const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const today = useToday();
 
   const summary = contextSummary(context, {
     city: weather?.city,
@@ -514,8 +513,8 @@ export function OwnerHome() {
       <div className="px-5 pt-11 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p suppressHydrationWarning className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
-              {today}
+            <p className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
+              {today || ' '}
             </p>
             <h1
               suppressHydrationWarning

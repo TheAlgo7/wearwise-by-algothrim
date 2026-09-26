@@ -5,11 +5,14 @@ import { SeasonPill } from '@/components/SeasonPill';
 import { cn } from '@/lib/cn';
 import { useWardrobe } from '@/hooks/useWardrobe';
 import { useSeason } from '@/hooks/useSeason';
+import { useToday } from '@/hooks/useToday';
 import { createClient } from '@/lib/supabase/client';
 import { pickGreeting } from '@/lib/greetings';
 import { SEASON_META, itemSuitsSeason } from '@/lib/season';
 import { cacheWeather } from '@/lib/weather-cache';
 import type { Item, Outfit, WeatherSnapshot } from '@/types';
+
+const TODAY_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
 import { ChevronRight, Heart, Shirt } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -97,13 +100,13 @@ export function PartnerHome() {
     return spread;
   }, [seasonItems]);
 
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+  const today = useToday(TODAY_FORMAT);
 
   return (
     <main className="min-h-dvh">
       <div className="px-5 pt-14 pb-4">
-        <p suppressHydrationWarning className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
-          {today}
+        <p className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
+          {today || ' '}
         </p>
         <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance">
           {greeting || 'Hi Ishita'}
