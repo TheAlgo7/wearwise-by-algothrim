@@ -20,15 +20,17 @@ HIDE_CARE = "() => document.querySelectorAll('.max-w-xl a[href=\"/care\"]').forE
 
 # The app asks for SamsungOne, the S24's system font. Chrome on Windows cannot match the
 # installed copy by name, so serve the files ourselves and the screens look like the phone.
-FONTS = Path(os.environ.get('SAMSUNG_FONTS', 'C:/Windows/Fonts'))
+FONT_DIRS = [os.environ.get('SAMSUNG_FONTS', ''), os.path.expandvars('%LOCALAPPDATA%/Microsoft/Windows/Fonts'), 'C:/Windows/Fonts']
+FONTS = next((Path(d) for d in FONT_DIRS if d and (Path(d) / 'SamsungOne-400.ttf').exists()), Path('.'))
 FACES = {w: FONTS / f'SamsungOne-{w}.ttf' for w in (400, 700)}
 HAVE_FONT = all(f.exists() for f in FACES.values())
+print('SamsungOne:', HAVE_FONT and FONTS)
 FONT_CSS = ''.join(f"@font-face{{font-family:SamsungOne;src:url('/__readme/SamsungOne-{w}.ttf');font-weight:{w}}}" for w in FACES)
 INJECT = "document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = %r; document.head.append(s); });" % FONT_CSS
 
 with sync_playwright() as p:
     b = p.chromium.launch(channel='chrome')
-    ctx = b.new_context(viewport={'width': 393, 'height': 852}, device_scale_factor=2, user_agent=UA, is_mobile=True, has_touch=True)
+    ctx = b.new_context(viewport={'width': 393, 'height': 852}, device_scale_factor=2, user_agent=UA, is_mobile=True, has_touch=True, service_workers='block')
     if HAVE_FONT:
         ctx.route('**/__readme/*.ttf', lambda r: r.fulfill(body=FACES[int(r.request.url.split('-')[-1][:3])].read_bytes(), content_type='font/ttf'))
         ctx.add_init_script(INJECT)
@@ -38,7 +40,7 @@ with sync_playwright() as p:
 
     # Today generates on open; wait for the outfit plate, then drop the Care card.
     page.goto(BASE + '/')
-    page.get_by_role('button', name='Wear this').wait_for(timeout=60000)
+    page.get_by_role('button', name='Wear this').wait_for(timeout=90000)
     # The stylist's note can mention his build; show an option whose note is about the clothes.
     # Its first sentence is usually colour, so keep that when it is clean; else hide the note.
     BODY = re.compile(r'torso|frame|height|build|body|shoulder|legs|tall|lean|proportion|gaurav', re.I)
