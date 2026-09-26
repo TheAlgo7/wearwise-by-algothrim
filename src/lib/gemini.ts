@@ -10,9 +10,16 @@ export function gemini(): GoogleGenAI {
   return _client;
 }
 
+/**
+ * Both 2.0 models were retired (404), which silently broke tagging and photo
+ * clean-up when adding clothes. `gemini-flash-latest` follows Google's current
+ * Flash, so it cannot retire under us again. Image editing has no free-tier
+ * quota on any model (checked 2026-09-27): without billing on the key, clean-up
+ * returns 429 and the add forms keep the original photo, as they always have.
+ */
 export const MODELS = {
-  /** Fast model for outfit generation + tagging — low latency. */
-  reasoning: 'gemini-2.0-flash',
-  /** Multimodal image generation / editing. */
-  image:     'gemini-2.0-flash-exp-image-generation',
+  /** Vision + JSON for tagging a new item. */
+  reasoning: 'gemini-flash-latest',
+  /** Background clean-up for garment photos. */
+  image:     'gemini-2.5-flash-image',
 } as const;

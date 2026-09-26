@@ -1,13 +1,13 @@
 /**
  * Multi-provider LLM client for outfit generation.
  *
- * Chain: Groq llama-3.3-70b → Groq gpt-oss-120b → OpenRouter gpt-oss-120b
- *        → OpenRouter llama-3.3-70b → Gemini flash-lite → Gemini 2.5-flash
+ * Chain: Gemini flash-lite → Groq qwen3.8-27b → Gemini 2.5-flash
+ *        → Groq gpt-oss-120b → OpenRouter nemotron (free)
  *
  * Each rung has independent rate limits, so rapid regenerations (the core
  * "tap until it's right" flow) degrade to a slower provider instead of failing.
- * The primary Groq rung retries once when its tokens-per-minute limit suggests
- * a short wait — cheaper than falling through to a slower provider.
+ * The Groq rung retries once when its tokens-per-minute limit suggests a short
+ * wait, which is cheaper than falling through to a slower provider.
  */
 
 interface ChatMessage { role: 'system' | 'user'; content: string; }
@@ -122,28 +122,26 @@ type Rung =
   | { provider: 'gemini'; model: string };
 
 /**
- * Rungs are checked in order. Keep the free OpenRouter slugs current: the
- * previous two (`openai/gpt-oss-120b:free`, `meta-llama/llama-3.3-70b-instruct:free`)
- * silently stopped being free and returned 404 on every call, so the chain was
- * really only Groq and Gemini for months. Verified against the live catalogue
- * with a JSON-mode request on 2026-08-03.
+ * Rungs are checked in order. Keep every slug current: they retire silently.
+ *
+ * Re-verified 2026-09-27 against each provider's live model list, with a
+ * JSON-mode request. Groq retired all of its Llama models, so the old primary
+ * (`llama-3.3-70b-versatile`) had been a 404 on every call and every outfit
+ * was really coming from Gemini flash-lite. That is now the primary on purpose.
+ * Groq's remaining chat models (gpt-oss-120b, gpt-oss-20b, qwen3.8-27b) are all
+ * capped at 8,000 tokens a minute, tight for this prompt, so they sit behind
+ * Gemini. OpenRouter dropped `openai/gpt-oss-20b:free`.
  */
 const CHAIN: Rung[] = [
-  // Groq first: when it is not rate limited it answers this prompt in ~3s.
-  { provider: 'groq', model: 'llama-3.3-70b-versatile', retryOn429: true },
-  // Gemini second, on a completely separate quota, and quick. This used to sit
-  // last behind two OpenRouter rungs; each of those spends its full timeout
-  // queueing on the free tier, so a Groq rate limit burned ~40s and then ran
-  // out of budget before ever reaching Gemini. Moving Gemini up turns the
-  // common failure from a 502 into a few extra seconds.
+  // Gemini first: its own quota, quick, and it has been answering every
+  // generation in production since the Groq Llama models were retired.
   { provider: 'gemini', model: 'gemini-flash-lite-latest' },
+  // Groq's fastest JSON-clean model. A prompt over the 8k-a-minute budget
+  // fails at once with 413 and the chain moves on without losing time.
+  { provider: 'groq', model: 'qwen/qwen3.8-27b', retryOn429: true },
   { provider: 'gemini', model: 'gemini-2.5-flash' },
-  // Shares the rate-limited Groq org quota and is flaky on JSON for a prompt
-  // this size ("Request too large", "Failed to generate JSON"), so it sits below
-  // Gemini rather than beside the primary.
   { provider: 'groq', model: 'openai/gpt-oss-120b' },
   // Genuinely last resort: free OpenRouter capacity is queued and slow.
-  { provider: 'openrouter', model: 'openai/gpt-oss-20b:free' },
   { provider: 'openrouter', model: 'nvidia/nemotron-3-super-120b-a12b:free' },
 ];
 

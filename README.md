@@ -63,7 +63,7 @@ flowchart LR
   gen --> ctx["Context<br/>weather, season, mode, time"]
   ctx --> bouncer["The Bouncer<br/>filter-engine.ts"]
   db[("Supabase<br/>items, outfits")] --> bouncer
-  bouncer -- "shortlist" --> stylist["The Stylist<br/>Groq, then Gemini, then OpenRouter"]
+  bouncer -- "shortlist" --> stylist["The Stylist<br/>Gemini, then Groq, then OpenRouter"]
   stylist -- "JSON outfits" --> check["Validate and dedupe"]
   check --> today
 ```
@@ -71,7 +71,7 @@ flowchart LR
 - **The Bouncer runs in code.** Temperature, formality, vibe, season and recent wear filter the wardrobe before any model sees it. The shortlist is capped so the model sees a focused set, not 120 pieces.
 - **The Stylist is the last mile.** The prompt carries the shortlist, the context and a style blueprint with hard rules that always ship. The model returns outfits as JSON, with its reasoning.
 - **Nothing the model says is trusted blindly.** Every returned id must exist in the shortlist. Layers are deduped (one pair of shoes, one watch), an open shirt over a tee counts as the outer layer, and a missing pair of shoes is filled by rule.
-- **A chain, not a single provider.** Groq answers first. When it is rate limited, Gemini takes over on a separate quota, and free OpenRouter models are the last resort, all inside one 48 second deadline.
+- **A chain, not a single provider.** Gemini flash-lite answers first. If it is busy, Groq and a larger Gemini take over on their own quotas, and a free OpenRouter model is the last resort, all inside one 48 second deadline. Every slug is checked against the providers' live lists, because retired models fail silently.
 - **Time is Delhi time.** The server runs in UTC, so anything that depends on the hour goes through the app's timezone, never the server clock.
 
 ## Built with
@@ -81,7 +81,7 @@ flowchart LR
 | App | Next.js 16 App Router, React 19, TypeScript |
 | Styling | Tailwind CSS on OKLCH tokens, SamsungOne type, liquid-glass navigation |
 | Data | Supabase Postgres and Storage |
-| AI | Groq (Llama 3.3 70B), Google Gemini, OpenRouter |
+| AI | Google Gemini (flash-lite, 2.5 Flash, image), Groq (Qwen 3.8, gpt-oss), OpenRouter |
 | Weather | OpenWeather current conditions and geocoding |
 | Hosting | Vercel, with a daily keep-alive cron for the free database |
 
