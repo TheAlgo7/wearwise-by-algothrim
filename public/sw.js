@@ -4,7 +4,7 @@
 //
 // Bump SW_VERSION to force all clients to pick up changes.
 
-const SW_VERSION = 'v1.1.0';
+const SW_VERSION = 'v2.0.0'; // 2.0.0: Lights down revamp (Nov 2026)
 const RUNTIME_CACHE = `wearwise-runtime-${SW_VERSION}`;
 const PRECACHE = `wearwise-precache-${SW_VERSION}`;
 
