@@ -318,7 +318,7 @@ export function AddItemForm() {
             value={tags.name ?? ''}
             onChange={(e) => setTags({ ...tags, name: e.target.value })}
             autoFocus
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+            className="w-full h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-400"
           />
         </Field>
       )}
@@ -329,7 +329,7 @@ export function AddItemForm() {
             id="item-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+            className="w-full h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-400"
           >
             <option value="">Pick a shelf</option>
             {categories.map((c) => (
@@ -385,7 +385,7 @@ export function AddItemForm() {
             id="item-name-full"
             value={tags.name ?? ''}
             onChange={(e) => setTags({ ...tags, name: e.target.value })}
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+            className="w-full h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-400"
           />
         </Field>
       )}
@@ -396,7 +396,7 @@ export function AddItemForm() {
             id="item-category-full"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-400"
+            className="w-full h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-400"
           >
             <option value="">Pick a shelf</option>
             {categories.map((c) => (
@@ -435,7 +435,7 @@ export function AddItemForm() {
       </Field>
 
       <Field label="Can be worn open (button-downs)" htmlFor="item-worn-open">
-        <label className="flex items-center gap-3 h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06]">
+        <label className="flex items-center gap-3 h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10]">
           <input
             id="item-worn-open"
             type="checkbox"
@@ -468,7 +468,7 @@ export function AddItemForm() {
             placeholder="min °C"
             value={tags.min_temp_c ?? ''}
             onChange={(e) => setTags({ ...tags, min_temp_c: e.target.value === '' ? null : Number(e.target.value) })}
-            className="h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-300"
           />
           <input
             id="item-temp-max"
@@ -477,7 +477,7 @@ export function AddItemForm() {
             placeholder="max °C"
             value={tags.max_temp_c ?? ''}
             onChange={(e) => setTags({ ...tags, max_temp_c: e.target.value === '' ? null : Number(e.target.value) })}
-            className="h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="h-12 px-4 rounded-squircle-sm bg-transparent border border-white/[0.10] text-fog-100 outline-none focus:border-crimson-300"
           />
         </div>
       </Field>

@@ -35,7 +35,7 @@ export function OneUIChip({
         // narrows a view; it is not a decision, so it does not get the accent.
         active
           ? 'bg-ink-500 text-fog-100 border-white/[0.16] shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_2px_10px_rgb(0_0_0/0.35)]'
-          : 'bg-white/[0.04] text-fog-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-fog-100',
+          : 'bg-transparent text-fog-300 border-white/[0.10] hover:border-white/[0.18] hover:text-fog-100',
         className
       )}
     >

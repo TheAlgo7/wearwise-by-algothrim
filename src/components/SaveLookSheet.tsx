@@ -98,7 +98,7 @@ export function SaveLookSheet({
             onChange={(e) => { setName(e.target.value); setError(null); }}
             placeholder="Sunday Church"
             autoComplete="off"
-            className="h-12 rounded-squircle-sm border border-white/[0.06] bg-ink-200 px-4 text-[16px] text-fog-100 outline-none focus:border-crimson-300"
+            className="h-12 rounded-squircle-sm border border-white/[0.10] bg-transparent px-4 text-[16px] text-fog-100 outline-none focus:border-crimson-300"
           />
           <div className="chip-row !mx-0 !px-0">
             {NAME_SUGGESTIONS.map((s) => (
@@ -121,7 +121,7 @@ export function SaveLookSheet({
               rows={3}
               maxLength={280}
               placeholder="Wear this on Saturday, please."
-              className="resize-none rounded-squircle-sm border border-white/[0.06] bg-ink-200 px-4 py-3 text-[16px] leading-6 text-fog-100 outline-none focus:border-crimson-300"
+              className="resize-none rounded-squircle-sm border border-white/[0.10] bg-transparent px-4 py-3 text-[16px] leading-6 text-fog-100 outline-none focus:border-crimson-300"
             />
           </div>
         )}

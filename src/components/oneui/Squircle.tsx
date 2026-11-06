@@ -14,10 +14,11 @@ const radiusMap = {
   xl: 'rounded-[32px]',
 } as const;
 
+// Revamp, Nov 2026: hairline groups on the black canvas, not grey boxes (see .app-card).
 const variantMap = {
-  flat: 'bg-ink-200 border border-white/[0.05]',
-  raised: 'bg-ink-200 border border-white/[0.07] shadow-card',
-  glass: 'bg-white/[0.04] border border-white/[0.06]',
+  flat: 'bg-white/[0.025] border border-white/[0.08]',
+  raised: 'bg-white/[0.04] border border-white/[0.10] shadow-card',
+  glass: 'bg-transparent border border-white/[0.08]',
 } as const;
 
 export function Squircle({ variant = 'flat', radius = 'md', className, children, ...rest }: SquircleProps) {

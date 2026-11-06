@@ -1,8 +1,10 @@
 'use client';
 
 import { GroomingCard } from '@/components/home/GroomingCard';
+import { OutfitComposition } from '@/components/OutfitComposition';
 import { SeasonPill } from '@/components/SeasonPill';
 import { cn } from '@/lib/cn';
+import { colourStory } from '@/lib/colour-story';
 import { useWardrobe } from '@/hooks/useWardrobe';
 import { useSeason } from '@/hooks/useSeason';
 import { useToday } from '@/hooks/useToday';
@@ -13,7 +15,7 @@ import { cacheWeather } from '@/lib/weather-cache';
 import type { Item, Outfit, WeatherSnapshot } from '@/types';
 
 const TODAY_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
-import { ChevronRight, Heart, Shirt } from 'lucide-react';
+import { ChevronRight, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -104,11 +106,11 @@ export function PartnerHome() {
 
   return (
     <main className="min-h-dvh">
-      <div className="px-5 pt-14 pb-4">
+      <div className="px-5 pb-3 pt-8">
         <p className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
           {today || ' '}
         </p>
-        <h1 suppressHydrationWarning className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance">
+        <h1 suppressHydrationWarning className="type-greeting text-balance">
           {greeting || 'Hi Ishita'}
         </h1>
 
@@ -215,36 +217,26 @@ export function PartnerHome() {
             </div>
           ) : (
             <>
-              <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+              <div className="shelf-rail">
                 {hers.slice(0, 6).map((look) => {
                   const resolved = look.items
                     .map((id) => items.find((i) => i.id === id))
-                    .filter((i): i is Item => Boolean(i))
-                    .slice(0, 4);
+                    .filter((i): i is Item => Boolean(i));
+                  const story = colourStory(resolved);
                   return (
                     <Link
                       key={look.id}
                       href="/looks"
-                      className="app-card block w-[164px] shrink-0 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                      className="press block w-[132px] shrink-0 rounded-[20px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
                     >
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {resolved.map((it) => (
-                          <div key={it.id} className="photo-well aspect-square overflow-hidden rounded-[12px]">
-                            {it.image_url ? (
-                              <Image src={it.image_url} alt={it.name} width={72} height={72} sizes="72px" className="h-full w-full object-contain" />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <Shirt size={16} className="text-fog-500" aria-hidden />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="mt-2.5 truncate text-[13px] font-semibold text-fog-100">
-                        {look.name ?? 'Your pick'}
+                      {/* The same lit figure he sees on his side, so a pick
+                          looks like an outfit, not four photos in a box. */}
+                      <OutfitComposition items={resolved} light={story.light} scale="tile" className="rounded-[20px]" />
+                      <p className="mt-2 truncate px-0.5 text-[13px] font-semibold text-fog-100">
+                        {look.name || story.headline || 'Your pick'}
                       </p>
                       <p className={cn(
-                        'text-[11px] font-medium',
+                        'px-0.5 text-[11px] font-medium',
                         look.worn_at ? 'text-crimson-300' : 'text-fog-400'
                       )}>
                         {look.worn_at ? 'He wore it' : 'Waiting on him'}

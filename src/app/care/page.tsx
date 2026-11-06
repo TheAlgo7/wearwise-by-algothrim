@@ -133,7 +133,7 @@ export default function CarePage() {
             ))}
           </div>
         ) : error || !plan || !state ? (
-          <div role="alert" className="rounded-[1.65rem] bg-ink-100 px-4 py-4">
+          <div role="alert" className="rounded-[1.65rem] border border-white/[0.10] px-4 py-4">
             <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load your routine</p>
             <p className="mt-1 text-[13px] leading-5 text-fog-400">{error ?? 'No care profile set up yet.'}</p>
           </div>
@@ -419,7 +419,7 @@ function LogSheet({
                 min={earliestIso}
                 max={todayIso}
                 onChange={(e) => setPicked(e.target.value)}
-                className="h-12 min-w-0 flex-1 rounded-squircle-sm border border-white/[0.08] bg-ink-200 px-4 text-[15px] text-fog-100 outline-none [color-scheme:dark] focus:border-crimson-400"
+                className="h-12 min-w-0 flex-1 rounded-squircle-sm border border-white/[0.08] bg-transparent px-4 text-[15px] text-fog-100 outline-none [color-scheme:dark] focus:border-crimson-400"
               />
               <button
                 type="button"

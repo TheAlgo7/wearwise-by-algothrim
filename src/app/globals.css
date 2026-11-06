@@ -105,14 +105,17 @@
 }
 
 @layer components {
-  /* Flat matte card */
+  /* A group that is genuinely a group. Revamp, Nov 2026: a hairline and the
+     faintest lift instead of a grey box. On a true black canvas a filled
+     ink-200 card was the loudest thing on most screens, and every screen was
+     mostly cards. */
   .app-card {
-    @apply bg-ink-200 rounded-[20px] border border-white/[0.05];
+    @apply rounded-[20px] border border-white/[0.08] bg-white/[0.025];
   }
 
   /* Legacy aliases kept so existing components compile */
   .glass-card    { @apply app-card; }
-  .glass-card-sm { @apply bg-ink-200 rounded-[16px] border border-white/[0.05]; }
+  .glass-card-sm { @apply rounded-[16px] border border-white/[0.08] bg-white/[0.025]; }
   .oneui-card        { @apply app-card; }
   .oneui-card-raised { @apply app-card; }
 
@@ -148,7 +151,7 @@
      and toggle was solid crimson, the Looks screen had four crimson pills on it
      before you reached a single look, and "Wear this" stopped standing out. */
   .seg {
-    @apply grid gap-1 rounded-full bg-white/[0.05] p-1;
+    @apply grid gap-1 rounded-full border border-white/[0.08] p-1;
   }
   .seg-item {
     @apply press flex min-h-[48px] items-center justify-center gap-2 rounded-full px-2
@@ -221,6 +224,17 @@
       radial-gradient(38% 46% at var(--light-x, 38%) 50%, color-mix(in oklab, var(--story) 12%, transparent), transparent 90%),
       radial-gradient(26% 7% at var(--light-x, 38%) 92%, color-mix(in oklab, var(--story) 18%, transparent), transparent 80%);
     transition: --story 900ms var(--ease-spring);
+  }
+
+  /* One piece, lit by its own colour: the item page's hero. Centred on the
+     garment rather than the shoulders, and contained like the tile light. */
+  .item-light {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(40% 36% at 50% 46%, color-mix(in oklab, var(--story) 34%, transparent), transparent 78%),
+      radial-gradient(30% 6% at 50% 90%, color-mix(in oklab, var(--story) 16%, transparent), transparent 80%);
   }
 
   /* Display type: moments only. Archivo, opened up slightly on its width axis,

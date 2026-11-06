@@ -159,7 +159,7 @@ export default function LooksPage() {
             ))}
           </div>
         ) : loadError ? (
-          <div role="alert" className="rounded-[1.65rem] bg-ink-100 px-4 py-4">
+          <div role="alert" className="rounded-[1.65rem] border border-white/[0.10] px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load your looks</p>
@@ -297,9 +297,9 @@ export default function LooksPage() {
                         onClick={() => void wear(o, 'Repeated an outfit from the wear log.')}
                         disabled={wearingId === o.id || repeated}
                         className={cn(
-                          'press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                          'press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border px-4 text-[13px] font-semibold transition-colors',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 disabled:opacity-70',
-                          repeated ? 'bg-white/[0.07] text-fog-200' : 'bg-crimson-400/[0.16] text-crimson-200'
+                          repeated ? 'border-white/[0.10] text-fog-200' : 'border-crimson-400/50 text-crimson-200 hover:border-crimson-400'
                         )}
                       >
                         {wearingId === o.id ? (

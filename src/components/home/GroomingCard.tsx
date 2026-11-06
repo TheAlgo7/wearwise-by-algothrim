@@ -70,7 +70,7 @@ export function GroomingCard() {
                   overdue || today ? 'text-crimson-300' : 'text-fog-400'
                 )}
               >
-                {n.inDays === null ? '—'
+                {n.inDays === null ? ''
                   : overdue ? `${Math.abs(n.inDays)}d over`
                   : today ? 'Today'
                   : n.inDays === 1 ? 'Tomorrow'

@@ -256,7 +256,7 @@ export default function StylePage() {
             ))}
           </div>
         ) : loadError ? (
-          <div role="alert" className="rounded-[1.65rem] bg-ink-100 px-4 py-4">
+          <div role="alert" className="rounded-[1.65rem] border border-white/[0.10] px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load the wardrobe</p>
@@ -305,12 +305,14 @@ export default function StylePage() {
                           onClick={() => toggle(it)}
                           aria-pressed={on}
                           className={cn(
-                            'press relative w-[100px] shrink-0 overflow-hidden rounded-squircle border text-left transition-colors',
+                            // Revamp: the garment floats like it does in his
+                            // wardrobe; only a chosen piece gets a frame, in her colour.
+                            'press relative w-[100px] shrink-0 rounded-[18px] border text-left transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                            on ? 'border-crimson-400 bg-crimson-400/10' : 'border-white/[0.07] bg-ink-200'
+                            on ? 'border-crimson-400 bg-crimson-400/[0.08]' : 'border-transparent'
                           )}
                         >
-                          <div className="photo-well relative aspect-[3/4]">
+                          <div className="photo-well relative aspect-[4/5]">
                             {it.image_url ? (
                               <Image
                                 src={it.image_url}
@@ -330,7 +332,7 @@ export default function StylePage() {
                               </span>
                             )}
                           </div>
-                          <p className="truncate px-2 py-1.5 text-[11px] font-medium text-fog-200">{it.name}</p>
+                          <p className={cn('truncate px-2 pb-1.5 pt-1 text-[11px] font-medium', on ? 'text-fog-100' : 'text-fog-300')}>{it.name}</p>
                         </button>
                       );
                     })}

@@ -171,7 +171,7 @@ export function StyleBlueprint() {
             id="bp-owner-name"
             value={profile.user_name}
             onChange={(e) => set('user_name', e.target.value)}
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="w-full h-12 px-4 rounded-squircle-sm border border-white/[0.10] bg-transparent text-fog-100 outline-none transition-colors focus:border-white/[0.24]"
           />
         </Field>
         <Field label="Height (cm)" htmlFor="bp-height">
@@ -180,7 +180,7 @@ export function StyleBlueprint() {
             type="number"
             value={profile.height_cm ?? ''}
             onChange={(e) => set('height_cm', e.target.value === '' ? null : Number(e.target.value))}
-            className="w-full h-12 px-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="w-full h-12 px-4 rounded-squircle-sm border border-white/[0.10] bg-transparent text-fog-100 outline-none transition-colors focus:border-white/[0.24]"
           />
         </Field>
       </Squircle>
@@ -239,7 +239,7 @@ export function StyleBlueprint() {
             value={serializeSignatureCombos(profile.signature_combos)}
             placeholder="black tee + relaxed denim | casual"
             onChange={(e) => set('signature_combos', parseSignatureCombos(e.target.value))}
-            className="w-full min-h-24 p-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="w-full min-h-24 p-4 rounded-squircle-sm border border-white/[0.10] bg-transparent text-fog-100 outline-none transition-colors focus:border-white/[0.24]"
           />
         </Field>
       </Squircle>
@@ -252,7 +252,7 @@ export function StyleBlueprint() {
             value={serializeAvoidedCombos(profile.avoided_combinations)}
             placeholder="skinny jeans with chunky sneakers | bad proportion"
             onChange={(e) => set('avoided_combinations', parseAvoidedCombos(e.target.value))}
-            className="w-full min-h-24 p-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="w-full min-h-24 p-4 rounded-squircle-sm border border-white/[0.10] bg-transparent text-fog-100 outline-none transition-colors focus:border-white/[0.24]"
           />
         </Field>
       </Squircle>
@@ -265,7 +265,7 @@ export function StyleBlueprint() {
             value={profile.notes ?? ''}
             placeholder='e.g. "never tuck in oversized tees", "always silver jewelry, no gold"'
             onChange={(e) => set('notes', e.target.value || null)}
-            className="w-full min-h-24 p-4 rounded-squircle-sm bg-ink-200 border border-white/[0.06] text-fog-100 outline-none focus:border-crimson-300"
+            className="w-full min-h-24 p-4 rounded-squircle-sm border border-white/[0.10] bg-transparent text-fog-100 outline-none transition-colors focus:border-white/[0.24]"
           />
         </Field>
       </Squircle>

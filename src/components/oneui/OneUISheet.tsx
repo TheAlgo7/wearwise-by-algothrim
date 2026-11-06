@@ -68,7 +68,7 @@ export function OneUISheet({ open, onClose, title, 'aria-label': ariaLabel, chil
             <button
               onClick={onClose}
               aria-label="Close"
-              className="press h-11 w-11 rounded-full bg-white/[0.08] flex items-center justify-center text-fog-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="press h-11 w-11 rounded-full border border-white/[0.12] flex items-center justify-center text-fog-200 transition-colors hover:border-white/[0.2] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <X size={18} />
             </button>

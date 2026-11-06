@@ -346,7 +346,7 @@ export function BatchAddForm() {
                     placeholder="Name this piece"
                     aria-label={`Name for ${draft.fileName}`}
                     disabled={draft.status !== 'ready'}
-                    className="h-11 rounded-squircle-sm border border-white/[0.06] bg-ink-200 px-3 text-[15px] text-fog-100 outline-none focus:border-crimson-300 disabled:opacity-60"
+                    className="h-11 rounded-squircle-sm border border-white/[0.10] bg-transparent px-3 text-[15px] text-fog-100 outline-none focus:border-crimson-300 disabled:opacity-60"
                   />
                   <select
                     value={draft.categoryId}
@@ -354,8 +354,8 @@ export function BatchAddForm() {
                     aria-label={`Category for ${draft.fileName}`}
                     disabled={draft.status !== 'ready'}
                     className={cn(
-                      'h-11 rounded-squircle-sm border bg-ink-200 px-3 text-[15px] text-fog-100 outline-none focus:border-crimson-300 disabled:opacity-60',
-                      draft.categoryId ? 'border-white/[0.06]' : 'border-crimson-400/40'
+                      'h-11 rounded-squircle-sm border bg-transparent px-3 text-[15px] text-fog-100 outline-none focus:border-crimson-300 disabled:opacity-60',
+                      draft.categoryId ? 'border-white/[0.10]' : 'border-crimson-400/40'
                     )}
                   >
                     <option value="">

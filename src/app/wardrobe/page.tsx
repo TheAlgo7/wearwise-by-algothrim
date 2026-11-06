@@ -72,7 +72,7 @@ export default function WardrobePage() {
             ))}
           </div>
         ) : loadError && items.length === 0 ? (
-          <div role="alert" className="rounded-[1.65rem] bg-ink-100 px-4 py-4">
+          <div role="alert" className="rounded-[1.65rem] border border-white/[0.10] px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold leading-5 text-fog-100">Couldn&apos;t load the wardrobe</p>

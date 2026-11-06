@@ -10,9 +10,12 @@ const buttonStyles = cva(
     variants: {
       intent: {
         primary:   'bg-crimson-400 text-white transition-colors duration-200 hover:bg-crimson-500',
-        secondary: 'bg-white/[0.08] text-crimson-50 border border-white/[0.08] transition-colors duration-200 hover:bg-white/[0.13]',
-        ghost:     'bg-transparent text-crimson-100 transition-colors duration-200 hover:bg-white/[0.07]',
-        outline:   'bg-transparent text-crimson-50 border border-white/[0.12] transition-colors duration-200 hover:bg-white/[0.07]',
+        // Revamp, Nov 2026: everything that is not the primary action is
+        // outlined in fog, never filled and never tinted pink. Crimson is spent
+        // only where something gets done.
+        secondary: 'bg-transparent text-fog-100 border border-white/[0.12] transition-colors duration-200 hover:border-white/[0.2] hover:bg-white/[0.04]',
+        ghost:     'bg-transparent text-fog-200 transition-colors duration-200 hover:bg-white/[0.06] hover:text-fog-100',
+        outline:   'bg-transparent text-fog-100 border border-white/[0.12] transition-colors duration-200 hover:border-white/[0.2] hover:bg-white/[0.04]',
         danger:    'bg-error text-error-text transition-colors duration-200 hover:bg-error/80',
       },
       size: {

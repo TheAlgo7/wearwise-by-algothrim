@@ -90,7 +90,7 @@ function ContextForm({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Family dinner somewhere nice"
               autoFocus
-              className="mt-3 h-12 w-full rounded-squircle-sm border border-white/[0.08] bg-ink-200 px-4 text-[15px] text-fog-100 outline-none placeholder:text-fog-400 focus:border-crimson-400"
+              className="mt-3 h-12 w-full rounded-squircle-sm border border-white/[0.08] bg-transparent px-4 text-[15px] text-fog-100 outline-none placeholder:text-fog-400 focus:border-crimson-400"
             />
           </>
         )}
@@ -131,7 +131,7 @@ function ContextForm({
               value={tripInput}
               onChange={(e) => setTripInput(e.target.value)}
               placeholder="Goa, IN"
-              className="mt-3 h-12 w-full rounded-squircle-sm border border-white/[0.08] bg-ink-200 px-4 text-[15px] text-fog-100 outline-none placeholder:text-fog-400 focus:border-crimson-400"
+              className="mt-3 h-12 w-full rounded-squircle-sm border border-white/[0.08] bg-transparent px-4 text-[15px] text-fog-100 outline-none placeholder:text-fog-400 focus:border-crimson-400"
             />
             <p className="mt-2 text-[12px] leading-5 text-fog-400">
               WearWise pulls that forecast instead of your current location.
