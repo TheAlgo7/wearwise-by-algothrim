@@ -277,7 +277,7 @@ export default function StylePage() {
           </p>
         ) : (
           <div className="flex flex-col gap-5">
-            {shelves.map(({ layer, label, items: shelfItems }) => {
+            {shelves.map(({ layer, label, items: shelfItems }, shelfIndex) => {
               const single = SINGLE_LAYERS.includes(layer);
               const chosen = selected.find((id) => itemById.get(id)?.category?.layer_type === layer);
               return (
@@ -296,8 +296,11 @@ export default function StylePage() {
                     </span>
                   </div>
                   <div className="shelf-rail">
-                    {shelfItems.map((it) => {
+                    {shelfItems.map((it, idx) => {
                       const on = selected.includes(it.id);
+                      // The opening pieces of the first three shelves are above the
+                      // fold on her phone; load them now, the rest lazily.
+                      const eager = shelfIndex < 3 && idx < 4;
                       return (
                         <button
                           key={it.id}
@@ -319,6 +322,8 @@ export default function StylePage() {
                                 alt={it.name}
                                 fill
                                 sizes="100px"
+                                loading={eager ? 'eager' : 'lazy'}
+                                fetchPriority={eager ? 'high' : 'auto'}
                                 className="object-contain p-1"
                               />
                             ) : (
