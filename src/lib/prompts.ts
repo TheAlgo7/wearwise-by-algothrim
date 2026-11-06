@@ -69,6 +69,23 @@ REASONING FIELD — MANDATORY. Write 2–3 punchy sentences, spoken to him direc
 3. ONE actionable styling instruction — ALWAYS one of: (a) tuck or untuck call ("front-tuck only" / "leave untucked"), (b) sleeve instruction ("fold once to the elbow" / "keep rolled"), OR (c) a specific layering tip. This field is MANDATORY in every single outfit — never omit it.
 Reference actual item names — but ONLY items you included in the items[] array for this outfit. Never mention items not in your items list.`;
 
+/**
+ * One candidate as one compact line, with empty fields left out.
+ *
+ * Pretty-printed JSON (two-space indent, one field per line) made the real
+ * prompt about 9,900 tokens: over both Groq rungs' per-minute caps (7,000 for
+ * Qwen, 8,000 for gpt-oss), so every Groq call was refused with a 413 and the
+ * chain was Gemini or nothing. On 5 Nov 2026 both Gemini models were at
+ * capacity and he got no outfit at all. Compact lines carry the same facts in
+ * about two thirds of the tokens, which puts both Groq rungs back in play.
+ */
+export function compactCandidate(o: Record<string, unknown>): string {
+  const kept = Object.entries(o).filter(
+    ([, v]) => v !== null && v !== undefined && v !== false && v !== '' && !(Array.isArray(v) && v.length === 0)
+  );
+  return JSON.stringify(Object.fromEntries(kept));
+}
+
 /** Build the user prompt for one generation call. */
 export function buildGeneratePrompt(args: {
   blueprint: string;
@@ -100,8 +117,8 @@ export function buildGeneratePrompt(args: {
 
   return [
     `STYLE BLUEPRINT:\n${blueprint}`,
-    `CONTEXT:\n${JSON.stringify(context, null, 2)}${heatWarning}`,
-    `CANDIDATES (${slim.length} items):\n${JSON.stringify(slim, null, 2)}`,
+    `CONTEXT:\n${JSON.stringify(context)}${heatWarning}`,
+    `CANDIDATES (${slim.length} items, one per line; a field that is left out is empty or false):\n[\n${slim.map(compactCandidate).join(',\n')}\n]`,
     `Return 2–3 outfits. Use only these ids.`,
   ].join('\n\n');
 }

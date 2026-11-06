@@ -136,8 +136,13 @@ const CHAIN: Rung[] = [
   // Gemini first: its own quota, quick, and it has been answering every
   // generation in production since the Groq Llama models were retired.
   { provider: 'gemini', model: 'gemini-flash-lite-latest' },
-  // Groq's fastest JSON-clean model. A prompt over the 8k-a-minute budget
-  // fails at once with 413 and the chain moves on without losing time.
+  // Groq's fastest JSON-clean model. Qwen's cap is 7,000 tokens a minute and
+  // gpt-oss's 8,000. Until 7 Nov 2026 the pretty-printed prompt was ~9,900
+  // tokens, so both Groq rungs were a 413 on every call; with compact
+  // candidates (lib/prompts.ts) it is ~6,700 for Qwen and ~6,250 for gpt-oss,
+  // and both answered the real prompt (3 outfits in 2.3s, 1 in 6.9s). Qwen's
+  // margin is thin, so a bigger shortlist can still tip it over; a 413 fails
+  // in ~100ms and gpt-oss, with ~1,750 tokens to spare, is right behind.
   { provider: 'groq', model: 'qwen/qwen3.8-27b', retryOn429: true },
   { provider: 'gemini', model: 'gemini-2.5-flash' },
   { provider: 'groq', model: 'openai/gpt-oss-120b' },
