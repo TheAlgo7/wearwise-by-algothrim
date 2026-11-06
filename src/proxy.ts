@@ -75,7 +75,10 @@ export const config = {
   // Everything except the unlock flow, PWA plumbing, and static assets.
   // `/api/keepalive` is exempt too: Vercel Cron carries no auth cookie, so the
   // gate was 401ing the nightly Supabase ping before it ever left the app.
+  // The app icons are exempt because Chrome re-mints an installed app's icon
+  // from a server that carries no cookie; gated, it got the unlock redirect
+  // instead of the PNG and the home-screen icon could never update.
   matcher: [
-    '/((?!unlock|api/unlock|api/keepalive|offline|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icons/|apple-touch-icon).*)',
+    '/((?!unlock|api/unlock|api/keepalive|offline|_next/static|_next/image|favicon|manifest\\.webmanifest|sw\\.js|icons/|icon-|apple-touch-icon|og-image).*)',
   ],
 };

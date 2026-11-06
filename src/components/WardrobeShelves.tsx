@@ -172,9 +172,9 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
   const controls = (
     <>
       {/* Sticky so search stays reachable however far down the shelves you are. */}
-      <div className="sticky top-0 z-30 -mx-4 mb-3 bg-ink-0/85 px-4 pb-2 pt-2 backdrop-blur-md">
+      <div className="sticky top-0 z-30 -mx-4 mb-4 bg-ink-0 px-4 pb-2 pt-2">
         <div className="flex items-center gap-2">
-          <div className="app-card flex h-12 min-w-0 flex-1 items-center gap-3 px-4">
+          <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full border border-white/[0.10] px-4 transition-colors focus-within:border-white/[0.22]">
             <Search size={17} className="shrink-0 text-fog-400" aria-hidden />
             <input
               value={query}
@@ -204,7 +204,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
               sortOpen
                 ? 'border-white/[0.16] bg-ink-500 text-fog-100'
-                : 'border-white/[0.08] bg-white/[0.06] text-fog-200'
+                : 'border-white/[0.10] text-fog-200 hover:border-white/[0.18]'
             )}
           >
             <SlidersHorizontal size={17} aria-hidden />
@@ -248,7 +248,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
           <h2 className="text-oneui-h text-fog-100">{shelf?.label ?? 'Shelf'}</h2>
           <p className="section-meta">{shelf?.items.length ?? 0} pieces</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           {(shelf?.items ?? []).map((it, idx) => (
             <ItemCard key={it.id} item={it} priority={idx < 2} />
           ))}
@@ -271,7 +271,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
             <p className="mb-3 px-1 section-meta">
               {searchResults.length} {searchResults.length === 1 ? 'match' : 'matches'}
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
               {searchResults.map((it, idx) => (
                 <ItemCard key={it.id} item={it} priority={idx < 2} />
               ))}
@@ -318,7 +318,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
                     key={it.id}
                     item={it}
                     priority={i === 0 && idx < 3}
-                    className="w-[116px] shrink-0"
+                    className="w-[128px] shrink-0"
                   />
                 ))}
                 {shelfItems.length > 12 && (
@@ -326,8 +326,8 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
                     type="button"
                     onClick={() => setExpanded(key)}
                     className={cn(
-                      'press flex w-[116px] shrink-0 flex-col items-center justify-center gap-1 rounded-squircle',
-                      'border border-dashed border-white/[0.12] text-fog-200',
+                      'press flex aspect-[4/5] w-[128px] shrink-0 flex-col items-center justify-center gap-1 rounded-[18px]',
+                      'border border-white/[0.10] text-fog-200 transition-colors hover:border-white/[0.18]',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400'
                     )}
                   >
@@ -347,7 +347,7 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
               </div>
               <div className="shelf-rail">
                 {orphans.map((it) => (
-                  <ItemCard key={it.id} item={it} className="w-[116px] shrink-0" />
+                  <ItemCard key={it.id} item={it} className="w-[128px] shrink-0" />
                 ))}
               </div>
             </section>

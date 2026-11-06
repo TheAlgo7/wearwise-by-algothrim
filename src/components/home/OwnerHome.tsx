@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn';
 import { PickInbox } from '@/components/PickInbox';
 import { SaveLookSheet } from '@/components/SaveLookSheet';
 import { CareCard } from '@/components/home/CareCard';
+import { OutfitComposition } from '@/components/OutfitComposition';
+import { colourStory } from '@/lib/colour-story';
 import { useCare } from '@/hooks/useCare';
 import { useWardrobe } from '@/hooks/useWardrobe';
 import { TodayContextSheet } from '@/components/home/TodayContextSheet';
@@ -26,8 +28,7 @@ import {
 } from '@/lib/today-context';
 import { cacheWeather } from '@/lib/weather-cache';
 import type { Item, Outfit, WeatherSnapshot, GeneratedOutfit } from '@/types';
-import { ChevronRight, Shirt, SlidersHorizontal, User } from 'lucide-react';
-import Image from 'next/image';
+import { ChevronRight, SlidersHorizontal, User } from 'lucide-react';
 import Link from 'next/link';
 
 /**
@@ -510,23 +511,20 @@ export function OwnerHome() {
       </div>
 
       {/* ── Header ── */}
-      <div className="px-5 pt-11 pb-3">
+      <div className="px-5 pb-1 pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="mb-1.5 truncate text-[13px] font-medium text-fog-400">
+            <p className="mb-2 truncate text-[13px] font-medium text-fog-400">
               {today || ' '}
             </p>
-            <h1
-              suppressHydrationWarning
-              className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance"
-            >
+            <h1 suppressHydrationWarning className="type-greeting text-balance">
               {greeting || 'Hello.'}
             </h1>
           </div>
           <Link
             href="/profile"
             aria-label="Your style profile"
-            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05] text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+            className="press -mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.10] text-fog-300 transition-colors hover:border-white/[0.18] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
           >
             <User size={19} aria-hidden />
           </Link>
@@ -548,8 +546,6 @@ export function OwnerHome() {
 
       {/* ── Content ── */}
       <div className="reach-zone">
-        <CareCard plan={care.state?.plan ?? null} loading={care.loading} />
-
         {error && (
           <div
             role="alert"
@@ -604,10 +600,14 @@ export function OwnerHome() {
           </p>
         )}
 
+        {/* Care is the second question of the morning, so it sits after the
+            outfit has had its say, one line, never a card. */}
+        <CareCard plan={care.state?.plan ?? null} loading={care.loading} />
+
         <PickInbox picks={picks} itemById={itemById} onWear={wearPick} onSeen={markPickSeen} />
 
         {seasonLooks.length > 0 && (
-          <section aria-label={`Saved looks for ${SEASON_META[season].label}`} className="mt-1">
+          <section aria-label={`Saved looks for ${SEASON_META[season].label}`} className="mt-3">
             <div className="shelf-head">
               <h2 className="section-title">Ready to wear</h2>
               <Link
@@ -622,41 +622,22 @@ export function OwnerHome() {
               {seasonLooks.map((look) => {
                 const resolved = look.items
                   .map((id) => itemById.get(id))
-                  .filter((i): i is Item => Boolean(i))
-                  .slice(0, 4);
+                  .filter((i): i is Item => Boolean(i));
+                const story = colourStory(resolved);
                 return (
                   <Link
                     key={look.id}
                     href="/looks"
                     className={cn(
-                      'app-card block w-[164px] shrink-0 p-3',
+                      'press block w-[132px] shrink-0 rounded-[20px]',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400'
                     )}
                   >
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {resolved.map((it) => (
-                        <div key={it.id} className="photo-well aspect-square overflow-hidden rounded-[12px]">
-                          {it.image_url ? (
-                            <Image
-                              src={it.image_url}
-                              alt={it.name}
-                              width={72}
-                              height={72}
-                              sizes="72px"
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Shirt size={16} className="text-fog-500" aria-hidden />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-2.5 truncate text-[13px] font-semibold text-fog-100">
-                      {look.name ?? 'Saved look'}
+                    <OutfitComposition items={resolved} light={story.light} scale="tile" className="rounded-[20px]" />
+                    <p className="mt-2 truncate px-0.5 text-[13px] font-semibold text-fog-100">
+                      {look.name || story.headline || 'Saved look'}
                     </p>
-                    <p className="text-[11px] font-medium text-fog-400">
+                    <p className="truncate px-0.5 text-[11px] font-medium text-fog-400">
                       {look.season ? SEASON_META[look.season].label : 'Any season'}
                     </p>
                   </Link>

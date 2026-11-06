@@ -65,7 +65,7 @@ export default function WardrobePage() {
                 <div className="mb-2 h-5 w-28 animate-pulse rounded-full bg-white/[0.05]" />
                 <div className="flex gap-2.5">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-[178px] w-[116px] animate-pulse rounded-squircle bg-white/[0.05]" />
+                    <div key={i} className="skeleton aspect-[4/5] w-[128px] animate-pulse rounded-[18px]" />
                   ))}
                 </div>
               </div>

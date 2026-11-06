@@ -36,9 +36,13 @@ The app's own palette is quiet on purpose; the colour comes from what he owns. `
 - **Swatches**: up to four colours, clothes before accessories, shown under the plate on Today, in the outfit sheet, and as dots on Looks tiles and wardrobe cards.
 - **A light** (`--story`): the first non-neutral colour. `.fit-stage` spills it around the outfit plate, never onto it, so a black shirt still photographs black. `--story` is a registered `@property`, so a new outfit fades its light in over 900ms.
 
-### Photo plates
+### Photos float (revamp, November 2026)
 
-Most garment photos are flattened onto black with a faint vignette, not cut out with alpha (checked: 4 of 5 sampled are RGB with a black corner). On pure black that vignette showed as a dark box around trousers and shirts. Every photo now sits on `.photo-well`: a floor of `--well` (21 16 17) with `mix-blend-mode: lighten` on the image, which dissolves the black box into the floor. Use `.photo-well` for any garment photo; never `bg-ink-0` or `bg-black`.
+Every garment photo is shot on black (measured 6 Nov 2026: 120 photos, corners at RGB 0-2; footwear has real alpha). The canvas is true black, so a photo needs no plate at all: the grey `--well` plates were most of what made the wardrobe look boxy and are gone. `.photo-well` is now transparent with `mix-blend-mode: screen` on the image, so the photo's black vanishes into whatever is behind it (canvas, sheet, an outfit's light). `screen` adds light rather than replacing shadows, so a black shirt under coloured light reads as lit, not fogged (`lighten` flattened its shadows into the light colour).
+
+- An animating wrapper is its own stacking context, so blend the wrapper (`.garment`), not the `<img>` inside it, or it flashes black squares mid-animation.
+- A blend only sees what is inside its stacking context. The outfit figure is a size container (a stacking context), so its light lives inside it.
+- Loading placeholders use `.skeleton`, never a `.photo-well` pulse (a transparent pulse is invisible).
 
 ---
 
@@ -96,7 +100,10 @@ The old `fog-400` and `fog-500` sat at roughly 3.4:1 and 1.9:1 and were used for
 
 ## Typography
 
-Font stack: `SamsungOne`, `SF Pro Display`, `system-ui`, `Roboto`, `sans-serif`. Mimics the native Samsung OneUI system font experience.
+Two families (revamp, November 2026):
+
+- **Display, for moments only:** Archivo via `next/font` (`--font-display`), variable, `wdth 112`, weight 620, tracking -0.025em. Classes: `.type-greeting` (31px, Today), `.type-title` (30px, every `OneUIHeader`), `.type-headline` (21px, an outfit's colour name). Never on labels, buttons or data.
+- **Everything else:** `SamsungOne`, `SF Pro Display`, `system-ui`, `Roboto`, `sans-serif`, the native stack on his S24 and her iPhone.
 
 ### Type scale
 
@@ -202,15 +209,17 @@ Four destinations each: Today, Wardrobe, Care, Looks for him; Home, Wardrobe, St
 
 Active item: `bg-crimson-400`, white text. Inactive: `text-fog-300`.
 
-### Today's fit (TodayFit + OutfitComposition)
+### Today's fit (TodayFit + OutfitComposition), revamp November 2026
 
-The home screen hero, roughly two thirds of the visible screen.
+The outfit stands on the canvas head to toe, no plate, lit by its own colour.
 
-- `OutfitComposition` lays items out as a flat-lay on one `.photo-well` plate: top large in band one with layers beside it, bottom and shoes in band two, accessories along band three. **No per-item borders or cards**: those are what made the old version read as a product list rather than an outfit. With `animate`, pieces settle in one after another in dressing order (`piece-in`, 60ms apart), and the plate is keyed by its item ids so a new option replays it.
-- The plate sits in a `.fit-stage` lit by the outfit's `--story` colour, with the swatch line under it.
-- Then one row: `Wear this` (h-14, crimson, flexible) beside `Another` (h-14, neutral). They used to be stacked, and on a 6.8in phone "Wear this" landed under the nav. A back chevron appears on the left once he has moved past the first option.
-- Then the reasoning, clamped to two lines, and "Why this works" into the full sheet. Save is a bookmark icon in the section header, not a third button.
-- The alternatives are real but hidden. `Another` walks the batch, then generates a fresh one when it runs out.
+- **`OutfitComposition` draws the silhouette.** Top over bottom on one axis at true proportion (square photo boxes: top 44% of the figure's height, trousers 65%, shorts 40%, waistband at 43%), with the finishing pieces in a side column (cap and glasses at the top; the under-layer, watch, belt and shoes stacked down to the hem). The visible layer leads: a jacket, a mid layer or a shirt worn open over a tee (`openShirtOverTee`), with what is under it beside. Container units (`container-type: size`), so one layout serves the hero and a 160px tile. Pieces arrive in dressing order (`piece-in`, 55ms apart).
+- **The light** (`.look-light`, hero) is the outfit's `--story` colour from above the shoulders plus a pool at the hem. Every gradient fades out inside its box, so it never shows a straight cut. Tiles and boxed figures use `.look-light-tile`, kept inside and clipped, because a light spilling into the next tile gets covered by that tile's photo boxes.
+- **Named by its colours** (`colourStory().headline`): "Burgundy over black", "All black". Display face, may wrap to two lines.
+- Swipe the figure for the next option (left) or the previous one (right); tap it for every piece. Option pips sit under it.
+- Then one row: `Wear this` (52px, crimson, flexible) and `Another` (52px, outlined). The figure is `min(46dvh, 420px)` so that with a two-line greeting on his phone (360 x 756 installed) the row still clears the nav.
+- Then the reasoning (two lines, "Why this works" opens the sheet), then the Care line (outlined, not a card), then Ready to wear as lit mini figures.
+- The page wrapper is `overflow-x: clip`: the hero's light may spill past the figure but never makes the page pan sideways.
 
 ### Looks (LookTile + LookSheet)
 
@@ -363,12 +372,15 @@ Voice, owner: composed and dry, never cheerful. Voice, partner: warm; she is a g
 
 ## App Icons
 
-PWA icons at `public/icons/`. Formats: SVG (primary), PNG fallbacks.
+The folded two-tone W (approved 21 Oct 2026, sources in `Work\Ongoing Apps Assets\WearWise\Logos`). The hanger-and-sparkle icon is retired: at launcher size it dissolved into a grey squiggle and a red dot.
 
-| File | Purpose | Notes |
-|---|---|---|
-| `icon.svg` | Main icon (PWA, browser tab) | 512×512 viewBox |
-| `icon-maskable.svg` | Android adaptive icon | Content within central 80% |
-| `apple-touch-icon.svg` | iOS home screen | 180×180 effective size; no rounded corners needed |
+| File | Purpose |
+|---|---|
+| `public/icon-192.png`, `icon-512.png` | `any` (from `WearWise - icon.png`) |
+| `public/icon-maskable-192.png`, `icon-maskable-512.png` | `maskable` (from the Android safe-zone version) |
+| `public/apple-touch-icon.png` | iOS, 180px, full bleed |
+| `public/favicon-16x16.png`, `favicon-32x32.png`, `favicon.ico` | browser tab |
 
-*Last updated: September 2026, the "Colour story" pass: OKLCH ink and fog, neutral selection, outfits lit by their own colours, photo plates, Wear this above the fold, Looks as a grid, grooming dates that can be logged and never pretend, liquid glass nav. Before that, August 2026, the "Focus" pass.*
+The icons are exempt from the PIN gate (`proxy.ts` matcher): Chrome re-mints an installed app's icon from a server with no cookie.
+
+*Last updated: November 2026, the "Lights down" revamp (in progress on the `revamp` branch, brief in `docs/revamp-brief.md`): true black canvas, photos float with no plates, the outfit drawn head to toe at true proportion and lit by its own colour, Archivo for moments, the new W icon. Before that, September 2026, the "Colour story" pass: OKLCH ink and fog, neutral selection, outfits lit by their own colours, photo plates, Wear this above the fold, Looks as a grid, grooming dates that can be logged and never pretend, liquid glass nav. Before that, August 2026, the "Focus" pass.*

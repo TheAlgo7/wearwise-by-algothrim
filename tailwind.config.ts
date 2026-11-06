@@ -55,6 +55,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['SamsungOne', '"SF Pro Display"', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'],
+        // Moments only (see layout.tsx). Never on labels, buttons or data.
+        display: ['var(--font-display)', 'SamsungOne', '"SF Pro Display"', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         // One UI 9 bold refresh: hero weight up one step

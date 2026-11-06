@@ -17,13 +17,11 @@ interface OneUIHeaderProps {
  */
 export function OneUIHeader({ title, subtitle, right, className }: OneUIHeaderProps) {
   return (
-    <header className={cn('flex items-end justify-between gap-4 px-5 pt-14 pb-5', className)}>
+    <header className={cn('flex items-end justify-between gap-4 px-5 pt-12 pb-5', className)}>
       <div className="min-w-0 flex-1">
-        <h1 className="text-[30px] font-semibold leading-[1.15] tracking-tight text-fog-100 text-balance">
-          {title}
-        </h1>
+        <h1 className="type-title text-balance">{title}</h1>
         {subtitle ? (
-          <p className="mt-1.5 text-oneui-body text-fog-300 text-pretty">{subtitle}</p>
+          <p className="mt-2 text-oneui-body text-fog-300 text-pretty">{subtitle}</p>
         ) : null}
       </div>
       {right ? <div className="shrink-0 self-start">{right}</div> : null}

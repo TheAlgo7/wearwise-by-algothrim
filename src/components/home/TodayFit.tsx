@@ -4,14 +4,10 @@ import { OutfitComposition } from '@/components/OutfitComposition';
 import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
 import { colourStory } from '@/lib/colour-story';
+import { readOrder } from '@/lib/item-presentation';
 import type { GeneratedOutfit, Item } from '@/types';
 import { BookmarkCheck, BookmarkPlus, Check, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-
-const LAYER_ORDER: Record<string, number> = {
-  base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4,
-  timepiece: 5, accessory: 6, eyewear: 7, headwear: 8, jewelry: 9,
-};
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   outfit: GeneratedOutfit;
@@ -36,14 +32,17 @@ interface Props {
 
 /** How long to wait before offering an escape from a slow model call. */
 const PATIENCE_MS = 8000;
+/** A horizontal drag this long, and clearly sideways, is a swipe, not a tap. */
+const SWIPE_PX = 48;
 
 /**
  * The answer, and only the answer.
  *
- * One outfit fills most of the screen, with a sentence explaining it and two
- * ways to respond: take it, or push back. The alternatives still exist — they
- * are just behind "Another option" instead of demanding to be compared in a
- * carousel before he has had coffee.
+ * Revamp, November 2026: the outfit stands on the black canvas head to toe,
+ * lit by its own colour, with no plate around it. It is named by its colours
+ * ("Burgundy over black"), because that is the decision he is making. Swipe it
+ * for the next option, tap it for every piece, and the two answers to "is this
+ * it?" sit right under it: wear it, or push back.
  */
 export function TodayFit({
   outfit, items, itemById, index, total, worn, saved, busy, stale,
@@ -64,96 +63,128 @@ export function TodayFit({
 
   const resolved = useMemo(
     () =>
-      Array.from(
-        new Map(
-          outfit.items.map((id) => itemById.get(id)).filter(Boolean).map((i) => [i!.id, i!])
-        ).values()
-      ).sort(
-        (a, b) =>
-          (LAYER_ORDER[a.category?.layer_type ?? ''] ?? 99) -
-          (LAYER_ORDER[b.category?.layer_type ?? ''] ?? 99)
+      readOrder(
+        Array.from(
+          new Map(
+            outfit.items.map((id) => itemById.get(id)).filter(Boolean).map((i) => [i!.id, i!])
+          ).values()
+        )
       ),
     [outfit.items, itemById]
   );
 
   const story = useMemo(() => colourStory(resolved), [resolved]);
-  // Remounting the plate on a new outfit is what replays the pieces settling in.
-  const plateKey = resolved.map((i) => i.id).join('|');
+  // Remounting the figure on a new outfit is what replays the pieces arriving.
+  const figureKey = resolved.map((i) => i.id).join('|');
+
+  // ── Swipe between options ──
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
+  const canGoBack = index > 0;
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = { x: e.clientX, y: e.clientY };
+    swiped.current = false;
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const start = drag.current;
+    drag.current = null;
+    if (!start || stale) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    swiped.current = true;
+    if (dx < 0) {
+      if (!busy) onAnother();
+    } else if (canGoBack) {
+      onPrevious();
+    }
+  };
+
+  const dim = stale ? 'opacity-40' : undefined;
 
   return (
     <>
-      <section aria-label="Today's outfit" className="animate-oneui-fade flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3 px-1">
-          <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Today&apos;s fit</h2>
-          <div className="flex items-center gap-1">
-            {stale ? (
-              <span className="mr-1 flex items-center gap-1.5 text-[12px] font-medium text-fog-400">
-                <Loader2 size={12} className="animate-spin" aria-hidden />
-                Updating for today
-              </span>
-            ) : total > 1 ? (
-              <span className="mr-1 text-[12px] font-medium tabular-nums text-fog-400">
-                {index + 1} of {total}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={onSave}
-              aria-label={saved ? 'Saved to your shelf' : 'Save this look'}
-              aria-pressed={saved}
-              className={cn(
-                'press flex h-11 w-11 items-center justify-center rounded-full transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-                saved ? 'text-crimson-300' : 'text-fog-300 hover:text-fog-100'
-              )}
-            >
-              {saved ? <BookmarkCheck size={19} aria-hidden /> : <BookmarkPlus size={19} aria-hidden />}
-            </button>
-          </div>
-        </div>
+      <section aria-label="Today's outfit" className="flex flex-col">
+        {/* The figure. Tap for every piece, swipe for another option. */}
+        <button
+          type="button"
+          onClick={() => {
+            if (swiped.current) { swiped.current = false; return; }
+            setDetailOpen(true);
+          }}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => { drag.current = null; }}
+          aria-label={`${story.headline || 'Today’s outfit'}. ${resolved.length} pieces. Open for details.`}
+          style={{ touchAction: 'pan-y' }}
+          className={cn(
+            'relative -mx-2 mt-2 block select-none rounded-[28px] px-2 text-left transition-opacity duration-300',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+            dim
+          )}
+        >
+          <OutfitComposition
+            key={figureKey}
+            items={resolved}
+            light={story.light}
+            priority
+            animate
+            // 46% of the screen: with a two-line greeting on his phone (360 x 756
+            // installed), "Wear this" still clears the nav bar.
+            className="aspect-auto h-[min(46dvh,420px)]"
+          />
+        </button>
 
-        {/* The plate, lit by the outfit's own colour. */}
-        <div className="fit-stage" style={{ '--story': story.light } as React.CSSProperties}>
+        {/* Where this sits among the options: the swipe's own indicator, under it. */}
+        {total > 1 && !stale && (
+          <div className="mt-1 flex justify-center gap-1" role="img" aria-label={`Option ${index + 1} of ${total}`}>
+            {Array.from({ length: total }).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'h-1 rounded-full transition-all duration-300',
+                  i === index ? 'w-4 bg-fog-200' : 'w-1.5 bg-fog-500'
+                )}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Named by its colours: that is the decision he is making. */}
+        <div className={cn('mt-3 flex items-start gap-3 px-1 transition-opacity duration-300', dim)}>
+          <h2 className="type-headline min-w-0 flex-1 pt-1.5 text-balance">
+            {story.headline || 'Today’s fit'}
+          </h2>
+
+          {stale && (
+            <span className="flex shrink-0 items-center gap-1.5 pt-3 text-[12px] font-medium text-fog-400">
+              <Loader2 size={12} className="animate-spin" aria-hidden />
+              Updating
+            </span>
+          )}
+
           <button
             type="button"
-            onClick={() => setDetailOpen(true)}
-            aria-label={`See all ${resolved.length} pieces in this outfit`}
+            onClick={onSave}
+            aria-label={saved ? 'Saved to your shelf' : 'Save this look'}
+            aria-pressed={saved}
             className={cn(
-              'press block w-full rounded-squircle-lg text-left transition-opacity duration-300',
+              'press -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-              stale && 'opacity-40'
+              saved ? 'text-crimson-300' : 'text-fog-300 hover:text-fog-100'
             )}
           >
-            <OutfitComposition key={plateKey} items={resolved} priority animate />
+            {saved ? <BookmarkCheck size={19} aria-hidden /> : <BookmarkPlus size={19} aria-hidden />}
           </button>
         </div>
-
-        {story.swatches.length > 0 && (
-          <p
-            className={cn(
-              'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[13px] font-medium text-fog-300 transition-opacity duration-300',
-              stale && 'opacity-40'
-            )}
-            aria-label={`Colours: ${story.swatches.map((s) => s.name).join(', ')}`}
-          >
-            {story.swatches.map((s) => (
-              <span key={s.name} className="inline-flex items-center gap-1.5" aria-hidden>
-                <span
-                  className="h-3 w-3 rounded-full ring-1 ring-inset ring-white/[0.18]"
-                  style={{ background: s.hex }}
-                />
-                {s.name}
-              </span>
-            ))}
-          </p>
-        )}
 
         {/* An outfit that answers yesterday's question is not something to
             tap "Wear this" on, so the actions wait. If the model is taking
             long enough to notice, he can take this one anyway. */}
         {stale ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-white/[0.05] text-[15px] font-semibold text-fog-300">
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full border border-white/[0.08] text-[15px] font-semibold text-fog-300">
               <Loader2 size={18} className="animate-spin" aria-hidden />
               Updating for today
             </div>
@@ -168,17 +199,15 @@ export function TodayFit({
             )}
           </div>
         ) : (
-          /* One row, so both answers to "is this it?" sit above the fold. The
-             column version put "Wear this" under the nav on a 6.8in phone. */
-          <div className="flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             {/* Going forward without being able to go back meant an option he
                 liked was gone the moment he looked at the next one. */}
-            {index > 0 && (
+            {canGoBack && (
               <button
                 type="button"
                 onClick={onPrevious}
                 aria-label="Previous option"
-                className="press flex h-14 w-11 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+                className="press flex h-[52px] w-11 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
               >
                 <ChevronLeft size={20} aria-hidden />
               </button>
@@ -188,10 +217,10 @@ export function TodayFit({
               onClick={onWear}
               disabled={worn}
               className={cn(
-                'press flex h-14 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full text-[16px] font-semibold transition-colors',
+                'press flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-semibold transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0',
                 worn
-                  ? 'bg-white/[0.07] text-fog-200'
+                  ? 'border border-white/[0.10] text-fog-200'
                   : 'bg-crimson-400 text-white hover:bg-crimson-500'
               )}
             >
@@ -214,8 +243,8 @@ export function TodayFit({
                 : 'Generate a fresh option'
               }
               className={cn(
-                'press flex h-14 shrink-0 items-center justify-center gap-1.5 rounded-full bg-white/[0.07] px-5 text-[15px] font-semibold text-fog-100 transition-colors',
-                'hover:bg-white/[0.11] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                'press flex h-[52px] shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/[0.12] px-5 text-[15px] font-semibold text-fog-100 transition-colors',
+                'hover:border-white/[0.2] hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
                 'disabled:opacity-60'
               )}
             >
@@ -237,12 +266,12 @@ export function TodayFit({
           type="button"
           onClick={() => setDetailOpen(true)}
           className={cn(
-            'press block w-full rounded-squircle-sm px-1 text-left transition-opacity duration-300',
+            'press mt-3.5 block w-full rounded-squircle-sm px-1 text-left transition-opacity duration-300',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
-            stale && 'opacity-40'
+            dim
           )}
         >
-          <span className="line-clamp-2 text-[14px] leading-[1.55] text-fog-200 text-pretty">
+          <span className="line-clamp-2 text-[14px] leading-[1.55] text-fog-300 text-pretty">
             {outfit.reasoning}
           </span>
           <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-fog-400">
@@ -266,22 +295,22 @@ export function TodayFit({
   );
 }
 
-/** Shown while the first fit of the day is being put together. */
+/** Shown while the first fit of the day is being put together: the figure's own shape, waiting. */
 export function TodayFitSkeleton() {
   return (
-    <section aria-label="Building today's outfit" className="flex flex-col gap-3">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-[17px] font-semibold leading-6 text-fog-100">Today&apos;s fit</h2>
-        <span className="flex items-center gap-2 text-[12px] font-medium text-fog-400">
-          <Loader2 size={13} className="animate-spin" aria-hidden />
-          Putting it together
-        </span>
+    <section aria-label="Building today's outfit" className="flex flex-col">
+      <div className="relative mt-2 h-[min(46dvh,420px)] w-full" style={{ containerType: 'size' }}>
+        <div className="skeleton absolute left-[calc(35cqw-16cqh)] top-[3cqh] h-[38cqh] w-[32cqh] animate-pulse rounded-[22%]" />
+        <div className="skeleton absolute left-[calc(35cqw-10cqh)] top-[44cqh] h-[53cqh] w-[20cqh] animate-pulse rounded-[18%]" />
+        <div className="skeleton absolute bottom-[3cqh] right-[4cqw] h-[16cqh] w-[24cqw] animate-pulse rounded-[30%]" />
       </div>
-      <div className="photo-well mx-auto aspect-[5/6] max-h-[38dvh] w-full animate-pulse rounded-squircle-lg" />
-      <div className="h-4 w-1/2 animate-pulse rounded-full bg-white/[0.05]" />
-      <div className="flex gap-2">
-        <div className="h-14 flex-1 animate-pulse rounded-full bg-white/[0.05]" />
-        <div className="h-14 w-[118px] animate-pulse rounded-full bg-white/[0.05]" />
+      <div className="mt-3 flex items-center gap-2 px-1 text-[13px] font-medium text-fog-400">
+        <Loader2 size={13} className="animate-spin" aria-hidden />
+        Putting today&apos;s fit together
+      </div>
+      <div className="mt-3 flex gap-2">
+        <div className="skeleton h-[52px] flex-1 animate-pulse rounded-full" />
+        <div className="skeleton h-[52px] w-[118px] animate-pulse rounded-full" />
       </div>
     </section>
   );

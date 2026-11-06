@@ -18,28 +18,25 @@ interface Props {
 /**
  * One piece on a shelf.
  *
- * It was a bordered card holding a black image box holding the photo, with a
- * one-line name that cut most of the wardrobe off mid-word ("Black Long-Sle...").
- * Now the photo sits straight on its plate, like a shop shelf, and the name gets
- * two lines. The colour dot is the fastest way to find a piece in a rail of
- * look-alike tees.
+ * Revamp, November 2026: no plate. The photo is shot on black and the canvas
+ * is black, so the garment simply hangs there; the grey box it used to sit in
+ * was what made the wardrobe read as a product catalogue. Two lines for the
+ * name, then its colour, which is how he actually finds a piece in a rail of
+ * look-alike tees. Fit was dropped from the tile: "Regular" on every tee told
+ * him nothing; it is still on the item page.
  */
 export function ItemCard({ item, compact, priority, className }: Props) {
   const swatch = swatchFor(item.primary_color);
-  const meta = [item.primary_color, item.fit].filter(Boolean).join(' · ');
 
   return (
     <Link
       href={`/wardrobe/${item.id}`}
-      className={cn(
-        'press group block min-w-0 rounded-[18px] focus-visible:outline-none',
-        className
-      )}
+      className={cn('press group block min-w-0 rounded-[18px] focus-visible:outline-none', className)}
     >
       <div
         className={cn(
-          'photo-well relative w-full overflow-hidden rounded-[18px] ring-crimson-400 ring-offset-2 ring-offset-ink-0 group-focus-visible:ring-2',
-          compact ? 'aspect-square' : 'aspect-[3/4]'
+          'photo-well relative w-full rounded-[18px] ring-crimson-400 ring-offset-2 ring-offset-ink-0 group-focus-visible:ring-2',
+          compact ? 'aspect-square' : 'aspect-[4/5]'
         )}
       >
         {item.image_url ? (
@@ -60,10 +57,10 @@ export function ItemCard({ item, compact, priority, className }: Props) {
           </div>
         )}
       </div>
-      <p className="mt-2 line-clamp-2 px-0.5 text-[13px] font-semibold leading-[1.3] text-fog-100">
+      <p className="mt-1.5 line-clamp-2 px-0.5 text-[13px] font-semibold leading-[1.3] text-fog-100">
         {item.name}
       </p>
-      {meta && (
+      {item.primary_color && (
         <p className="mt-0.5 flex items-center gap-1.5 px-0.5 text-[11px] capitalize text-fog-400">
           {swatch && (
             <span
@@ -72,7 +69,7 @@ export function ItemCard({ item, compact, priority, className }: Props) {
               aria-hidden
             />
           )}
-          <span className="truncate">{meta}</span>
+          <span className="truncate">{item.primary_color}</span>
         </p>
       )}
     </Link>

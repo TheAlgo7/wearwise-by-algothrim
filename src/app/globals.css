@@ -138,8 +138,8 @@
      assuming right now; tapping it opens the sheet where those are editable. */
   .context-pill {
     @apply press inline-flex min-h-[44px] max-w-full items-center gap-2 rounded-full
-           border border-white/[0.08] bg-white/[0.05] pl-4 pr-3 text-[13px] font-medium text-fog-200
-           transition-colors hover:bg-white/[0.09]
+           border border-white/[0.10] bg-transparent pl-4 pr-3 text-[13px] font-medium text-fog-300
+           transition-colors hover:border-white/[0.18] hover:text-fog-100
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400;
   }
 
@@ -161,13 +161,86 @@
     box-shadow: 0 1px 0 rgb(255 255 255 / 0.07) inset, 0 2px 10px rgb(0 0 0 / 0.35);
   }
 
-  /* A garment photo's plate. See --well: photos blend with `lighten`, so the
-     black they were flattened onto disappears into the plate. */
+  /* A garment photo's home. Revamp, Nov 2026: no plate any more. Every photo
+     is shot on black, so on the black canvas it needs nothing; `screen` makes
+     that black disappear into whatever is behind it instead (a sheet, a
+     card, an outfit's light), and it adds light rather than replacing
+     shadows, so a black shirt under coloured light reads as lit, not fogged.
+     The old grey plates were most of what made the wardrobe look boxy. */
   .photo-well {
-    background: rgb(var(--well));
+    background: transparent;
   }
   .photo-well img {
-    mix-blend-mode: lighten;
+    mix-blend-mode: screen;
+  }
+
+  /* The same, for a photo whose wrapper animates. An animating element is its
+     own stacking context, so a blend on the <img> inside it would only see the
+     wrapper's empty backdrop and flash black squares mid-animation. Blending
+     the wrapper itself composites the whole piece against what is behind it. */
+  .garment {
+    mix-blend-mode: screen;
+  }
+
+  /* Loading placeholder. Separate from .photo-well now that the well has no
+     fill: a transparent pulse is an invisible one. */
+  .skeleton {
+    background: rgb(255 255 255 / 0.05);
+  }
+
+  /* An outfit's light: its hero colour, falling on the pieces from slightly
+     above the shoulders, with a faint pool at the hem. Lives INSIDE the outfit
+     figure (see OutfitComposition): the figure is a size container, which
+     makes it its own stacking context, and the garments can only blend with
+     light that is inside that context. */
+  /* The Today hero, which stands alone and may spill. The box reaches 30%
+     past the figure on three sides and 20% below; every ellipse fades out
+     well inside it (centre plus its faded radius stays within 0-100%), so the
+     light never meets an edge and never shows a straight cut. --light-x is
+     the figure's axis in this box's coordinates (set by OutfitComposition). */
+  .look-light {
+    position: absolute;
+    inset: -30% -30% -20%;
+    pointer-events: none;
+    background:
+      radial-gradient(34% 30% at var(--light-x, 42%) 37%, color-mix(in oklab, var(--story) 36%, transparent), transparent 74%),
+      radial-gradient(40% 36% at var(--light-x, 42%) 40%, color-mix(in oklab, var(--story) 12%, transparent), transparent 92%),
+      radial-gradient(22% 6% at var(--light-x, 42%) 86%, color-mix(in oklab, var(--story) 20%, transparent), transparent 80%);
+    transition: --story 900ms var(--ease-spring);
+  }
+  /* Tiles and boxed figures. A light that spilled into the next tile was
+     covered by that tile's photo boxes (each figure blends only inside
+     itself), which drew rectangles; so a tile's light stays inside the tile,
+     and the figure clips it to its rounded shape. */
+  .look-light-tile {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(36% 32% at var(--light-x, 38%) 30%, color-mix(in oklab, var(--story) 40%, transparent), transparent 76%),
+      radial-gradient(38% 46% at var(--light-x, 38%) 50%, color-mix(in oklab, var(--story) 12%, transparent), transparent 90%),
+      radial-gradient(26% 7% at var(--light-x, 38%) 92%, color-mix(in oklab, var(--story) 18%, transparent), transparent 80%);
+    transition: --story 900ms var(--ease-spring);
+  }
+
+  /* Display type: moments only. Archivo, opened up slightly on its width axis,
+     semibold, tight. Labels and buttons never use it. */
+  .type-display {
+    font-family: var(--font-display), 'SamsungOne', 'SF Pro Display', system-ui, sans-serif;
+    font-variation-settings: 'wdth' 112;
+    font-weight: 620;
+    letter-spacing: -0.025em;
+  }
+  .type-greeting {
+    @apply type-display text-[31px] leading-[1.06] text-fog-100;
+  }
+  .type-title {
+    @apply type-display text-[30px] leading-[1.08] text-fog-100;
+  }
+  /* A look's name, from its colours: "Burgundy over black". */
+  .type-headline {
+    @apply type-display text-[21px] leading-[1.15] text-fog-100;
+    letter-spacing: -0.015em;
   }
 
   /* The outfit, lit by its own colours. --story is the outfit's most telling

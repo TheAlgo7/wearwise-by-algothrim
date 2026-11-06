@@ -58,7 +58,7 @@ export default function ItemDetailPage({ params }: PageProps) {
     return (
       <main className="min-h-dvh p-6">
         <div className="h-8 w-40 bg-ink-200 rounded animate-pulse mb-4" />
-        <div className="photo-well aspect-square rounded-squircle animate-pulse" />
+        <div className="skeleton aspect-square rounded-squircle animate-pulse" />
       </main>
     );
   }

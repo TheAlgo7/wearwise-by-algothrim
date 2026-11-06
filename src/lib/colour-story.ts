@@ -1,3 +1,4 @@
+import { readOrder } from '@/lib/item-presentation';
 import type { Item } from '@/types';
 
 /**
@@ -51,17 +52,28 @@ const SWATCH: Record<string, string> = {
 /** Colours that frame a look rather than define it. */
 const NEUTRAL = new Set(['black', 'charcoal', 'grey', 'gray', 'white', 'cream', 'ivory', 'silver']);
 
-/** Order the pieces are read in: the top tells the story, shoes finish it. */
-const LAYER_WEIGHT: Record<string, number> = {
-  base: 0, mid: 1, outer: 2, bottom: 3, footwear: 4,
-  headwear: 5, eyewear: 6, timepiece: 7, jewelry: 8, accessory: 9,
-};
+/** Clothing layers: these carry the colour story, accessories only join it. */
+const CLOTHING = new Set(['outer', 'mid', 'base', 'bottom', 'footwear']);
 
 export interface ColourStory {
   /** Up to four colours, in the order the eye meets them. */
   swatches: Array<{ name: string; hex: string }>;
   /** The colour the outfit is lit by, as an `rgb()` string for `--story`. */
   light: string;
+  /**
+   * The look named by its colours, top first: "Burgundy over black", "All
+   * black". Fashion first: the colour story is what he is choosing, so it is
+   * what the outfit is called. Empty when no piece has a colour.
+   */
+  headline: string;
+}
+
+/** "Burgundy over black" from the first two colours; "All black" from one. */
+export function colourHeadline(names: string[]): string {
+  const [first, second] = names.map((n) => n.toLowerCase());
+  if (!first) return '';
+  const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+  return second ? `${cap(first)} over ${second}` : `All ${first}`;
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -75,14 +87,12 @@ export function swatchFor(name: string | null | undefined): string | null {
 }
 
 export function colourStory(items: Item[]): ColourStory {
-  const ordered = [...items].sort(
-    (a, b) =>
-      (LAYER_WEIGHT[a.category?.layer_type ?? ''] ?? 99) - (LAYER_WEIGHT[b.category?.layer_type ?? ''] ?? 99)
-  );
+  // Front to back: a jacket or an open shirt before the tee under it.
+  const ordered = readOrder(items);
 
   // Clothes first. A watch or a belt can be in the palette, but never ahead of
   // the shirt and trousers that actually carry it.
-  const clothing = ordered.filter((i) => (LAYER_WEIGHT[i.category?.layer_type ?? ''] ?? 99) <= 4);
+  const clothing = ordered.filter((i) => CLOTHING.has(i.category?.layer_type ?? ''));
   const source = clothing.length > 0 ? clothing : ordered;
 
   const seen = new Set<string>();
@@ -100,5 +110,9 @@ export function colourStory(items: Item[]): ColourStory {
   // quiet warm light rather than none, so the stage never goes dead.
   const lead = swatches.find((s) => !NEUTRAL.has(s.name.toLowerCase()));
   const [r, g, b] = lead ? hexToRgb(lead.hex) : [150, 132, 134];
-  return { swatches, light: `rgb(${r} ${g} ${b})` };
+  return {
+    swatches,
+    light: `rgb(${r} ${g} ${b})`,
+    headline: colourHeadline(swatches.map((s) => s.name)),
+  };
 }

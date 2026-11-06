@@ -1,10 +1,24 @@
 import type { Metadata, Viewport } from 'next';
+import { Archivo } from 'next/font/google';
 import { BottomNav } from '@/components/BottomNav';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { RoleProvider } from '@/components/RoleProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { getRole } from '@/lib/auth';
 import './globals.css';
+
+/**
+ * The display face, for moments only: greetings, page titles, a look's colour
+ * headline, big counts. Every label, button and body line stays on the system
+ * stack (SamsungOne on his phone, SF on Ishita's). Variable, so the width axis
+ * can open it up slightly without loading a second file.
+ */
+const display = Archivo({
+  subsets: ['latin'],
+  axes: ['wdth'],
+  variable: '--font-display',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://wearwise-by-algothrim.vercel.app'),
@@ -53,7 +67,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0d0005',
+  // The canvas is true black now, so the status bar should be too.
+  themeColor: '#000000',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
@@ -67,10 +82,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const role = await getRole();
 
   return (
-    <html lang="en" className="dark" data-role={role === 'partner' ? 'partner' : undefined}>
+    <html lang="en" className={`${display.variable} dark`} data-role={role === 'partner' ? 'partner' : undefined}>
       <body>
         <RoleProvider role={role}>
-          <div className="mx-auto max-w-xl min-h-dvh pb-nav">
+          {/* overflow-x: clip. An outfit's light may spill past the figure, but
+              never far enough to make the page scroll sideways. `clip`, not
+              `hidden`: it is not a scroll container, so sticky headers stick.
+              On this wrapper rather than <body>, whose overflow is handed to
+              the viewport and does not reliably stop the sideways pan. */}
+          <div className="mx-auto max-w-xl min-h-dvh overflow-x-clip pb-nav">
             {children}
           </div>
           <BottomNav />

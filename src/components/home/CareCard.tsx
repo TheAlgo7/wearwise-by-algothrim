@@ -52,7 +52,9 @@ export function CareCard({ plan, loading }: Props) {
       href="/care"
       aria-label={`${phaseWord} care, ${remaining.length} steps, about ${Math.round(plan.minutes)} minutes${note ? `. ${note}` : ''}`}
       className={cn(
-        'press app-card flex min-h-[52px] items-center gap-3 rounded-[18px] px-4',
+        // Outlined, not filled: a reminder, not a surface competing with the outfit.
+        'press mt-1 flex min-h-[52px] items-center gap-3 rounded-full border border-white/[0.10] pl-4 pr-3',
+        'transition-colors hover:border-white/[0.18]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400'
       )}
     >

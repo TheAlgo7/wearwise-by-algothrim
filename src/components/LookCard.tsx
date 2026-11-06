@@ -58,11 +58,13 @@ export function LookTile({ look, itemById, worn, onOpen, index = 0 }: TileProps)
     >
       <OutfitComposition
         items={resolved}
-        className="aspect-square max-h-none rounded-[22px] p-1.5 ring-crimson-400 ring-offset-2 ring-offset-ink-0 group-focus-visible:ring-2"
+        light={story.light}
+        scale="tile"
+        className="aspect-square rounded-[22px] ring-crimson-400 ring-offset-2 ring-offset-ink-0 group-focus-visible:ring-2"
       />
       <div className="mt-2 flex items-center gap-2 px-1">
         <p className="min-w-0 flex-1 truncate text-[14px] font-semibold text-fog-100">
-          {look.name ?? 'Saved look'}
+          {look.name || story.headline || 'Saved look'}
         </p>
         <span className="flex shrink-0 -space-x-1" aria-hidden>
           {story.swatches.slice(0, 3).map((s) => (
@@ -144,9 +146,16 @@ function LookSheetBody({
         ))}
       </p>
 
-      <div className="fit-stage" style={{ '--story': story.light } as React.CSSProperties}>
-        <OutfitComposition items={resolved} priority animate />
-      </div>
+      {/* A small black lightbox on the sheet, so the look is lit the same way
+          it is on Today and the photos' black has somewhere to disappear. */}
+      <OutfitComposition
+        items={resolved}
+        light={story.light}
+        floor="rgb(0 0 0)"
+        priority
+        animate
+        className="overflow-hidden rounded-[24px]"
+      />
 
       {missing > 0 && (
         <p className="px-1 text-[12px] text-fog-400">
