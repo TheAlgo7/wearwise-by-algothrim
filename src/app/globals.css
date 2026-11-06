@@ -257,27 +257,6 @@
     letter-spacing: -0.015em;
   }
 
-  /* The outfit, lit by its own colours. --story is the outfit's most telling
-     colour (see lib/colour-story.ts); it spills around the plate rather than
-     onto it, so the garments themselves are never tinted and a black shirt
-     still reads as black. Registered below, so a new outfit fades its light in
-     instead of snapping. */
-  .fit-stage {
-    position: relative;
-    isolation: isolate;
-    transition: --story 900ms var(--ease-spring);
-  }
-  .fit-stage::before {
-    content: '';
-    position: absolute;
-    inset: -44px -16px -28px;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(64% 58% at 50% 40%, color-mix(in oklab, var(--story) 44%, transparent), transparent 74%),
-      radial-gradient(50% 40% at 50% 104%, color-mix(in oklab, var(--story) 22%, transparent), transparent 82%);
-  }
-
   /* The bottom nav's surface. Frosted by default, which is all Safari and
      Firefox can do, and opaque enough that the crimson "Wear this" never bleeds
      into a label. On Chromium useLiquidGlass adds edge refraction and sets

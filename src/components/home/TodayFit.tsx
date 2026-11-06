@@ -207,7 +207,7 @@ export function TodayFit({
             {canGoBack && (
               <button
                 type="button"
-                onClick={onPrevious}
+                onClick={() => { tick(); onPrevious(); }}
                 aria-label="Previous option"
                 className="press flex h-[52px] w-11 shrink-0 items-center justify-center rounded-full text-fog-300 transition-colors hover:bg-white/[0.06] hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
               >
@@ -237,7 +237,7 @@ export function TodayFit({
             </button>
             <button
               type="button"
-              onClick={onAnother}
+              onClick={() => { tick(); onAnother(); }}
               disabled={busy}
               aria-label={
                 busy ? 'Finding another outfit'
