@@ -7,6 +7,7 @@ export interface CareProfile {
   skin_type: string;
   skin_concerns: string[];
   sensitivities: string[];
+  /** Natural texture, e.g. 'fine-straight-silky'. A perm does not change it. */
   hair_type: string;
   hair_hold: string;
   /** 'active' | 'occasional' | 'none' */
@@ -14,6 +15,15 @@ export interface CareProfile {
   hairstyle_goal: string | null;
   growth_started_on: string | null;
   share_with_partner: boolean;
+  /**
+   * When the current perm was done (ISO timestamp), null while the hair is in
+   * its natural state. The three fields below are optional so rows and
+   * fixtures from before the columns existed still type-check.
+   */
+  perm_on?: string | null;
+  /** Hair wash window, in days since the last wash: earliest and latest. */
+  wash_min_days?: number | null;
+  wash_max_days?: number | null;
 }
 
 export interface CareProduct {
@@ -38,6 +48,8 @@ export interface CareProduct {
   wishlist: boolean;
   needs_detail: string | null;
   archived: boolean;
+  /** When the row was added. Of two owned bottles of a kind, the newer is the one in use. */
+  created_at?: string | null;
 }
 
 export interface CareLog {
@@ -80,8 +92,18 @@ export interface DueItem {
   stale?: boolean;
   /** ISO timestamp of the log this date is counted from. */
   lastDone?: string | null;
-  /** What to record when he says it is done. Absent for things like a wash. */
-  log?: { action: 'shave' | 'trim' | 'haircut'; area: string; domain: 'hair' | 'body' };
+  /** What to record when he says it is done. Absent when there is nothing to log yet. */
+  log?: {
+    action: 'shave' | 'trim' | 'haircut' | 'shampoo' | 'refresh';
+    area: string;
+    domain: 'hair' | 'body';
+    /** Recorded with the log, e.g. which shampoo a wash used. */
+    product_id?: string | null;
+    /** Products he can pick between when logging, e.g. gentle or medicated shampoo. */
+    choices?: Array<{ product_id: string; label: string }>;
+    /** Today-only and optional, like a morning refresh: log on tap, no date sheet. */
+    instant?: boolean;
+  };
 }
 
 export interface CarePlan {

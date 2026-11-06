@@ -1,6 +1,7 @@
 import { APP_TIMEZONE, localHour } from '@/lib/weather';
 import { modeLabel } from '@/lib/today-context';
 import { groomingDue } from '@/lib/care/grooming';
+import { permSettleText, permState, pickHairKit, planWash, washDueItem } from '@/lib/care/hair';
 import type {
   CareLog, CarePlan, CareProduct, CareProfile, CareStep, DueItem, Phase,
 } from '@/lib/care/types';
@@ -26,15 +27,9 @@ import type {
 // Starting points, not medical instructions. Each is overridable per area once
 // the logs show what his skin and hair actually tolerate.
 
-/** Fine straight hair gets oily quickly; this is the general wash interval. */
-const WASH_INTERVAL_D = 2;
-/** Treatment shampoo spacing. A medicated shampoo is not an everyday shampoo. */
-const TREATMENT_SHAMPOO_D: Record<string, number | null> = {
-  active: 3,
-  occasional: 7,
-  none: null,
-};
-// Shave, trim and haircut cadences live in ./grooming, shared with Ishita's card.
+// The hair wash window and the treatment-shampoo spacing live in ./hair; the
+// window is his own setting (every 3-4 days to start). Shave, trim and haircut
+// cadences live in ./grooming, shared with Ishita's card.
 
 /** How long a logged reaction keeps actives off the table. */
 const REACTION_LOOKBACK_D = 3;
@@ -48,6 +43,12 @@ const EVENT_MODES = new Set(['impress', 'night']);
 
 /** Modes that mean he is not leaving the house. */
 const HOME_MODES = new Set(['home']);
+
+/** Steps finished by a different logged action: one logged wash covers the whole wash. */
+const COMPLETED_BY: Record<string, string> = {
+  condition: 'shampoo',
+  curl_cream: 'shampoo',
+};
 
 export interface CareContext {
   mode: string;
@@ -152,6 +153,9 @@ export function buildCarePlan(
   const doneToday = new Set(
     logs.filter((l) => dayKey(new Date(l.done_at)) === today).map((l) => l.action)
   );
+  // Only a log completes a step. One logged wash covers the whole wash.
+  const isDone = (key: string) =>
+    doneToday.has(key) || (COMPLETED_BY[key] !== undefined && doneToday.has(COMPLETED_BY[key]));
 
   const stayingHome = HOME_MODES.has(ctx.mode) || ctx.environment === 'indoor-ac';
 
@@ -173,21 +177,12 @@ export function buildCarePlan(
 
   const eventTomorrow = ctx.plannedFor === 'tomorrow' && EVENT_MODES.has(ctx.mode);
 
-  // ── Hair wash decision ──
-  const antiDandruff = find(products, 'hair', 'shampoo');
-  const gentleShampoo = find(products, 'hair', 'shampoo', { wishlist: true });
-  const conditioner = find(products, 'hair', 'conditioner');
-
-  const sinceWash = daysSince(logs, (l) => l.action === 'shampoo', now);
-  const sinceTreatmentWash = daysSince(
-    logs,
-    (l) => l.action === 'shampoo' && l.product_id === antiDandruff?.id,
-    now
-  );
-  const isWashDay = sinceWash === null || sinceWash >= WASH_INTERVAL_D;
-  const treatmentGap = TREATMENT_SHAMPOO_D[profile.dandruff] ?? null;
-  const useTreatmentShampoo =
-    treatmentGap !== null && (sinceTreatmentWash === null || sinceTreatmentWash >= treatmentGap);
+  // ── Hair ──
+  // Owned bottles only, medicated and gentle kept apart. The wash is an
+  // evening job on a window he sets; showering has no say in it.
+  const kit = pickHairKit(products);
+  const perm = permState(profile, now);
+  const wash = planWash(profile, kit, logs, ctx, now);
 
   // ── Products ──
   const cleanser = find(products, 'skin', 'cleanser');
@@ -196,15 +191,13 @@ export function buildCarePlan(
   const sunscreen = find(products, 'skin', 'sunscreen');
   const bodyWash = find(products, 'body', 'wash');
   const bodyLotion = find(products, 'body', 'moisturiser');
-  const saltSpray = find(products, 'hair', 'styling', { order: 1 });
-  const clay = find(products, 'hair', 'styling', { order: 3 });
-  const heatProtectant = find(products, 'hair', 'styling', { wishlist: true, order: 0 });
 
   const flags: string[] = [];
   if (shavedToday) flags.push('Post-shave');
   if (recentReaction) flags.push('Skin recovery');
   if (eventTomorrow) flags.push('Event tomorrow');
-  if (isWashDay) flags.push('Wash day');
+  if (perm?.settling) flags.push('Perm setting');
+  if (wash.tonight && !wash.optional) flags.push('Wash day');
 
   const steps: CareStep[] = [];
 
@@ -249,28 +242,6 @@ export function buildCarePlan(
       );
     }
 
-    if (isWashDay) {
-      if (useTreatmentShampoo) {
-        steps.push(
-          step('shampoo', 'Shampoo', antiDandruff,
-            profile.dandruff === 'active'
-              ? 'Treatment wash. Scalp only, twice a week while flaking is active.'
-              : 'Treatment wash, about weekly. Scalp only, not the lengths.')
-        );
-      } else {
-        steps.push(
-          step('shampoo', 'Shampoo', gentleShampoo,
-            'A normal wash day. The medicated shampoo is not meant for every wash.',
-            { missing: 'You do not own a gentle everyday shampoo yet.' })
-        );
-      }
-      steps.push(
-        step('condition', 'Condition', conditioner,
-          'Lengths and fringe only, never the scalp. Two to three minutes, then rinse properly.',
-          { detail: 'Small amount, 2-3 min' })
-      );
-    }
-
     // ── Body ──
     // Shower, then lotion. Both products are fragranced, which is fine most
     // days and the wrong idea on skin that was shaved this week.
@@ -280,13 +251,19 @@ export function buildCarePlan(
       !freshlyGroomed && !shavedToday &&
       (daysSince(logs, (l) => l.action === 'exfoliate', now) ?? 99) >= 4;
 
+    // The shower is a body step. It never makes a hair wash due, and on the
+    // perm's first days it has to keep the hair dry.
+    const hairInShower = perm?.settling
+      ? ` Keep your hair out of the water until ${permSettleText(perm)}: a shower cap does it.`
+      : ' Body only. A shower is not a hair wash.';
+
     steps.push(
       step('body_wash', 'Shower', bodyWash,
-        freshlyGroomed || shavedToday
+        (freshlyGroomed || shavedToday
           ? 'Hands only while the skin is still settling. No loofah on freshly groomed skin.'
           : loofahDay
           ? 'Loofah is fine today, gently. Let it dry out properly afterwards.'
-          : 'Palms are enough. The loofah is a twice-a-week thing, not a daily one.',
+          : 'Palms are enough. The loofah is a twice-a-week thing, not a daily one.') + hairInShower,
         { detail: loofahDay && !freshlyGroomed && !shavedToday ? 'With the loofah' : 'Hands only' })
     );
 
@@ -298,13 +275,42 @@ export function buildCarePlan(
         { missing: bodyLotion ? undefined : 'No body moisturiser recorded yet.' })
     );
 
-    if (!stayingHome) {
+    // ── Hair ──
+    // Nothing here is mandatory any more. The perm makes the shape, so the
+    // old salt spray, blow-dry and clay routine is an option, not a duty.
+    if (perm?.settling) {
       steps.push(
-        step('style', 'Style', saltSpray,
-          'Damp hair, spray from a distance, lift the roots with your fingers while blow-drying, then a pea of clay from the back forward. The dryer makes the shape; the clay only holds it.',
+        step('perm_settle', 'Leave the perm alone', null,
+          `No water, no product, nothing tied back or tucked behind the ears until ${permSettleText(perm)}. The new shape is still setting.`)
+      );
+    } else if (perm) {
+      steps.push(
+        step('refresh', 'Water refresh', null,
+          'Wet hands or a mist of water, scrunch the waves up from the ends, then hands off while they dry. No shampoo, whether or not you showered.',
+          { optional: true, detail: 'Water only, air-dry' })
+      );
+      // Salt and heat wait out the first two weeks of a perm.
+      const texture = [
+        kit.saltSpray && `${kit.saltSpray.brand ?? ''} salt spray, 2-3 sprays on damp hair`.trim(),
+        kit.clay && `${kit.clay.brand ?? ''} clay, a rice grain in the ends`.trim(),
+        kit.powder && `${kit.powder.brand ?? ''} powder at the roots`.trim(),
+      ].filter((s): s is string => Boolean(s));
+      if (!stayingHome && !perm.fresh && texture.length > 0) {
+        steps.push(
+          step('style', 'Extra texture', null,
+            'Only if you want more grit. The perm makes the shape now, so there is no blow-dry and nothing has to go on. Pick one, not all three; salt dries permed hair, so not every day.',
+            { optional: true, detail: texture.join(', or ') })
+        );
+      }
+    } else if (!stayingHome) {
+      // Natural texture: the old styling routine, kept as an option.
+      steps.push(
+        step('style', 'Style', kit.saltSpray,
+          'Only if you want the shape. Damp hair, spray from a distance, lift the roots with your fingers while blow-drying, then a pea of clay from the back forward. The dryer makes the shape; the clay only holds it.',
           {
-            detail: clay ? `Sea salt spray, blow-dry, then ${clay.name.toLowerCase()}` : undefined,
-            missing: heatProtectant ? 'No heat protectant yet, and this routine blow-dries.' : undefined,
+            optional: true,
+            detail: kit.clay ? `Sea salt spray, blow-dry, then ${kit.clay.name.toLowerCase()}` : undefined,
+            missing: kit.heatProtectantGap ? 'No heat protectant yet, and this blow-dries.' : undefined,
           })
       );
     } else {
@@ -315,6 +321,49 @@ export function buildCarePlan(
       );
     }
   } else {
+    // ── Hair wash ──
+    // Evenings, on his window. Shampoo, a rinse-out conditioner, and on permed
+    // hair a little curl cream while it is still wet.
+    if (wash.tonight) {
+      const shampoo = wash.treatment ? kit.medicated : kit.gentle;
+      const optional = wash.optional;
+      steps.push(
+        step('shampoo', wash.treatment ? 'Treatment shampoo' : 'Shampoo', shampoo,
+          wash.treatment
+            ? `${wash.reason} Treatment night, scalp only: work it in, leave it two or three minutes, rinse well. The lengths get conditioner straight after.`
+            : `${wash.reason} Fingertips on the scalp only; the rinse is enough for the lengths.${
+                wash.heldForPerm ? ' The medicated one waits until the perm is two weeks old.' : ''
+              }`,
+          {
+            optional,
+            detail: wash.treatment ? 'Coin-sized, scalp only' : 'Small coin, scalp only',
+            missing: shampoo ? undefined : 'You do not own a gentle everyday shampoo yet.',
+          })
+      );
+      steps.push(
+        step('condition', 'Conditioner', kit.conditioner,
+          'Mid-lengths to ends, never the scalp. Two minutes, then rinse it out.',
+          {
+            optional,
+            detail: 'Rinse-out, 2 min',
+            missing: kit.conditioner ? undefined : 'No rinse-out conditioner recorded.',
+          })
+      );
+      if (perm) {
+        steps.push(
+          step('curl_cream', 'Curl cream', kit.curlCream,
+            `Straight onto wet hair: smooth it over the lengths, scrunch upward, then hands off until it is dry. Fine hair needs very little; too much and the waves drop flat. On a late wash, let it dry most of the way before bed or it sets flat.${
+              perm.fresh ? ' No heat in the first two weeks.' : ' A diffuser on low is fine when you are short of time.'
+            }`,
+            {
+              optional,
+              detail: 'Pea-sized, on wet hair',
+              missing: kit.curlCream ? undefined : 'No curl cream recorded yet.',
+            })
+        );
+      }
+    }
+
     steps.push(step('cleanse', 'Cleanse', cleanser, 'Everything from the day, including sunscreen, comes off first.'));
 
     const recoveryNight =
@@ -346,13 +395,21 @@ export function buildCarePlan(
   // ── What is coming up ──
   const due: DueItem[] = [];
 
-  if (!isWashDay && sinceWash !== null) {
+  // The wash is always listed, so it can always be logged, including the
+  // "I washed it on Tuesday" backfill that brings an unknown date back.
+  due.push(washDueItem(wash, kit));
+
+  // Mornings on permed hair: an optional refresh, logged with one tap. It
+  // only counts as done once he logs it.
+  if (phase === 'morning' && perm && !perm.settling) {
+    const refreshed = doneToday.has('refresh');
     due.push({
-      key: 'shampoo',
-      label: WASH_INTERVAL_D - sinceWash === 1 ? 'Shampoo tomorrow' : 'Next wash',
-      inDays: WASH_INTERVAL_D - sinceWash,
-      detail: useTreatmentShampoo ? 'Treatment wash next' : 'Normal wash next',
+      key: 'hair-refresh',
+      label: 'Morning refresh',
+      inDays: null,
+      detail: refreshed ? 'Done today' : 'Optional · water, scrunch, air-dry',
       domain: 'hair',
+      log: refreshed ? undefined : { action: 'refresh', area: 'scalp', domain: 'hair', instant: true },
     });
   }
 
@@ -382,7 +439,7 @@ export function buildCarePlan(
     weatherWord,
   ].filter(Boolean).join(' · ');
 
-  const actionable = steps.filter((s) => !doneToday.has(s.key));
+  const actionable = steps.filter((s) => !isDone(s.key));
 
   return {
     phase,
@@ -392,6 +449,6 @@ export function buildCarePlan(
     // Roughly 90 seconds a step, rounded up, floored at 2 minutes.
     minutes: Math.max(2, Math.round((actionable.length * 1.5) / 0.5) * 0.5),
     due,
-    doneKeys: steps.filter((s) => doneToday.has(s.key)).map((s) => s.key),
+    doneKeys: steps.filter((s) => isDone(s.key)).map((s) => s.key),
   };
 }

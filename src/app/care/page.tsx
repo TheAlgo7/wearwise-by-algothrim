@@ -9,10 +9,15 @@ import { modeForDate } from '@/lib/modes';
 import { readTodayContext } from '@/lib/today-context';
 import { readCachedWeather } from '@/lib/weather-cache';
 import type { CareProduct, CareStep, DueItem } from '@/lib/care/types';
-import { AlertTriangle, CalendarDays, Check, Droplets, Loader2, Moon, Scissors, Sparkles, Sun } from 'lucide-react';
+import {
+  AlertTriangle, CalendarDays, Check, Droplets, Loader2, Moon, Scissors, ShowerHead, Sparkles, Sun, Waves,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type Tab = 'today' | 'calendar' | 'products';
+
+/** Hair wash windows offered in settings, in days since the last wash. */
+const WASH_WINDOWS: Array<[number, number]> = [[2, 3], [3, 4], [4, 5]];
 
 /**
  * Care.
@@ -66,11 +71,25 @@ export default function CarePage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const record = async (item: DueItem, when: Date) => {
+  const record = async (item: DueItem, when: Date, productId?: string | null) => {
     if (!item.log) return;
-    const id = await log({ ...item.log, done_at: when.toISOString() });
+    const { action, area, domain } = item.log;
+    const id = await log({
+      action, area, domain,
+      product_id: productId ?? item.log.product_id ?? null,
+      done_at: when.toISOString(),
+    });
     setLogging(null);
     setToast({ text: `${item.label} logged`, id });
+  };
+
+  // Today-only things (the morning refresh) log on the tap itself, with Undo.
+  const recordNow = async (item: DueItem) => {
+    try {
+      await record(item, new Date());
+    } catch {
+      setToast({ text: 'Could not log that', id: null });
+    }
   };
 
   const plan = state?.plan;
@@ -141,7 +160,11 @@ export default function CarePage() {
               </div>
               <ul className="app-card divide-y divide-white/[0.05] px-2">
                 {upcoming.map((d) => (
-                  <DueRow key={d.key} item={d} onLog={d.log ? () => setLogging(d) : undefined} />
+                  <DueRow
+                    key={d.key}
+                    item={d}
+                    onLog={!d.log ? undefined : d.log.instant ? () => void recordNow(d) : () => setLogging(d)}
+                  />
                 ))}
               </ul>
             </section>
@@ -194,6 +217,30 @@ export default function CarePage() {
                     className="seg-item text-[13px]"
                   >
                     {v === 'active' ? 'Flaking' : v === 'occasional' ? 'Sometimes' : 'None'}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-1 px-1 text-[15px] font-semibold text-fog-100">Hair wash</h3>
+              <p className="mb-2.5 px-1 text-[12px] leading-5 text-fog-400">
+                {state.profile.perm_on
+                  ? `Permed ${new Date(state.profile.perm_on).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })}, so fewer washes than straight hair needed. `
+                  : ''}
+                Go shorter if your scalp gets oily or you sweat a lot, longer if the hair feels dry.
+              </p>
+              <div role="radiogroup" aria-label="Wash every" className="seg grid-cols-3">
+                {WASH_WINDOWS.map(([min, max]) => (
+                  <button
+                    key={min}
+                    type="button"
+                    role="radio"
+                    aria-checked={(state.profile.wash_min_days ?? 3) === min && (state.profile.wash_max_days ?? 4) === max}
+                    onClick={() => void patchProfile({ wash_min_days: min, wash_max_days: max })}
+                    className="seg-item text-[13px]"
+                  >
+                    {min}-{max} days
                   </button>
                 ))}
               </div>
@@ -271,12 +318,16 @@ function LogSheet({
 }: {
   item: DueItem | null;
   onClose: () => void;
-  onRecord: (item: DueItem, when: Date) => Promise<void>;
+  onRecord: (item: DueItem, when: Date, productId?: string | null) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState('');
+  // Which shampoo the wash used. Starts on the one the plan suggested; the
+  // medicated wash only counts as a treatment when it is the one logged.
+  const choices = item?.log?.choices ?? [];
+  const [productId, setProductId] = useState<string | null>(item?.log?.product_id ?? null);
 
   // One clock read per sheet, so today, yesterday and the picker's range agree.
   const [now] = useState(() => Date.now());
@@ -290,7 +341,7 @@ function LogSheet({
     setBusy(true);
     setErr(null);
     try {
-      await onRecord(item, when);
+      await onRecord(item, when, productId);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Could not log that');
       setBusy(false);
@@ -309,6 +360,23 @@ function LogSheet({
               ? `${item.detail}. When did you last do it?`
               : item.detail}
           </p>
+
+          {choices.length > 1 && (
+            <div role="radiogroup" aria-label="Which shampoo" className="seg grid-cols-2">
+              {choices.map((c) => (
+                <button
+                  key={c.product_id}
+                  type="button"
+                  role="radio"
+                  aria-checked={productId === c.product_id}
+                  onClick={() => setProductId(c.product_id)}
+                  className="seg-item text-[13px]"
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <button
             type="button"
@@ -406,7 +474,12 @@ function DueRow({ item, onLog }: { item: DueItem; onLog?: () => void }) {
     : item.inDays === 1 ? 'Tomorrow'
     : `in ${item.inDays}d`;
 
-  const Icon = item.domain === 'hair' ? Scissors : item.domain === 'body' ? Droplets : Sparkles;
+  const Icon =
+    item.key === 'hair-wash' ? ShowerHead
+    : item.key === 'hair-refresh' ? Waves
+    : item.domain === 'hair' ? Scissors
+    : item.domain === 'body' ? Droplets
+    : Sparkles;
 
   const body = (
     <>

@@ -10,10 +10,14 @@ interface Props {
   due: DueItem[];
 }
 
-/** Only the things worth marking a date for. Cleansing every day is not one. */
-const TRACKED: Record<string, { label: string; tone: 'hair' | 'body' | 'skin' }> = {
+/**
+ * Only the things worth marking a date for. Cleansing every day is not one,
+ * and neither is the optional morning refresh; a hair wash every few days is.
+ */
+const TRACKED: Record<string, { label: string; tone: 'hair' | 'body' | 'skin'; showArea?: boolean }> = {
   haircut: { label: 'Haircut', tone: 'hair' },
   hair_spa: { label: 'Hair spa', tone: 'hair' },
+  shampoo: { label: 'Hair wash', tone: 'hair', showArea: false },
   shave: { label: 'Shave', tone: 'body' },
   trim: { label: 'Trim', tone: 'body' },
   reaction: { label: 'Reaction', tone: 'skin' },
@@ -66,7 +70,8 @@ export function CareCalendar({ logs, due }: Props) {
       if (!meta) continue;
       const key = istKey(new Date(l.done_at));
       const list = byDay.get(key) ?? [];
-      list.push({ label: l.area ? `${meta.label} · ${l.area}` : meta.label, tone: meta.tone, future: false });
+      const withArea = l.area && meta.showArea !== false;
+      list.push({ label: withArea ? `${meta.label} · ${l.area}` : meta.label, tone: meta.tone, future: false });
       byDay.set(key, list);
     }
 

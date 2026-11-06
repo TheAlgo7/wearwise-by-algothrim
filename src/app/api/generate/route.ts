@@ -142,11 +142,21 @@ export async function POST(req: Request) {
   // and 5 of his 17 bottoms — the reason the same handful of outfits kept
   // coming back and most of the wardrobe never appeared. Roughly doubled; the
   // prompt is still well inside budget.
+  // Belts get their own seats, favourites first. They used to draw at random
+  // against caps and bandanas for eight accessory places, so the three he
+  // actually wears (tagged `signature`, named in HARD_RULES) often never
+  // reached the model and it reached for whatever belt was there.
+  const belts = ranked
+    .filter((i) => i.category?.name === 'Belt')
+    .sort((a, b) => Number(b.vibe.includes('signature')) - Number(a.vibe.includes('signature')))
+    .slice(0, 4);
+
   const candidates = [
     ...byLayer(['base', 'mid', 'outer'], 16),
     ...byLayer(['bottom'], 9),
     ...byLayer(['footwear'], 6),
-    ...byLayer(['timepiece'], 3),                           // watches always guaranteed a slot
+    ...byLayer(['timepiece'], 5),                           // every watch he owns; the model matches one to the outfit
+    ...belts,
     ...byLayer(['accessory', 'headwear', 'eyewear', 'jewelry'], 8),
   ].filter((item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx); // dedup
 

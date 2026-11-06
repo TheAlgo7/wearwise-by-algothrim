@@ -9,9 +9,9 @@ const INTERNAL = {
   height_cm: 178,
   weight_kg: 65,
   body_type: 'tall, lean frame — long torso, long legs, narrow shoulders, narrow upper arms with defined forearms. Warm tan complexion.',
-  hairstyle: `Textured Side-Swept Undercut with a Fade (Modern Textured Quiff).
-Cut: high mid-fade / blended skin fade on sides and back. Top kept ~3–4 inches, heavily layered and texturized (point-cut) for movement and volume. Fringe swept diagonally across the forehead. Slight disconnection at the part line — top sweeps cleanly over faded sides without blending.
-Styling: swept up and to the side with sea salt spray + volumizing powder; matte, piecey finish (not slicked back).`,
+  // Updated 6 Nov 2026: cold perm on 23 Oct replaced the side-swept quiff.
+  hairstyle: `Messy, textured loose waves. Fine, naturally straight and silky hair, cold-permed on 23 Oct 2026.
+Styling: air-dried with a little curl cream; no blow-dry, no slick-back.`,
 };
 
 /**

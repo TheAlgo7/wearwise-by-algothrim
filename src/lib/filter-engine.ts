@@ -27,6 +27,24 @@ const WINTER_GUARD_EXCESS = 5;     // °C above the item's ceiling before exclus
 const WINTER_GUARD_LAYERS = new Set(['mid', 'outer']);
 
 /**
+ * Watches and belts go with the outfit, not with the occasion.
+ *
+ * Casual mode caps formality at 3 and wants a casual/street/clean tag. Applied
+ * to accessories, that removed his metal watches and two of his three
+ * favourite black belts from every casual generation (all tagged formality 4,
+ * formal/smart-casual), so the model could only put a sporty smartwatch and,
+ * most often, the brown belt on a shirt, gurkhas and black Chelsea boots.
+ * Found 6 Nov 2026. In modes that allow going-out clothes (no ceiling, or a
+ * ceiling of 3 and up) they skip the ceiling and the required tags and the
+ * prompt matches them to the outfit. Minimum formality and excluded tags still
+ * apply, and Home and Gym keep every gate.
+ */
+function followsOutfit(it: Item, rules: ModeRules): boolean {
+  const kind = it.category?.layer_type === 'timepiece' || it.category?.name === 'Belt';
+  return kind && (rules.max_formality == null || rules.max_formality >= 3);
+}
+
+/**
  * The Bouncer.
  *
  * Reduces a full wardrobe to a shortlist the AI can reason over without
@@ -69,16 +87,17 @@ function passesGates(it: Item, ctx: FilterContext): boolean {
 
   // 4. Formality gate — scoped by mode rules
   const { min_formality, max_formality } = ctx.mode_rules;
+  const matchedToOutfit = followsOutfit(it, ctx.mode_rules);
   if (it.formality !== null) {
     if (min_formality != null && it.formality < min_formality) return false;
-    if (max_formality != null && it.formality > max_formality) return false;
+    if (!matchedToOutfit && max_formality != null && it.formality > max_formality) return false;
   }
 
   // 5. Vibe gates
   if (ctx.mode_rules.excluded_vibes?.length) {
     if (it.vibe.some((v) => ctx.mode_rules.excluded_vibes!.includes(v))) return false;
   }
-  if (ctx.mode_rules.required_vibes_any?.length && it.vibe.length > 0) {
+  if (!matchedToOutfit && ctx.mode_rules.required_vibes_any?.length && it.vibe.length > 0) {
     if (!it.vibe.some((v) => ctx.mode_rules.required_vibes_any!.includes(v))) return false;
   }
 

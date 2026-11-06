@@ -62,13 +62,14 @@ function latest(logs: LogLike[], match: (l: LogLike) => boolean): LogLike | null
 
 /**
  * Past this point a missed date means "not logged", not "neglected".
- * Shave (4d) goes quiet after 11 days, a 21-day trim after 42.
+ * Shave (4d) goes quiet after 11 days, a 21-day trim after 42. Hair washes
+ * (lib/care/hair) use the same rule, so every "Last logged" reads alike.
  */
-function staleAfter(cadence: number): number {
+export function staleAfter(cadence: number): number {
   return Math.max(cadence * 2, cadence + 7);
 }
 
-function shortDate(iso: string): string {
+export function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-IN', {
     timeZone: APP_TIMEZONE, day: 'numeric', month: 'short',
   });

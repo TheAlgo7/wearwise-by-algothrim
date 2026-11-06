@@ -39,6 +39,12 @@ create table if not exists care_profile (
   hairstyle_goal     text,
   growth_started_on  date,
 
+  -- Added 2026-11 (care-hair-perm.sql). When the current perm was done; null
+  -- while the hair is natural. The wash window is days since the last wash.
+  perm_on            timestamptz,
+  wash_min_days      smallint not null default 3,
+  wash_max_days      smallint not null default 4,
+
   -- Off. Turning it on exposes only a short hairstyle status line, never logs.
   share_with_partner boolean not null default false,
 
@@ -89,7 +95,8 @@ create table if not exists care_logs (
   id         uuid primary key default gen_random_uuid(),
   -- 'cleanse' | 'serum' | 'moisturise' | 'sunscreen' | 'shampoo' |
   -- 'conditioner' | 'style' | 'shave' | 'trim' | 'haircut' | 'hair_spa' |
-  -- 'body_wash' | 'exfoliate' | 'reaction'
+  -- 'body_wash' | 'exfoliate' | 'reaction' | 'refresh' (morning water
+  -- refresh on permed hair; never counts as a wash)
   action     text not null,
   domain     text not null,
   -- Areas grow and tolerate shaving differently, so they are logged apart.

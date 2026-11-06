@@ -22,6 +22,8 @@ const LOG_ACTIONS = [
   'cleanse', 'soothe', 'treat', 'moisturise', 'sunscreen',
   'shampoo', 'condition', 'style', 'body_wash', 'exfoliate',
   'shave', 'trim', 'haircut', 'hair_spa', 'reaction',
+  // Morning water refresh on permed hair. Not a wash: it never moves the wash date.
+  'refresh',
 ] as const;
 
 const logSchema = z.object({
@@ -45,12 +47,24 @@ const logSchema = z.object({
     .nullish(),
 });
 
-const profilePatchSchema = z.object({
-  dandruff: z.enum(['active', 'occasional', 'none']).optional(),
-  skin_type: z.string().max(40).optional(),
-  hairstyle_goal: z.string().max(200).optional(),
-  share_with_partner: z.boolean().optional(),
-});
+const washDays = z.number().int().min(1).max(14);
+
+const profilePatchSchema = z
+  .object({
+    dandruff: z.enum(['active', 'occasional', 'none']).optional(),
+    skin_type: z.string().max(40).optional(),
+    hairstyle_goal: z.string().max(200).optional(),
+    share_with_partner: z.boolean().optional(),
+    // The wash window travels as a pair, so it can never end up inverted.
+    wash_min_days: washDays.optional(),
+    wash_max_days: washDays.optional(),
+  })
+  .refine(
+    (p) =>
+      (p.wash_min_days === undefined) === (p.wash_max_days === undefined) &&
+      (p.wash_min_days === undefined || p.wash_min_days <= p.wash_max_days!),
+    'Send the wash window as a pair, earliest day first'
+  );
 
 async function guard() {
   if (await isOwner()) return null;
@@ -166,7 +180,10 @@ export async function PATCH(req: NextRequest) {
   if (denied) return denied;
 
   const parsed = profilePatchSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success || Object.keys(parsed.data).length === 0) {
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid update' }, { status: 400 });
+  }
+  if (Object.keys(parsed.data).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 

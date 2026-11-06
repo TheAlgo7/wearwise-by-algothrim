@@ -63,7 +63,7 @@ If planned_for is "tomorrow" — note this is advance planning. If "tonight" —
 OUTPUT: strict JSON only — no prose, no markdown fences.
 Schema: {"outfits":[{"items":["id1","id2",...],"reasoning":"string","confidence":0.0-1.0}]}
 
-REASONING FIELD — MANDATORY. Write 2–3 punchy sentences. Every reasoning MUST include ALL THREE of these:
+REASONING FIELD — MANDATORY. Write 2–3 punchy sentences, spoken to him directly: "you" and "your", never "Gaurav", "he" or "his". Talk about the clothes, the colour and the proportion; never comment on his body itself (no veins, vascularity or muscles). Every reasoning MUST include ALL THREE of these:
 1. Color story — how the pieces harmonise (e.g. "the navy tones down the white so it reads clean, not stark")
 2. Silhouette note for Gaurav's frame (6'1", lean, long torso, bootcut signature) — e.g. "bootcut flares balance the shoulder line", "oversized top over slim bottom creates proportion contrast"
 3. ONE actionable styling instruction — ALWAYS one of: (a) tuck or untuck call ("front-tuck only" / "leave untucked"), (b) sleeve instruction ("fold once to the elbow" / "keep rolled"), OR (c) a specific layering tip. This field is MANDATORY in every single outfit — never omit it.

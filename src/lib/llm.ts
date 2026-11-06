@@ -2,7 +2,7 @@
  * Multi-provider LLM client for outfit generation.
  *
  * Chain: Gemini flash-lite → Groq qwen3.8-27b → Gemini 2.5-flash
- *        → Groq gpt-oss-120b → OpenRouter nemotron (free)
+ *        → Groq gpt-oss-120b → OpenRouter Gemma 4 31B (free)
  *
  * Each rung has independent rate limits, so rapid regenerations (the core
  * "tap until it's right" flow) degrade to a slower provider instead of failing.
@@ -142,7 +142,9 @@ const CHAIN: Rung[] = [
   { provider: 'gemini', model: 'gemini-2.5-flash' },
   { provider: 'groq', model: 'openai/gpt-oss-120b' },
   // Genuinely last resort: free OpenRouter capacity is queued and slow.
-  { provider: 'openrouter', model: 'nvidia/nemotron-3-super-120b-a12b:free' },
+  // Nemotron 3 Super stopped being free (404) by 6 Nov 2026; Gemma 4 31B
+  // answered a JSON-mode check in ~2s that day.
+  { provider: 'openrouter', model: 'google/gemma-4-31b-it:free' },
 ];
 
 // Don't stall the user past this even if the provider asks for a longer wait.
