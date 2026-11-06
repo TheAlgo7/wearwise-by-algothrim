@@ -4,6 +4,7 @@ import { OutfitComposition } from '@/components/OutfitComposition';
 import { OutfitDetailSheet } from '@/components/OutfitDetailSheet';
 import { cn } from '@/lib/cn';
 import { colourStory } from '@/lib/colour-story';
+import { tick } from '@/lib/haptics';
 import { readOrder } from '@/lib/item-presentation';
 import type { GeneratedOutfit, Item } from '@/types';
 import { BookmarkCheck, BookmarkPlus, Check, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
@@ -95,8 +96,9 @@ export function TodayFit({
     if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy) * 1.4) return;
     swiped.current = true;
     if (dx < 0) {
-      if (!busy) onAnother();
+      if (!busy) { tick(); onAnother(); }
     } else if (canGoBack) {
+      tick();
       onPrevious();
     }
   };
@@ -214,7 +216,7 @@ export function TodayFit({
             )}
             <button
               type="button"
-              onClick={onWear}
+              onClick={() => { tick(12); onWear(); }}
               disabled={worn}
               className={cn(
                 'press flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-semibold transition-colors',

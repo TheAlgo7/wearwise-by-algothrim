@@ -231,8 +231,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   const supa = createAdminClient();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // Midnight in Asia/Kolkata, not the server's: Vercel runs in UTC, so
+  // setHours(0) meant "today" started at 5:30 am IST and an early-morning log
+  // could not be undone by action.
+  const istDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const startOfToday = new Date(`${istDay}T00:00:00+05:30`);
 
   const { data: recent } = await supa
     .from('care_logs')

@@ -144,7 +144,9 @@ export function groomingDue(logs: LogLike[], now: Date): DueItem[] {
         key: 'shape-cut',
         label: 'Shape cut',
         domain: 'hair',
-        detail: `Two-block shape, ${sinceCut} ${sinceCut === 1 ? 'day' : 'days'} into the grow-out.`,
+        // The cut is no longer a two-block (cold perm, Oct 2026), so the line
+        // says only what is true whatever the style: how long since the cut.
+        detail: `${sinceCut} ${sinceCut === 1 ? 'day' : 'days'} since the last full cut.`,
         log: { action: 'haircut', area: 'scalp', domain: 'hair' },
       },
       fullCut,

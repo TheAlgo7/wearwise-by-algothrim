@@ -3,6 +3,7 @@
 import { ItemCard } from '@/components/ItemCard';
 import { OneUIChip } from '@/components/oneui';
 import { cn } from '@/lib/cn';
+import { swatchFor } from '@/lib/colour-story';
 import { LAYER_TYPES, type LayerType } from '@/lib/constants';
 import { SEASON_META, itemSuitsSeason, type Season } from '@/lib/season';
 import type { Item } from '@/types';
@@ -77,6 +78,11 @@ function shelfLabel(name: string): string {
   return SHELF_LABELS[name] ?? name;
 }
 
+/** Sentence case for a stored colour: "olive green" reads "Olive green". */
+function colourLabel(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 // "Least worn" and "Most worn" are gone. times_worn is 0 on all 105 items and
 // always will be: he does not log wears and has said he never intends to, so
 // both sorts returned the list in an arbitrary order while claiming to mean
@@ -124,6 +130,11 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
   const [sortOpen, setSortOpen] = useState(false);
   /** When set, the view drills into one shelf as a full grid. */
   const [expanded, setExpanded] = useState<string | null>(null);
+  /**
+   * Browse by colour. Fashion first: colour decides his outfits, so "what do
+   * I own in olive" deserves one tap, not a search for the word.
+   */
+  const [colour, setColour] = useState<string | null>(null);
 
   function setSort(val: SortKey) {
     sessionStorage.setItem(SORT_KEY, val);
@@ -135,10 +146,31 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
     [items, season, seasonFilterOn]
   );
 
+  // The colours he actually owns, most common first.
+  const palette = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const it of inSeason) {
+      const c = it.primary_color?.trim().toLowerCase();
+      if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ name, count, hex: swatchFor(name) }));
+  }, [inSeason]);
+
+  // A colour picked under one season can vanish under another; drop it then
+  // rather than showing an empty grid with a chip row that no longer has it.
+  const activeColour = colour && palette.some((p) => p.name === colour) ? colour : null;
+
+  const inColour = useMemo(
+    () => (activeColour ? inSeason.filter((it) => it.primary_color?.trim().toLowerCase() === activeColour) : inSeason),
+    [inSeason, activeColour]
+  );
+
   const q = query.trim().toLowerCase();
   const searchResults = useMemo(
-    () => (q ? sortItems(inSeason.filter((it) => matchesQuery(it, q)), sort) : []),
-    [inSeason, q, sort]
+    () => (q ? sortItems(inColour.filter((it) => matchesQuery(it, q)), sort) : []),
+    [inColour, q, sort]
   );
 
   const shelves = useMemo(() => {
@@ -228,6 +260,36 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
           </div>
         )}
       </div>
+
+      {/* Every colour he owns, as a row of swatches. Tap one to see all of it. */}
+      {palette.length > 1 && (
+        <div role="group" aria-label="Browse by colour" className="chip-row -mt-1 mb-4">
+          {palette.map((p) => {
+            const on = activeColour === p.name;
+            return (
+              <button
+                key={p.name}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setColour(on ? null : p.name)}
+                className={cn(
+                  'press inline-flex h-10 shrink-0 items-center gap-2 rounded-full border pl-2 pr-3.5 text-[13px] font-semibold transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400',
+                  on ? 'border-white/[0.24] bg-ink-500 text-fog-100' : 'border-white/[0.10] text-fog-300 hover:border-white/[0.18] hover:text-fog-100'
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="h-6 w-6 rounded-full ring-1 ring-inset ring-white/[0.18]"
+                  style={{ background: p.hex ?? 'rgb(var(--fog-500))' }}
+                />
+                {colourLabel(p.name)}
+                <span className="tabular-nums text-fog-400">{p.count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 
@@ -250,6 +312,31 @@ export function WardrobeShelves({ items, season, seasonFilterOn }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           {(shelf?.items ?? []).map((it, idx) => (
+            <ItemCard key={it.id} item={it} priority={idx < 2} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── One colour, everything he owns in it ──
+  if (activeColour && !q) {
+    const pieces = sortItems(inColour, sort);
+    return (
+      <div>
+        {controls}
+        <div className="mb-3 flex items-baseline justify-between px-1">
+          <h2 className="text-oneui-h text-fog-100">{colourLabel(activeColour)}</h2>
+          <button
+            type="button"
+            onClick={() => setColour(null)}
+            className="press inline-flex min-h-[36px] items-center rounded-full px-2 text-[12px] font-semibold text-fog-300 transition-colors hover:text-fog-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson-400"
+          >
+            {pieces.length} {pieces.length === 1 ? 'piece' : 'pieces'} · Clear
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+          {pieces.map((it, idx) => (
             <ItemCard key={it.id} item={it} priority={idx < 2} />
           ))}
         </div>
