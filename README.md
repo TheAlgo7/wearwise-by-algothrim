@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/readme/hero.png" alt="WearWise: dress like you already know what you're doing" width="100%">
+  <picture>
+    <source media="(max-width: 600px)" srcset="docs/readme/hero-mobile.webp">
+    <img src="docs/readme/hero.webp" alt="WearWise: dress like you already know what you're doing. Saved looks, today's outfit and the wardrobe on three phones" width="100%">
+  </picture>
 </p>
 
 <p align="center">
@@ -8,21 +11,16 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a>
-  &nbsp;·&nbsp;
-  <a href="#how-it-works">How it works</a>
-  &nbsp;·&nbsp;
-  <a href="#run-it-locally">Run it locally</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/TheAlgo7/wearwise-go-by-algothrim">WearWise Go</a>
+  <a href="https://getwearwise.vercel.app"><img alt="WearWise: Try the demo" src="https://img.shields.io/badge/WearWise-Try%20the%20demo-E2335D?style=for-the-badge"></a>
+  <a href="https://github.com/TheAlgo7/wearwise-go-by-algothrim"><img alt="Packing: WearWise Go" src="https://img.shields.io/badge/Packing-WearWise%20Go-1a1a1a?style=for-the-badge"></a>
 </p>
 
 <p align="center">
-  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-E2335D?style=flat-square&labelColor=111111">
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-E2335D?style=flat-square&labelColor=111111">
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-E2335D?style=flat-square&labelColor=111111">
-  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-tested-E2335D?style=flat-square&labelColor=111111">
-  <img alt="Installable PWA" src="https://img.shields.io/badge/PWA-installable-E2335D?style=flat-square&labelColor=111111">
+  <a href="#what-it-looks-like">What it looks like</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#run-it-locally">Run it locally</a> ·
+  <a href="#privacy-and-security">Privacy</a>
 </p>
 
 ## Why WearWise
@@ -33,20 +31,31 @@ That constraint shapes everything. It only suggests clothes he owns. It knows th
 
 This repository is a public case study in software built around one life instead of a persona. The live app is PIN-locked, because it is somebody's actual wardrobe.
 
-## Screenshots
 
-<table>
-  <tr>
-    <td align="center"><img src="docs/readme/today.png" width="240" alt="Today's outfit, lit by its own colours"><br><sub>Today's fit, already chosen</sub></td>
-    <td align="center"><img src="docs/readme/wardrobe.png" width="240" alt="The wardrobe by shelf"><br><sub>Every piece, by shelf</sub></td>
-    <td align="center"><img src="docs/readme/colour.png" width="240" alt="Browsing the wardrobe by colour"><br><sub>Or by colour</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/readme/item.png" width="240" alt="One piece and its details"><br><sub>One piece, in its own light</sub></td>
-    <td align="center"><img src="docs/readme/looks.png" width="240" alt="Saved looks"><br><sub>Saved looks by season</sub></td>
-    <td align="center"><img src="docs/readme/look.png" width="240" alt="A saved look and why it works"><br><sub>Why a look works</sub></td>
-  </tr>
-</table>
+The live app is PIN-locked; [the public demo](https://getwearwise.vercel.app) runs the same stylist on a sample wardrobe, entirely on your device.
+
+## What it looks like
+
+<picture>
+  <source media="(max-width: 600px)" srcset="docs/readme/today-mobile.webp">
+  <img src="docs/readme/today.webp" alt="A look for today: today's outfit with its reason on one phone, and a saved look on another" width="100%">
+</picture>
+
+**A look for today.** Opening the app generates one outfit from the wardrobe, for the weather, the season and where you're going, with the reason it works.
+
+<picture>
+  <source media="(max-width: 600px)" srcset="docs/readme/wardrobe-mobile.webp">
+  <img src="docs/readme/wardrobe.webp" alt="Only what you own: the wardrobe by shelf, and one shirt with its details" width="100%">
+</picture>
+
+**Only what you own.** Every suggestion comes from the pieces you've photographed, by shelf, each lit by its own colours on a true-black screen.
+
+<picture>
+  <source media="(max-width: 600px)" srcset="docs/readme/looks-mobile.webp">
+  <img src="docs/readme/looks.webp" alt="Saved looks, by colour: saved looks by season, and the wardrobe filtered to blue" width="100%">
+</picture>
+
+**Saved looks, by colour.** Keep the combinations that worked, filtered by season, and browse the wardrobe one colour at a time.
 
 ## Features
 
@@ -54,11 +63,17 @@ This repository is a public case study in software built around one life instead
 - **One context line.** City, temperature, mode, indoor or outdoor, and when. Ten modes cover the week: Quick Fit, Home, Casual, Smart, Gym, Church, Travel, Impress, Night, or describe where you are going.
 - **Four Indian seasons.** Summer, monsoon, autumn and winter, picked from live weather or set by hand. Winter unlocks the cold-weather layers; real heat keeps them out.
 - **Lights down.** The screen is true black, so the clothes are the only colour on it. An outfit stands as a figure, shirt over trousers, shoes and accessories beside it, lit from behind by its most telling colour and named after it: "Burgundy over black". The garments themselves are never tinted.
-- **The wardrobe by shelf, or by colour.** T-shirts, shirts, bottoms, footwear and accessories as rails you can drill into, with search and a season filter. A row of every colour you own, with counts, opens everything in that colour in one tap.
-- **Looks.** Save a combination you like, filter by season, and read why it works.
 - **Photo to closet.** Add a photo and the background is cleaned and the piece is tagged by AI: category, colour, formality, vibe and temperature range. If the first model is slow, two more take over inside the same request.
 - **A partner view.** A second PIN gives read and suggest access: browse the wardrobe, build a look piece by piece and send it as a pick. Adding, editing and private screens stay with the owner.
+
+<details>
+<summary><strong>Everything else it does</strong></summary>
+
+- **The wardrobe by shelf, or by colour.** T-shirts, shirts, bottoms, footwear and accessories as rails you can drill into, with search and a season filter. A row of every colour you own, with counts, opens everything in that colour in one tap.
+- **Looks.** Save a combination you like, filter by season, and read why it works.
 - **Care.** Morning and night routines and grooming dates, worked out by a plain rules engine with no model involved, and visible only to the owner. Hair care follows the hair, not the shower: a wash window you can tune, gentle and medicated shampoos kept apart, a settling period after chemical treatments, and nothing counted as done until you log it.
+
+</details>
 
 ## How it works
 
@@ -79,6 +94,7 @@ flowchart LR
 - **A chain, not a single provider.** Gemini flash-lite answers first. If it is busy, Groq and a larger Gemini take over on their own quotas, and a free Gemma model on OpenRouter is the last resort, all inside one 48 second deadline. Every slug is checked against the providers' live lists, because retired models fail silently.
 - **Time is Delhi time.** The server runs in UTC, so anything that depends on the hour or the day goes through the app's timezone, never the server clock.
 
+
 ## Built with
 
 | Layer | Choice |
@@ -91,7 +107,11 @@ flowchart LR
 | Tests | Vitest for the care engine and the outfit filter |
 | Hosting | Vercel, with a daily keep-alive cron for the free database |
 
+
 ## Run it locally
+
+<details>
+<summary><strong>Setup, environment and commands</strong></summary>
 
 You need Node 20 or newer and a Supabase project.
 
@@ -127,7 +147,10 @@ Then run `supabase/schema.sql` and `supabase/seed.sql` in the Supabase SQL edito
 | `npm test` | Vitest: wash windows, owned-shampoo selection, the outfit filter |
 | `python scripts/readme-shots.py` | Rebuilds the screenshots in this README from the live app |
 
-## Project structure
+</details>
+
+<details>
+<summary><strong>Project structure</strong></summary>
 
 ```text
 src/
@@ -141,6 +164,10 @@ supabase/         schema, seed and the care tables
 scripts/          README screenshots
 ```
 
+The pictures on this page come from `scripts/readme-shots.py` (captures in `docs/readme/src/assets`) and `docs/readme/src/readme.js`, drawn by The Algothrim's README Kit.
+
+</details>
+
 ## Privacy and security
 
 - The app sits behind a PIN. The session cookie is a hash of role and PIN, so an owner session and a partner session cannot be swapped.
@@ -148,6 +175,7 @@ scripts/          README screenshots
 - Care data lives in tables with row-level security on and no public policies. Only the server, behind an owner check, can read them.
 - Wardrobe tables are readable with the publishable key, because the clothes are not a secret. If you fork this for other people, tighten those policies first.
 - The README screenshots are taken from the live app with the private parts hidden first.
+
 
 ## Licence
 
